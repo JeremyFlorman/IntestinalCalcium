@@ -1,26 +1,26 @@
-fld = 'E:\Jeremy Acquisitions\DMP_Mutants\unc-68(r1162)'; % Folder containing the data you want to analyze
-serverfolder = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\unc-68(r1162)';  % upload everything to this location.
- 
+fld = 'E:\Jeremy Acquisitions\DMP_Mutants\tax-6(ok2065)'; % Folder containing the data you want to analyze
+serverfolder = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\tax-6(ok2065)';  % upload everything to this location.
+
 %% settings
 startIndex = 1; % which video to start analysis.
 startframe =1; % when to begin analysis
 
 uploadresults = 1; % upload data to remote location (serverfolder)?
 isremote = 0;    % is our tiff file on the server? If so, we'll copy to local
-                 % folder to run the analysis then move the results to the
-                 % server.
+% folder to run the analysis then move the results to the
+% server.
 
 plotstuff = 1; % display tracking
 videostuff =1; % record video
 framerate = 15; % display video/plots every Nth iteration of loop.
 fps = 15;      % frames per sec of input tiff.
 troubleshoot =0; % show binary images instead of regular plots
-showNormals = 0;
+showNormals = 1;
 
 crop = 3; % num pixels to crop from image edge. set to 0 for no cropping.
 minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
-axSigLen = 200; % how many pixels to use for registering axial signal. 
+axSigLen = 200; % how many pixels to use for registering axial signal.
 
 useautothreshold = 1;% set to 1 to calculate a threshold for each image.
 useadaptivethreshold = 0; % if useautothreshold is set to 0 adaptive thresholding can be used
@@ -30,7 +30,7 @@ loadtiff =1; % read entire tiff into memory? faster analysis but requires more r
 
 %%
 tdir = dir([fld '\**\*.tif']);
- 
+
 for nf =startIndex:length(tdir)
     path = fullfile(tdir(nf).folder, tdir(nf).name)
 
@@ -69,10 +69,10 @@ for nf =startIndex:length(tdir)
         end
     end
 
-%     if showNormals ==1
-%     normfig = figure();
-%     normAx = axes(Parent=normfig);
-%     end
+    %     if showNormals ==1
+    %     normfig = figure();
+    %     normAx = axes(Parent=normfig);
+    %     end
 
     tic
     info = imfinfo(path);
@@ -92,32 +92,32 @@ for nf =startIndex:length(tdir)
     orientation = NaN(length(info)/2,1);
     area = NaN(length(info)/2,1);
     mag = NaN(length(info)/2,1);
-    
+
     time = linspace(0,round((length(info)/2)/fps/60,1),ceil(length(info)/2)); %minutes per frame
     wormIdx = [];
 
 
-    %% Get comments if available 
-%     commentPath = [tdir(nf).folder '\comments.txt'];
-%     if exist(commentPath, 'file')
-%         s = readlines(commentPath);
-%         comments = s(12,:);
-%         tem = regexpi(comments, 'temp', 'split');
-%         
-% 
-%         
-%     end
+    %% Get comments if available
+    %     commentPath = [tdir(nf).folder '\comments.txt'];
+    %     if exist(commentPath, 'file')
+    %         s = readlines(commentPath);
+    %         comments = s(12,:);
+    %         tem = regexpi(comments, 'temp', 'split');
+    %
+    %
+    %
+    %     end
 
 
     if loadtiff == 1
         if exist('TIFFStack.m','file')
-        img = TIFFStack(path);
-         war = warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
-         warning('off', 'MATLAB:imagesci:tifftagsread:expectedTagDataFormat');
-         warning('off','imageio:tiffmexutils:libtiffWarning')
+            img = TIFFStack(path);
+            war = warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
+            warning('off', 'MATLAB:imagesci:tifftagsread:expectedTagDataFormat');
+            warning('off','imageio:tiffmexutils:libtiffWarning')
         else
-        disp('This Code works way faster with the TiffStack function: https://github.com/DylanMuir/TIFFStack')
-        img = tiffreadVolume(path);
+            disp('This Code works way faster with the TiffStack function: https://github.com/DylanMuir/TIFFStack')
+            img = tiffreadVolume(path);
         end
         disp('loading tif took:')
         toc
@@ -145,7 +145,7 @@ for nf =startIndex:length(tdir)
             imgWidth = size(mCh, 2);
             imgHeight = size(mCh,1);
         end
-%         imshow(imadjust(mCh))
+        %         imshow(imadjust(mCh))
         % set up thresholding and binary image processing
         if useautothreshold ==1
             T = graythresh(mCh);
@@ -158,16 +158,16 @@ for nf =startIndex:length(tdir)
         BW = imcomplement(BW);
         BW = bwmorph(BW,'clean');
         BW = bwmorph(BW,'fill');
-        
+
 
         tempb = BW;
         BW = imdilate(BW,strel('disk',7));
         BW = imerode(BW,strel('disk',7));
-        
-%         BW = imerode(BW,strel('disk',7));
-%         B =bwmorph(B,'open',1);
-       
-        
+
+        %         BW = imerode(BW,strel('disk',7));
+        %         B =bwmorph(B,'open',1);
+
+
         tempb2 = BW;
 
         % identify connected objects
@@ -188,7 +188,7 @@ for nf =startIndex:length(tdir)
         % assume that is the worm. If there is another big object off center,
         % as will occur with vignetting, we will check to make sure that the
         % most central object is within a size range determined by the values
-        % of minwormarea and maxwormarea.  
+        % of minwormarea and maxwormarea.
         if bigIdx == centralIdx && bwprops(bigIdx).Area<= maxwormarea
             wormIdx = bigIdx;
         elseif bwprops(centralIdx).Area <= maxwormarea && ...
@@ -205,20 +205,20 @@ for nf =startIndex:length(tdir)
         if ~isempty(wormIdx)
             Lw(Lw~=wormIdx) = 0;
 
-             orientation(i,1) = bwprops(wormIdx).Orientation;
+            orientation(i,1) = bwprops(wormIdx).Orientation;
 
 
             % generate mask, outline and skeleton
             mask = logical(Lw);
             outline = bwmorph(mask, 'remove',1);
-%             skel = bwskel(mask,'MinBranchLength', 20);
+            %             skel = bwskel(mask,'MinBranchLength', 20);
             skel = bwmorph(mask,'thin', inf);
 
             outskel = logical(outline+skel);
             [ep] = bwmorph(skel,'endpoints');
- 
-            
-% Extract Axial signal by sampling perpendicular lines from skeleton %
+
+
+            % Extract Axial signal by sampling perpendicular lines from skeleton %
 
             if nnz(ep) >0
                 [ey,ex] = find(ep,1);
@@ -232,23 +232,23 @@ for nf =startIndex:length(tdir)
                 tempbf = cell(1,length(sortSkel)-1); %NaN(Clen,length(sortSkel)-1);
                 perpX = cell(1,length(sortSkel)-1);
                 perpY = cell(1,length(sortSkel)-1);
-                
-                
+
+
 
                 parfor ii = 1:length(sortSkel)-1
                     if ii+stepSize<length(sortSkel)
-                    seg = sortSkel(ii:ii+stepSize,:);
+                        seg = sortSkel(ii:ii+stepSize,:);
                     else
-                    seg = sortSkel(ii:end,:);
+                        seg = sortSkel(ii:end,:);
                     end
 
 
 
                     A = [seg(1,2) seg(1,1)]; % [x y] coords of point 1
                     B = [seg(end,2) seg(end,1)]; % [x y] coords of point 2
-                    
+
                     AB = B - A;     % Call AB the vector that points in the direction from A to B
-                    
+
                     % Normalize AB to have unit length
                     AB = AB/norm(AB);
 
@@ -265,35 +265,35 @@ for nf =startIndex:length(tdir)
                     C = ABmid + Clen*ABperp;
                     D = ABmid - Clen*ABperp;
 
-%                     if showNormals == 1
-%                     plot([A(1);B(1)],[A(2);B(2)],'-bo',[C(1);D(1)],[C(2);D(2)],'-rs','Parent',normAx)
-%                     xlim(normAx,[0 256-crop])
-%                     ylim(normAx,[0 256-crop])
-%                     hold on
-%                     drawnow()
-%                     end
-                    
-                    try 
-                    temptrace(ii) = {improfile(GFP,[C(1);D(1)],[C(2);D(2)],Clen)};
-                    tempbf(ii) = {improfile(mCh,[C(1);D(1)],[C(2);D(2)],Clen)};
-                    perpX(ii) = {[C(1); D(1)]}
-                    perpY(ii) = {[C(2); D(2)]}
+                    %                     if showNormals == 1
+                    %                     plot([A(1);B(1)],[A(2);B(2)],'-bo',[C(1);D(1)],[C(2);D(2)],'-rs','Parent',normAx)
+                    %                     xlim(normAx,[0 256-crop])
+                    %                     ylim(normAx,[0 256-crop])
+                    %                     hold on
+                    %                     drawnow()
+                    %                     end
+
+                    try
+                        temptrace(ii) = {improfile(GFP,[C(1);D(1)],[C(2);D(2)],Clen)};
+                        tempbf(ii) = {improfile(mCh,[C(1);D(1)],[C(2);D(2)],Clen)};
+                        perpX(ii) = {[C(1); D(1)]}
+                        perpY(ii) = {[C(2); D(2)]}
                     catch
                     end
                 end
-                
-                hold off 
-                
 
-                
+                hold off
+
+
+
                 temptrace = cell2mat(temptrace);
                 tempbf = cell2mat(tempbf);
                 perpX = cell2mat(perpX);
                 perpY = cell2mat(perpY);
 
-%                 h1 = plot(perpX,perpY);
+                %                 h1 = plot(perpX,perpY);
 
- 
+
 
 
                 if ~isempty(temptrace)
@@ -304,16 +304,16 @@ for nf =startIndex:length(tdir)
                     axialSignal(i,1:size(tt,2)) = tt;
                 end
             end
-            
-% Bulk signal and background signal
+
+            % Bulk signal and background signal
             blksig = GFP(mask);
             sumSignal(i,1) = sum(blksig,"all",'omitnan');
             bulkSignal(i,1) = mean(blksig,"all",'omitnan');
             backgroundSignal(i,1) = mean(GFP(~mask),'all','omitnan');
-            
+
             abovebkg = blksig>mean(GFP(~mask));
             bulkAboveBkg(i,1) = mean(blksig(abovebkg)-mean(GFP(~mask)),"all",'omitnan');
-            
+
             area(i,1) = bwprops(wormIdx).Area;
 
 
@@ -321,19 +321,13 @@ for nf =startIndex:length(tdir)
             if plotstuff == 1
                 if mod(i,framerate) == 0
 
-
-                    if showNormals == 1 
-                    plot(perpX,perpY,'Color', [0.2 0.2 0.2],'Parent', ax1)
-                    xlim(ax1,[1 256-crop])
-                    ylim(ax1,[1 256-crop])
-                    ax1.YDir = 'reverse';
-                    title(ax1, 'Midline Normal Vectors')
-                    else
-
                     imshow(label2rgb(L,'jet','k','shuffle'),'Parent', ax1)
-                    title(ax1,'Binary Masks');
+                    title(ax1,'Binary Mask');
+                    if showNormals == 1
+                        line(perpX,perpY,'Color', [0.9 0.9 0.9],'Parent', ax1)
+                        title(ax1,'Binary Mask + Normal Vectors');
                     end
-                    
+
                     if troubleshoot == 1
                         imshow(tempb,'Parent', ax2);
                         title(ax2,'Initial Threshold');
@@ -342,16 +336,16 @@ for nf =startIndex:length(tdir)
                         title(ax3,'Processed Mask');
                     else
                         try
-                            
+
                             mdiff = size(mCh,2)-size(tempbf,2);
-                            
+
                             if mdiff>0
-                            mpadTrace = padarray(tempbf,[0, ceil(mdiff/2)],0,'both');
-                            mpadTrace = mpadTrace(:,1:size(mCh, 2));
+                                mpadTrace = padarray(tempbf,[0, ceil(mdiff/2)],0,'both');
+                                mpadTrace = mpadTrace(:,1:size(mCh, 2));
                             elseif mdiff<0
                                 mpaTrace = tempbf(:,abs(mdiff):size(mCh, 2));
                             end
-                           
+
                             mpad_Outskel = padarray(outskel, [size(mpadTrace,1),0], 'post');
                             mmergedImage = vertcat(mCh, mpadTrace);
                             mmergedOverlay = imoverlay(imadjust(mmergedImage, [0.05 0.21]), mpad_Outskel, [1 0 0]);
@@ -360,11 +354,11 @@ for nf =startIndex:length(tdir)
 
                             gdiff = size(GFP,2)-size(temptrace,2);
 
-                            if gdiff>0 
-                            gpadTrace = padarray(temptrace,[0, ceil(gdiff/2)],0,'both');
-                            gpadTrace = gpadTrace(:,1:size(GFP, 2));
+                            if gdiff>0
+                                gpadTrace = padarray(temptrace,[0, ceil(gdiff/2)],0,'both');
+                                gpadTrace = gpadTrace(:,1:size(GFP, 2));
                             elseif gdiff<0
-                                 gpaTrace = temptrace(:,abs(gdiff):size(GFP, 2));
+                                gpaTrace = temptrace(:,abs(gdiff):size(GFP, 2));
                             end
 
                             gpad_Outskel = padarray(outskel, [size(gpadTrace,1),0], 'post');
@@ -378,7 +372,7 @@ for nf =startIndex:length(tdir)
 
                             imshow(imoverlay(imadjust(GFP,[0.06 0.1]), outskel, [0 1 0]), 'Parent', ax3)
                             title(ax3,'GCaMP');
-                        end 
+                        end
                     end
 
                     plot(time,area(:), 'Parent', ax4);
@@ -429,20 +423,20 @@ for nf =startIndex:length(tdir)
     %% %%%%%%%%%%%%%%%%%%%%% Auto Fix Axial Signal %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     fractionToQuerry = 0.1;
     autoAxialSignal = autoFixSignal(axialSignal,fractionToQuerry);
-    
+
     %     for ii = 1:length(axialSignal)
-%         left = mean(axialSignal(ii,1:10),'omitnan');
-%         right = mean(axialSignal(ii,end-10:end),'omitnan');
-%         if left > right
-%             autoAxialSignal(ii,:) = fliplr(axialSignal(ii,:));
-%             autoAxialBF(ii,:) = fliplr(axialBF(ii,:));
-%             axmat(ii,1) = {fliplr(axmat{ii,1})};
-%             axmat(ii,2) = {fliplr(axmat{ii,2})};
-%         elseif left <= right
-%             autoAxialSignal(ii,:) = axialSignal(ii,:);
-%             autoAxialBF(ii,:) = axialBF(ii,:);
-%         end
-%     end
+    %         left = mean(axialSignal(ii,1:10),'omitnan');
+    %         right = mean(axialSignal(ii,end-10:end),'omitnan');
+    %         if left > right
+    %             autoAxialSignal(ii,:) = fliplr(axialSignal(ii,:));
+    %             autoAxialBF(ii,:) = fliplr(axialBF(ii,:));
+    %             axmat(ii,1) = {fliplr(axmat{ii,1})};
+    %             axmat(ii,2) = {fliplr(axmat{ii,2})};
+    %         elseif left <= right
+    %             autoAxialSignal(ii,:) = axialSignal(ii,:);
+    %             autoAxialBF(ii,:) = axialBF(ii,:);
+    %         end
+    %     end
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -568,7 +562,7 @@ for nf =startIndex:length(tdir)
     ax.XTickLabels = xtl;
     ax.YTick = [20 size(autoAxialSignal,2)-20];
     ax.YTickLabel = {'Head', 'Tail'};
-    
+
 
 
     nexttile([1 1])
@@ -599,13 +593,13 @@ for nf =startIndex:length(tdir)
 
 
 
-%     nexttile([1 1]);
-%     plot(orientation,time);
-%     ylim([0 time(end)])
-%     title(gca, 'Worm Orientation')
-%     set(gca,'YDir', 'reverse')
-%     xlabel(gca,'Orientation (degrees)')
-%     ylabel(gca, 'Time (min)')
+    %     nexttile([1 1]);
+    %     plot(orientation,time);
+    %     ylim([0 time(end)])
+    %     title(gca, 'Worm Orientation')
+    %     set(gca,'YDir', 'reverse')
+    %     xlabel(gca,'Orientation (degrees)')
+    %     ylabel(gca, 'Time (min)')
 
 
 
@@ -629,7 +623,7 @@ for nf =startIndex:length(tdir)
         elseif isremote == 1  % if working with remote files, moved analyzed results back to where we found them.
             pattern = fullfile(tempfolder, '*.tif'); % identify large tif file which was moved to local drive
             tifffile = dir(pattern);
-            ld = dir(tempfolder); 
+            ld = dir(tempfolder);
             ld = ld(3:end);
 
             tifflist = zeros(length(ld),1);
@@ -653,7 +647,7 @@ for nf =startIndex:length(tdir)
     end
 
 
-    if exist('wormdata', 'var') 
+    if exist('wormdata', 'var')
         clear('wormdata');
     end
 
@@ -661,11 +655,11 @@ for nf =startIndex:length(tdir)
         clear('img')
     end
 
-     if exist('TIFFStack.m','file')
-         warning(war);
-     end
+    if exist('TIFFStack.m','file')
+        warning(war);
+    end
 
-%     close all
+    %     close all
 
 end
 
