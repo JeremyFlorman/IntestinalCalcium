@@ -14,6 +14,9 @@ data = [];
 settings = returnPlotSettings();
 axylimit = settings.axylimit;
 peakthreshold = settings.peakthreshold;
+reFixSig = settings.autoFixAxialSignal;
+axSigToQuerry = settings.axSigToQuerry;
+XTickInt = settings.axialXticint;
 
 spikeProperties = getSpikeLocs(datapath,peakthreshold,1);
 mtsort = spikeProperties.mtsort;
@@ -37,23 +40,31 @@ end
 buffer = NaN(length(data(1).autoAxialSignal), 10);
 
 for i = 1:num2plot
-    if isfield(data, 'backgroundSignal')
-    background = repmat(data(i).backgroundSignal,1,size(data(i).autoAxialSignal,2));
-    axsig = data(i).autoAxialSignal-background;
+
+    if reFixSig == 1
+        rawsig = autoFixSignal(data(i).autoAxialSignal,axSigToQuerry);
     else
-    axsig = data(i).autoAxialSignal;
+        rawsig = data(i).autoAxialSignal;
+    end
+
+    if isfield(data, 'backgroundSignal')
+        background = repmat(data(i).backgroundSignal,1,size(data(i).autoAxialSignal,2));
+        axsig = rawsig-background;
+    else
+        axsig = rawsig;
     end
 
     if i == 1
         axialMatrix = axsig;
-    elseif i>1 
-    axialMatrix = horzcat(axialMatrix,buffer, axsig);
+    elseif i>1
+        axialMatrix = horzcat(axialMatrix,buffer, axsig);
     end
 end
 
 
 % figure('Position', [488 70.6000 465 691.4000]);
-imagesc(smoothdata(axialMatrix,'movmean',75)',axylimit)
+imagesc(smoothdata(axialMatrix,'movmedian',60)',axylimit)
+% imagesc(axialMatrix' ,axylimit)
 % map = colormap('bone');
 % colormap(flipud(map))
 % colormap('turbo')
@@ -63,10 +74,18 @@ if isfield(data, 'genotype')
     title(['\it' data(1).genotype])
 end
 
+durationInMin = length(data(1).autoAxialSignal)/900;
+framesInMin = length(data(1).autoAxialSignal)/durationInMin;
+
+xt = [1 framesInMin*XTickInt:framesInMin*XTickInt:length(data(1).autoAxialSignal)];
+xtl = 0:2:durationInMin;
+
 
 ax = gca;
+ax.XTick = xt;
+ax.XTickLabel = xtl;
 ax.YTickLabel = [];
-ax.XTickLabel = num2str(round(str2double(ax.XTickLabel)/15/60,0));
+
 xlabel('Time (min)');
 end
 

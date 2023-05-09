@@ -19,17 +19,17 @@ normalize = settings.normalize;
 [mtdata, wtdata] = parseWormData(datapath);
 
 spikeProperties = getSpikeLocs(datapath,peakthreshold,1);
-mtsort = spikeProperties.mtsort;
-wtsort = spikeProperties.wtsort;
+mtdata = mtdata(spikeProperties.mtsort);
+wtdata = wtdata(spikeProperties.wtsort);
 
 
 data = [];
 
 switch plotcontrol
     case 0
-        data = mtdata(mtsort);
+        data = mtdata;
     case 1
-        data = wtdata(wtsort);
+        data = wtdata;
 end
 
 mpf = 1/900; 

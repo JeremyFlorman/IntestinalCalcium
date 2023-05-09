@@ -11,12 +11,18 @@ settings = returnPlotSettings();
 traceylimits = settings.traceylimit;
 peakthreshold = settings.peakthreshold;
 normalize = settings.normalize;
+secondsPrePost = settings.spikeProfileWindow;
 
 [mtdata, wtdata] = parseWormData(mtdatapath);
 
 
 wtprofiles = [];
 mtpeakprofiles = [];
+
+
+
+timePreSpike = 15*secondsPrePost;
+timePostSpike = 15*secondsPrePost;
 
 % midx = ~cellfun(@isempty,{mtdata.normalizedSignal});
 % mtbulksig = mtdata(midx).normalizedSignal;
@@ -43,8 +49,8 @@ for k = 1:length(mtdata)
 
 
     for q = 1:length(loc)
-        pre = loc(q)-150;
-        post = loc(q)+150;
+        pre = loc(q)-timePreSpike;
+        post = loc(q)+timePostSpike;
 
         if pre>0 && post<= length(mtsig)
             ttrace = mtsig(pre:post);
@@ -80,8 +86,8 @@ if plotcontrol == 1
 
 
         for q = 1:length(loc)
-            pre = loc(q)-150;
-            post = loc(q)+150;
+            pre = loc(q)-timePreSpike;
+            post = loc(q)+timePostSpike;
             if pre>0 && post<= length(wtsig)
                 wttrace = wtsig(pre:post);
                 wtprofiles = horzcat(wtprofiles, wttrace);
@@ -107,11 +113,11 @@ end
 
 
 
-wtpktime = linspace(-15,15,size(wtprofiles,1))';
+wtpktime = linspace(-timePreSpike/15,timePostSpike/15,size(wtprofiles,1))';
 wtpktimemat = repmat(wtpktime, [1,size(wtprofiles,2)]);
 wtpk = max(mean(wtprofiles,2,'omitnan'));
 
-mtpktime = linspace(-15,15,size(mtpeakprofiles,1))';
+mtpktime = linspace(-timePreSpike/15,timePostSpike/15,size(mtpeakprofiles,1))';
 mtpktimemat = repmat(mtpktime, [1,size(mtpeakprofiles,2)]);
 mtpk = max(mean(mtpeakprofiles,2,'omitnan'));
 
@@ -122,22 +128,22 @@ hold on
 if plotcontrol ==1
     if ~isempty(wtpktimemat)
         plot(wtpktimemat, wtprofiles, 'Color',wttracecol , 'LineWidth', singlewidth) % plot wild type individual traces
-        line([-15; 15], [wtpk; wtpk], 'Color', wtcolor, 'LineStyle', ':',...    %line at wild type mean
+        line([-timePreSpike/15; timePostSpike/15], [wtpk; wtpk], 'Color', wtcolor, 'LineStyle', ':',...    %line at wild type mean
             'LineWidth', tracelinewidth)
     end
 end
 
 if ~isempty(mtpktimemat)
     plot(mtpktimemat, mtpeakprofiles, 'Color',mttracecol ,'LineWidth', singlewidth); % plot mutant individual traces
-    line([-15; 15], [mtpk; mtpk], 'Color', mtcolor, 'LineStyle', '--',... % line at mutant mean
+    line([-timePreSpike/15; timePostSpike/15], [mtpk; mtpk], 'Color', mtcolor, 'LineStyle', '--',... % line at mutant mean
         'LineWidth', tracelinewidth)
 
-    plot(mtpktime, median(mtpeakprofiles,2,'omitnan'), 'Color', mtcolor, 'LineWidth', tracewidth); % plot mutant trace mean
+    plot(mtpktime, mean(mtpeakprofiles,2,'omitnan'), 'Color', mtcolor, 'LineWidth', tracewidth); % plot mutant trace mean
 end
 
 if plotcontrol == 1
     if~isempty(wtprofiles)
-        plot(wtpktime, median(wtprofiles,2,'omitnan'), 'Color', wtcolor, 'LineWidth', tracewidth); % plot wild type trace mean
+        plot(wtpktime, mean(wtprofiles,2,'omitnan'), 'Color', wtcolor, 'LineWidth', tracewidth); % plot wild type trace mean
     end
 end
 
@@ -146,7 +152,7 @@ hold off
 
 
 
-xlim([-15 15])
+xlim([-timePreSpike/15; timePostSpike/15])
 ylim(traceylimits)
 title('Ca^2^+ Spike Profiles');
 if labelYAxis == 1

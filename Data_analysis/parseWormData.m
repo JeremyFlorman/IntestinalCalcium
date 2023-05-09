@@ -13,7 +13,7 @@ function [mtdata, wtdata] = parseWormData(datapath)
 settings = returnPlotSettings;
 normalize = settings.normalize;
 
-if ischar(datapath) || isstring(datapath)
+if ischar(datapath) || isstring(datapath) 
     mtdata = load(datapath);
     mtdata = mtdata.wormdata;
 elseif isstruct(datapath)
@@ -31,7 +31,9 @@ if isfield(mtdata, 'controlData')
         wtdata = wtdata(logical([wtdata.include]));
     end
 
-    %% normalize bulk signal by dividing by the mean wildtype bulk signal.
+
+
+    % normalize bulk signal by dividing by the mean wildtype bulk signal.
     if normalize == 1
         wtbulksig = cell2mat({wtdata(:).bulkSignal});
         wtmedian = median(wtbulksig,'all','omitnan');

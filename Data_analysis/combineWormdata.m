@@ -4,7 +4,7 @@ function [] = combineWormdata(datafolder)
 
 if nargin <1
     %     datafolder = uigetdir('Z:\Calcium Imaging\Intestinal_Calcium_FreelyMoving')
-    datafolder = 'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\egl-8'
+    datafolder = 'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\slcf-1'
 end
  
 folderparts = regexp(datafolder, '\','split');
@@ -80,6 +80,10 @@ for k = 1:length(genotypes)
     
     
 end
+disp("Done Combining wormdata")
 
 mergeControl(combinedDataFolder,controlname)
-disp("Done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+disp("Done merging control")
+
+plot_MatchedControl(combinedDataFolder)
+disp('done plotting!!!!!')

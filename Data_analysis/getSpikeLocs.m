@@ -41,9 +41,9 @@ wtsort = nan(length(wtdata),1);
 
 for i = 1:length(mtdata)
 
-    if normalize == 1 
+    if normalize == 1
         sig = mtdata(i).normalizedSignal;
-    else 
+    else
         sig = mtdata(i).bulkSignal;
     end
 
@@ -62,27 +62,22 @@ for i = 1:length(mtdata)
     mtsignal(i) = {terpdata};
     if ~isempty(templocs)
         mtnum(i) = length(templocs);
-        mtAvAmp(i) = mean(mtamp);
+        mtAvAmp(i) = mean(tempamp);
     else
         mtnum(i) = 0;
         mtAvAmp(i) = 0;
     end
 
-    
+
 end
 
 if getControl == 1
-
-%     if normalize == 1
-%     idx = ~cellfun(@isempty,{wtdata.normalizedSignal});
-%     wtbulksig = wtdata(idx).normalizedSignal;
-%     end
 
     for i = 1:length(wtdata)
 
         if normalize == 1
             sig = wtdata(i).normalizedSignal;
-        else 
+        else
             sig = wtdata(i).bulkSignal;
         end
 
@@ -93,15 +88,23 @@ if getControl == 1
         if length(templocs)>1
             tempint = diff(templocs)/15;
         end
+        
 
+        if i == 1 
+        wtinterval = tempint;
+        wtamp = tempamp;
+        wtlocs = templocs;
+        elseif i>1
         wtinterval = vertcat(wtinterval, tempint);
         wtamp = vertcat(wtamp, tempamp);
         wtlocs = vertcat(wtlocs, templocs);
+        end
+
         wtsignal(i) = {terpdata};
 
         if ~isempty(templocs)
             wtnum(i) = length(templocs);
-            wtAvAmp(i) = mean(wtamp);
+            wtAvAmp(i) = mean(tempamp,'omitnan');
         else
             wtnum(i) = 0;
             wtAvAmp(i) = 0;
@@ -110,14 +113,18 @@ if getControl == 1
 end
 
 
-switch sortType
-    case 1
-        mtsorttype = mtnum;
-    case 2
-        mtsorttype = mtAvAmp;
+
+if sortType == 0                % dont sort
+    mtsort = 1:length(mtdata);
+elseif sortType == 1            % sort by number of spikes
+    mtsorttype = mtnum;
+    [~, mtsort] = sort(mtsorttype,sortDir);
+elseif sortType == 2            % sort by spike amplitude
+    mtsorttype = mtAvAmp;
+    [~, mtsort] = sort(mtsorttype,sortDir);
 end
 
-[B, mtsort] = sort(mtsorttype,sortDir);
+
 spikeProperties.mtsort = mtsort;
 spikeProperties.mtAmp = mtamp;
 spikeProperties.mtLocs = mtlocs;
@@ -126,14 +133,18 @@ spikeProperties.mtInterval = mtinterval;
 
 if getControl == 1
 
-    switch sortType
-    case 1
+
+    if sortType == 0                % dont sort
+        wtsort = 1:length(wtdata);
+    elseif sortType == 1            % sort by number of spikes
         wtsorttype = wtnum;
-    case 2
+        [~, wtsort] = sort(wtsorttype,sortDir);
+    elseif sortType == 2            % sort by spike amplitude
         wtsorttype = wtAvAmp;
+        [~, wtsort] = sort(wtsorttype,sortDir);
     end
- 
-    [~, wtsort] = sort(wtsorttype, sortDir);
+
+    
     spikeProperties.wtsort = wtsort;
     spikeProperties.wtAmp = wtamp;
     spikeProperties.wtLocs = wtlocs;

@@ -39,9 +39,9 @@ if plotcontrol == 1
     ax1.YLim = [0 0.5];
 
 
-    line([median(mtint); median(mtint)], [ax1.YLim(1) ax1.YLim(2)*.8], 'Color', mtcolor, 'LineStyle', '--',...
+    line([mean(mtint); mean(mtint)], [ax1.YLim(1) ax1.YLim(2)*.8], 'Color', mtcolor, 'LineStyle', '--',...
         'LineWidth', loclinewidth)
-    line([median(wtint); median(wtint)], [ax1.YLim(1) ax1.YLim(2)*.8], 'Color', wtcolor, 'LineStyle', ':',...
+    line([mean(wtint); mean(wtint)], [ax1.YLim(1) ax1.YLim(2)*.8], 'Color', wtcolor, 'LineStyle', ':',...
         'LineWidth', loclinewidth)
 
     hold off
@@ -80,7 +80,7 @@ elseif plotcontrol == 0
     hold on
     ax2 = gca;
     ax2.YLim = [0 0.5];
-    line([median(mtint); median(mtint)], [ax2.YLim(1) ax2.YLim(2)*.8],...
+    line([mean(mtint); mean(mtint)], [ax2.YLim(1) ax2.YLim(2)*.8],...
         'Color', wtcolor, 'LineStyle', '--','LineWidth', loclinewidth)
 
     hold off
