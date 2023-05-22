@@ -4,7 +4,7 @@ function [] = combineWormdata(datafolder)
 
 if nargin <1
     %     datafolder = uigetdir('Z:\Calcium Imaging\Intestinal_Calcium_FreelyMoving')
-    datafolder = 'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\slcf-1'
+    datafolder = 'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\egl-19(gf)'
 end
  
 folderparts = regexp(datafolder, '\','split');
@@ -20,6 +20,22 @@ end
 
  
 d = dir([datafolder '\**\*wormdata.mat']);
+
+%% Exclude/include experiments based on date specified in dateflag
+nms = {d.name};
+dates = nan(1,length(nms));
+for i = 1:length(nms)
+    r = regexp(nms{i}, '_zfis178_', 'split');
+
+    dates(i)=str2double(r{1});
+end
+
+dateflag = dates>210410; %set date range to include in merged dataset. format is yymmdd
+
+d = d(dateflag);
+
+%%
+
 nms = {d.name};
 names = cell(1,length(nms));
 for i = 1:length(nms)

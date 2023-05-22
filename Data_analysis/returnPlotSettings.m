@@ -6,7 +6,7 @@ function [plotSettings] = returnPlotSettings()
 plotSettings.peakdistance = 150;
 plotSettings.peakwidth = 15;
 plotSettings.autoFixAxialSignal = 1;
-plotSettings.axSigToQuerry = 0.07;
+plotSettings.axSigToQuerry = 0.15;
 plotSettings.framerate = 15;
 
 plotSettings.axylimit = [-500 12000];
@@ -26,7 +26,7 @@ plotSettings.axialXticint = 2; % # x tick interval (in minutes) for axial signal
 %                                 % absent.
 %                                 % 3 = normalized to mean control signal
 
-plotSettings.sortType = 2; % 0=dont sort,  1=num spikes, 2=amplitude
+plotSettings.sortType = 0; % 0=dont sort,  1=num spikes, 2=amplitude
 plotSettings.sortDir = 'descend';
 plotSettings.normalize = 0;
 

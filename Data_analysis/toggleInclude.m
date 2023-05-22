@@ -1,8 +1,11 @@
-[name, folder]  = uigetfile('C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants');
+file = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\egl-19(gf)\egl-19(gf)_mergedData.mat';
+[folder, name, ~] = fileparts(file);
 
-toggleMutant = [5 6 7 8 9];
-toggleControl = [];
+% [name, folder]  = uigetfile('C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\Sammy\tir-1(qd4)\');
 
+toggleMutant = [1 2 5 6];
+toggleControl = [1 2 5 6];
+ 
  wormdata = load(fullfile(folder, name)); 
  wormdata = wormdata.wormdata; 
 for i = 1:length(toggleMutant)
@@ -10,7 +13,24 @@ for i = 1:length(toggleMutant)
 end
 
  if ~isempty(toggleControl) 
-     wormdata(1).controlData(toggleControl).include = abs(wormdata(1).controlData(toggleControl).include-1);
+     firstIncluded = find([wormdata.include],1);
+     controlIndex = [];
+     for k = 1:length(wormdata)
+         if ~isempty(wormdata(k).controlData)
+             controlIndex = k;
+         end
+     end
+                
+     
+     controlData = wormdata(controlIndex).controlData;
+     wormdata(controlIndex).controlData = [];
+
+     for i = 1:length(toggleControl)
+         
+         controlData(toggleControl(i)).include = abs(controlData(toggleControl(i)).include-1);
+     end
+     wormdata(firstIncluded).controlData = controlData;
+
  end
 
 save(fullfile(folder, name), 'wormdata')

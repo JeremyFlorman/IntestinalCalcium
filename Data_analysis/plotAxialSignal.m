@@ -37,7 +37,7 @@ else
 end
 
 
-buffer = NaN(length(data(1).autoAxialSignal), 10);
+buffer = NaN(length(data(1).autoAxialSignal), 1);
 
 for i = 1:num2plot
 

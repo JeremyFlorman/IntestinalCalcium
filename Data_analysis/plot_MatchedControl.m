@@ -3,7 +3,7 @@ function [] = plot_MatchedControl(parentfolder)
 %   Detailed explanation goes here
 
 if nargin<1
-parentfolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\slcf-1';
+parentfolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\egl-19(gf)';
 end
 
 dd = dir(parentfolder);
@@ -31,7 +31,7 @@ axylimit = settings.axylimit;
 overlayplots = 0; 
 
 
-tolimit = 14;             % set to 0 if you want to plot all bulk & axial signal plots.
+tolimit = 20;             % set to 0 if you want to plot all bulk & axial signal plots.
                          %  set to -1 if you want equal # of control and
                          %  mutant plots, the latter is better for
                          %  comparison as bulk signals will haveS identical
