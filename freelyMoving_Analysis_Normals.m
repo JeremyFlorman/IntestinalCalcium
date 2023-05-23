@@ -1,9 +1,9 @@
-fld = 'E:\Jeremy Acquisitions\DMP_Mutants\tax-6(ok2065)'; % Folder containing the data you want to analyze
-serverfolder = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\tax-6(ok2065)';  % upload everything to this location.
+fld = 'E:\Jeremy Acquisitions\DMP_Mutants\unc-43(e408)'; % Folder containing the data you want to analyze
+serverfolder = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\unc-43(e408)';  % upload everything to this location.
 
 %% settings
-startIndex = 1; % which video to start analysis.
-startframe =1; % when to begin analysis
+startIndex = 3; % which video to start analysis.
+startframe =1; % what frame to begin analysis
 
 uploadresults = 1; % upload data to remote location (serverfolder)?
 isremote = 0;    % is our tiff file on the server? If so, we'll copy to local
@@ -11,11 +11,12 @@ isremote = 0;    % is our tiff file on the server? If so, we'll copy to local
 % server.
 
 plotstuff = 1; % display tracking
-videostuff =1; % record video
+videostuff =1; % record video 
 framerate = 15; % display video/plots every Nth iteration of loop.
 fps = 15;      % frames per sec of input tiff.
 troubleshoot =0; % show binary images instead of regular plots
 showNormals = 1;
+showAxialSignal = 1;
 
 crop = 3; % num pixels to crop from image edge. set to 0 for no cropping.
 minwormarea = 10000; %lower limit to worm area
@@ -37,7 +38,7 @@ for nf =startIndex:length(tdir)
 
     if isremote == 1
         tic
-        tempfolder = 'C:\tmp'; %set temp directory for copying tiff files.
+        tempfolder = 'E:\tmp'; %set temp directory for copying tiff files.
         copyfile(path, tempfolder)
         remotepath = path;                         % save the original path for later uploading.
         path = fullfile(tempfolder, tdir(nf).name); % rename path to the local path.
@@ -46,8 +47,9 @@ for nf =startIndex:length(tdir)
 
     %%
     if plotstuff == 1
-        figure('Position', [506 92 1332 849],'Color',[1 1 1]);
-        tiledlayout(4,3,'Padding','tight')
+       if showAxialSignal == 0 
+        figure('Position', [668 128 1064 653],'Color',[1 1 1]);
+        tiledlayout(4,3,'Padding','compact')
         ax1 = nexttile([2 1]);
         ax2 = nexttile([2 1]);
         ax3 = nexttile([2 1]);
@@ -55,6 +57,15 @@ for nf =startIndex:length(tdir)
         ax5 = nexttile([1 1]);
         ax6 = nexttile([1 1]);
         ax7 = nexttile([1 3]);
+       elseif showAxialSignal == 1
+        figure('Position',[668 128 1064 653],'Color',[1 1 1]);
+        tiledlayout(4,3,'Padding','compact')
+        ax1 = nexttile([2 1]);
+        ax2 = nexttile([2 1]);
+        ax3 = nexttile([2 1]);
+        ax4 = nexttile([1 3]);
+        ax7 = nexttile([1 3]);
+       end
 
 
         if videostuff == 1
@@ -265,14 +276,6 @@ for nf =startIndex:length(tdir)
                     C = ABmid + Clen*ABperp;
                     D = ABmid - Clen*ABperp;
 
-                    %                     if showNormals == 1
-                    %                     plot([A(1);B(1)],[A(2);B(2)],'-bo',[C(1);D(1)],[C(2);D(2)],'-rs','Parent',normAx)
-                    %                     xlim(normAx,[0 256-crop])
-                    %                     ylim(normAx,[0 256-crop])
-                    %                     hold on
-                    %                     drawnow()
-                    %                     end
-
                     try
                         temptrace(ii) = {improfile(GFP,[C(1);D(1)],[C(2);D(2)],Clen)};
                         tempbf(ii) = {improfile(mCh,[C(1);D(1)],[C(2);D(2)],Clen)};
@@ -299,6 +302,18 @@ for nf =startIndex:length(tdir)
                 if ~isempty(temptrace)
                     tt = resample(max(temptrace), size(axialSignal,2), size(temptrace,2),5,20);  % max?
                     abf = resample(mean(tempbf), size(axialSignal,2), size(tempbf,2),5,20);
+
+                    % % % % real-time autoFixSignal % % %
+                    querryLength = length(tt)*0.1; % fraction of signal to querry
+                    leftMean = mean(tt(1:querryLength),'omitnan');
+                    rightMean = mean(tt(length(tt)-querryLength:length(tt)),'omitnan');
+                    
+                    if leftMean>rightMean 
+                        tt = fliplr(tt);
+                        abf = fliplr(abf);
+                    end
+
+                     % % % % % % % % % % % % % % % % % % % %
 
                     axialBF(i,1:size(abf,2)) = abf;
                     axialSignal(i,1:size(tt,2)) = tt;
@@ -363,7 +378,7 @@ for nf =startIndex:length(tdir)
 
                             gpad_Outskel = padarray(outskel, [size(gpadTrace,1),0], 'post');
                             gmergedImage = vertcat(GFP, gpadTrace);
-                            gmergedOverlay = imoverlay(imadjust(gmergedImage, [0.06 0.1]), gpad_Outskel, [0 1 0]);
+                            gmergedOverlay = imoverlay(imadjust(gmergedImage, [0.06 0.2]), gpad_Outskel, [0 1 0]);
                             imshow(gmergedOverlay,'Parent', ax3)
                             title(ax3,'GCaMP');
                         catch
@@ -374,7 +389,8 @@ for nf =startIndex:length(tdir)
                             title(ax3,'GCaMP');
                         end
                     end
-
+                    
+                    if showAxialSignal == 0
                     plot(time,area(:), 'Parent', ax4);
                     title(ax4,'Worm Area');
                     ylabel(ax4,'Pixels');
@@ -395,8 +411,21 @@ for nf =startIndex:length(tdir)
                     legend(ax6,{'GCaMP6', 'Brightfield'}, 'Location', 'northwest', ...
                         'Box', 'off');
 
+                    elseif showAxialSignal == 1
+                       axsig = smoothdata(axialSignal(1:i,:),1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
+                        imagesc(axsig,'Parent',ax4)  
+                        ax4.CLim = [-500 30000];
+                        ax4.XAxis.Visible = 0;
+                        ax4.YAxis.Visible = 0;
+                        title(ax4,'Raw Axial Signal')
+                        colormap turbo
+                        
+                    end
 
                     plot(time,bulkSignal(:),time,backgroundSignal(:), 'Parent', ax7)
+                    if i>1
+                    xlim([0 time(i)]);
+                    end
                     title(ax7, 'Whole Body Ca^2^+ Signal')
                     ylabel(ax7, 'Mean Fluorescent Intensity (a.u.)');
                     xlabel(ax7,'Time (min)');
@@ -549,7 +578,7 @@ for nf =startIndex:length(tdir)
 
 
     ax = nexttile([1 3]);
-    imagesc(smoothdata(autoAxialSignal,1,'gaussian',60)')
+    imagesc(smoothdata(autoAxialSignal,1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan'))
     title(gca, 'Axial Calcium Trace')
     ct = gca;
     hold on
@@ -562,6 +591,8 @@ for nf =startIndex:length(tdir)
     ax.XTickLabels = xtl;
     ax.YTick = [20 size(autoAxialSignal,2)-20];
     ax.YTickLabel = {'Head', 'Tail'};
+    ax.CLim =[-500 30000];
+    colormap turbo
 
 
 
