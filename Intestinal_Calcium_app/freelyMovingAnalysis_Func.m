@@ -39,7 +39,8 @@ for nf =startIndex:length(tdir)
 
     if isremote == 1
         tic
-        tempfolder = 'C:\tmp'; %set temp directory for copying tiff files.
+        uploadresults =1;
+        tempfolder = 'E:\tmp'; %set temp directory for copying tiff files.
         copyfile(path, tempfolder)
         remotepath = path;                         % save the original path for later uploading.
         path = fullfile(tempfolder, tdir(nf).name); % rename path to the local path.
@@ -651,28 +652,26 @@ for nf =startIndex:length(tdir)
 
 
         elseif isremote == 1  % if working with remote files, moved analyzed results back to where we found them.
-            pattern = fullfile(tempfolder, '*.tif'); % identify large tif file which was moved to local drive
-            tifffile = dir(pattern);
-            ld = dir(tempfolder);
-            ld = ld(3:end);
+            clear('img')
 
-            tifflist = zeros(length(ld),1);
-            for i = 1:length(ld)
-                tifflist(i) =  strcmpi(ld(i).name, tifffile.name);
+            tifFiles = dir([tempfolder '\*.tif']);
+            for j = 1:length(tifFiles)
+                delete(fullfile(tifFiles(j).folder,tifFiles(j).name))
             end
 
-            noTiff = ld(~tifflist);     % exclude tif file, we dont need to move it to the server.
+            otherFiles = dir(tempfolder);
+            otherFiles = otherFiles(3:end);
 
-            for ri = 1:length(noTiff)   % copy results to server and clean up our mess.
-                file2copy = fullfile(noTiff(ri).folder, noTiff(ri).name);
+
+            for ri = 1:length(otherFiles)   % copy results to server and clean up our mess.
+                file2copy = fullfile(otherFiles(ri).folder, otherFiles(ri).name);
                 [uploadLocation, ~]= fileparts(remotepath);
                 [status,message,messageId]= copyfile(file2copy,[uploadLocation '\']);
                 if status == 1
-                    delete(fullfile(noTiff(ri).folder, noTiff(ri).name));
+                    delete(fullfile(otherFiles(ri).folder, otherFiles(ri).name));
                 end
             end
-            clear('img')
-            delete(fullfile(tifffile.folder, tifffile.name));
+            
         end
     end
 
