@@ -102,6 +102,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         BulkSignallimsLabel            matlab.ui.control.Label
         axialYLim                      matlab.ui.control.EditField
         AxialSignallimLabel            matlab.ui.control.Label
+        showFit                        matlab.ui.control.CheckBox
     end
 
 
@@ -120,8 +121,15 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                 parsedInputs.remoteDir = app.remoteDir.Value;
             end
 
-            parsedInputs.loadTiff = app.LoadTiffCheckBox.Value;
+            
             parsedInputs.isRemote = app.IsRemoteCheckBox.Value;
+
+            if app.IsRemoteCheckBox.Value
+                parsedInputs.uploadResults = 1;
+            end
+
+
+            parsedInputs.loadTiff = app.LoadTiffCheckBox.Value;          
             parsedInputs.crop = app.CropPixelsEditField.Value;
             parsedInputs.inputFramerate = app.InputFramerateEditField.Value;
             parsedInputs.autoThreshold = app.AutoThresholdButton.Value;
@@ -173,6 +181,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
 
             plotSettings.binedges = app.MinEditField.Value:app.IncrementEditField.Value:app.MaxEditField.Value;
+            plotSettings.showFitParams = app.showFit.Value;
 
 
             if app.dontSort.Value
@@ -224,6 +233,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
 
     end
+
+
 
 
     % Callbacks that handle component events
@@ -939,6 +950,14 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.AutoFixAxialSignalCheckBox.Text = 'Auto-Fix Axial Signal';
             app.AutoFixAxialSignalCheckBox.Position = [26 28 132 24];
             app.AutoFixAxialSignalCheckBox.Value = true;
+
+            % Create showFit
+            app.showFit = uicheckbox(app.PlotSettingsTab);
+            app.showFit.Tooltip = {'Re-analyze axial signal to correct for head tail flips.'};
+            app.showFit.Text = 'Show Spike fitting';
+            app.showFit.Position = [26 45 132 24];
+            app.showFit.Value = false;
+
 
             % Create test
             app.test = uibutton(app.PlotSettingsTab, 'push');
