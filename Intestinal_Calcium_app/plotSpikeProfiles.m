@@ -17,7 +17,7 @@ end
 traceylimits = settings.traceylimit;
 secondsPrePost = settings.spikeProfileWindow;
 fps = settings.framerate;
-
+noalpha = 1;
 
 timePreSpike = fps*secondsPrePost;
 timePostSpike = fps*secondsPrePost;
@@ -37,8 +37,15 @@ tracewidth = 1;
 tracelinewidth = 1;
 wtcolor = [0 0 0];
 mtcolor = [0.09 0.35 0.92];
-mttracecol = [0.7,0.85,0.99,0.6];
-wttracecol = [0.6 0.6 0.6 0.4];
+
+if noalpha == 1
+    mttracecol = [0.7,0.85,0.99];
+    wttracecol = [0.6 0.6 0.6];
+else
+    mttracecol = [0.7,0.85,0.99,0.6];
+    wttracecol = [0.6 0.6 0.6 0.4];
+end
+
 
 if plotcontrol == 0
     mtcolor = wtcolor;

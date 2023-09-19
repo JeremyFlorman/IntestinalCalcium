@@ -12,6 +12,7 @@ loclinewidth = 1.5;
 mtcolor = settings.mtcolor;
 binedges = settings.binedges;
 wtcolor = [0 0 0];
+noalpha = 1;
 
 if isempty(wtdata)
     plotcontrol = 0;
@@ -27,13 +28,20 @@ mtint = vertcat(mtdata(:).peakIntervals);
 if plotcontrol == 1
     wtint = vertcat(wtdata(:).peakIntervals);
 
+    if noalpha ==1
+        h1=histogram(wtint,binedges,'FaceColor', [0.7 0.7 0.7],'FaceAlpha',...
+            1, 'EdgeAlpha', 1, 'Normalization','probability');
+        hold on
 
-    h1=histogram(wtint,binedges,'FaceColor', [0.7 0.7 0.7],'FaceAlpha',...
-        0.4, 'EdgeAlpha', 0.4, 'Normalization','probability');
-    hold on
+        h2 =  histogram(mtint,binedges,'FaceColor', mtcolor,'FaceAlpha',...
+            1, 'EdgeAlpha', 1, 'Normalization','probability');
+    else
+        h1=histogram(wtint,binedges,'FaceColor', [0.7 0.7 0.7],'FaceAlpha',...
+            0.4, 'EdgeAlpha', 0.4, 'Normalization','probability');
+        hold on
 
-    h2 =  histogram(mtint,binedges,'FaceColor', mtcolor,'Normalization','probability');
-
+        h2 =  histogram(mtint,binedges,'FaceColor', mtcolor,'Normalization','probability');
+    end
     ax1 = gca;
     ax1.YLim = [0 0.5];
 

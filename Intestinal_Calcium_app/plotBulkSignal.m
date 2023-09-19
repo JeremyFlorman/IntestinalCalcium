@@ -35,7 +35,7 @@ for i = 1:num2plot
     baseLine = repmat(baseline, [length(time),1]);
     line(time,baseLine, 'Color', [0.6 0.6 0.6])
     hold on
-    plot(templocs/900,shiftedamp+0.05*tracediff,'v','color' ,[0.7 0.2 0.4], 'MarkerSize',1)
+    plot(templocs/900,shiftedamp+0.05*tracediff,'v','color' ,[0.7 0.2 0.4], 'MarkerSize',3)
 
 
 end

@@ -5,8 +5,8 @@ function [] = mergeControl(datafolder,controlname)
 %   assumed to be the mutant dataset.
 
 if nargin <1
-    datafolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\dec-1';
-    controlname = 'wildtype';
+    datafolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\5-HT\wildtype-30mM-5HT';
+    controlname = 'wildtype-control';
 end
 
 
