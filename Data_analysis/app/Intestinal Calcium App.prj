@@ -1,0 +1,92 @@
+<deployment-project plugin="plugin.apptool" plugin-version="1.0">
+  <configuration build-checksum="665968401" file="C:\Users\Jeremy\Documents\MATLAB\Intestinal Calcium App.prj" location="C:\Users\Jeremy\Documents\MATLAB" name="Intestinal Calcium App" target="target.mlapps" target-name="Package App">
+    <param.appname>Intestinal Calcium App</param.appname>
+    <param.authnamewatermark>Jeremy Florman</param.authnamewatermark>
+    <param.email>Jeremy.Florman@umassmed.edu</param.email>
+    <param.company>Alkema Lab</param.company>
+    <param.icon />
+    <param.icons />
+    <param.summary>Analysis suite for tracking calcium signals in freely moving C. elegans</param.summary>
+    <param.description />
+    <param.screenshot>C:\Users\Jeremy\AppData\Local\Temp\tp67364652_0494_431e_9d14_39f8438d95d7.png</param.screenshot>
+    <param.version>1.0</param.version>
+    <param.products.name>
+      <item>MATLAB</item>
+      <item>Image Processing Toolbox</item>
+    </param.products.name>
+    <param.products.id>
+      <item>1</item>
+      <item>17</item>
+    </param.products.id>
+    <param.products.version>
+      <item>9.13</item>
+      <item>11.6</item>
+    </param.products.version>
+    <param.platforms>
+      <item>win64</item>
+    </param.platforms>
+    <param.output>${PROJECT_ROOT}</param.output>
+    <param.guid>b7d1f86f-faaa-4a58-8cdd-dc3e68e0920d</param.guid>
+    <unset>
+      <param.icon />
+      <param.icons />
+      <param.description />
+      <param.version />
+      <param.output />
+    </unset>
+    <fileset.main>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium_app.mlapp</file>
+    </fileset.main>
+    <fileset.depfun>
+      <file>${PROJECT_ROOT}\copyLoadClear.m</file>
+      <file>${PROJECT_ROOT}\freelyMovingAnalysis_Func.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\app\combine_Wormdata.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\app\plot_MultiGenotype.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\autoFixSignal.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\mergeControl.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\overlayBulkSignal.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\plot_MatchedControl.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\plotAxialSignal.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\plotBulkSignal.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\plotCV.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\plotEchos.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\plotIntervalHistogram.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\plotOverlay.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\plotSpikeProfiles.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\processWormdata.m</file>
+      <file>${PROJECT_ROOT}\Intestinal_Calcium\returnPlotSettings.m</file>
+      <file>${PROJECT_ROOT}\matplotlib\viridis.m</file>
+      <file>${PROJECT_ROOT}\TiffStack\private\mapped_tensor_repsum.mexw64</file>
+      <file>${PROJECT_ROOT}\TiffStack\private\tifflib.mexw64</file>
+      <file>${PROJECT_ROOT}\TiffStack\private\tiffread31_header.m</file>
+      <file>${PROJECT_ROOT}\TiffStack\private\tiffread31_readimage.m</file>
+      <file>${PROJECT_ROOT}\TiffStack\private\tiffread31_readtags.m</file>
+      <file>${PROJECT_ROOT}\TiffStack\TIFFStack.m</file>
+    </fileset.depfun>
+    <fileset.resources />
+    <fileset.package />
+    <build-deliverables>
+      <file location="C:\Users\Jeremy\Documents" name="MATLAB" optional="false">C:\Users\Jeremy\Documents\MATLAB</file>
+    </build-deliverables>
+    <workflow />
+    <matlab>
+      <root>C:\Program Files\MATLAB\R2022b</root>
+      <toolboxes />
+    </matlab>
+    <platform>
+      <unix>false</unix>
+      <mac>false</mac>
+      <windows>true</windows>
+      <win2k>false</win2k>
+      <winxp>false</winxp>
+      <vista>false</vista>
+      <linux>false</linux>
+      <solaris>false</solaris>
+      <osver>10.0</osver>
+      <os32>false</os32>
+      <os64>true</os64>
+      <arch>win64</arch>
+      <matlab>true</matlab>
+    </platform>
+  </configuration>
+</deployment-project>
