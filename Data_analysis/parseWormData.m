@@ -1,4 +1,4 @@
-function [mtdata, wtdata] = parseWormData(datapath)
+function [mtdata, wtdata, settings] = parseWormData(datapath,settings)
 %parseWormData - Returns mutant and control data from a mergedData
 %file.
 %   if datapath is a file location, that file will be loaded. if datapath
@@ -9,8 +9,10 @@ function [mtdata, wtdata] = parseWormData(datapath)
 
 % datapath = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\egl-19(lf)\egl-19(lf)_mergedData.mat';
 
+if nargin<2
+settings = returnPlotSettings();
+end
 
-settings = returnPlotSettings;
 normalize = settings.normalize;
 
 if ischar(datapath) || isstring(datapath) 

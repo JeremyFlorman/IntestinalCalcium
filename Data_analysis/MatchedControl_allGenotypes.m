@@ -1,5 +1,6 @@
 
 parentfolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants';
+% parentfolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\Rebekka\dec_mutants';
 dd = dir(parentfolder);
 ddirflag = [dd.isdir];
 dd = dd(ddirflag);
@@ -11,7 +12,7 @@ settings = returnPlotSettings();
 peakthreshold = settings.peakthreshold; 
 traceYLimit = settings.traceylimit; 
 axylimit = settings.axylimit;
-plotlimit = 5;
+plotlimit = 1;
 plotnum = [];
 plotcontrol = [];
 
@@ -34,19 +35,32 @@ figpos2 = [130.6000 345.8000 1324 325.6000];
 
 %  genotypes = {'wildtype','unc-43(e408)','itr-1-unc-43', 'itr-1'};
 % genotypes = {'wildtype', 'dec-7', 'dec-9','dec-10'};
-genotypes = {'wildtype', 'dec-9', 'unc-43(sa200)'};
+% genotypes = {'wildtype', 'dec-9', 'unc-43(sa200)'};
 
-if length(genotypes) == 4
-    figpos = [245.8000 117 948 210.4000];
-    figpos2 = [305.8000 308.2000 848 325.6000];
-elseif length(genotypes) == 3
+% genotypes = {'wildtype', 'dec-9', 'unc-43(sa200)'};
+% prefix = '\dec9 candidates ';
+% 
+genotypes = {'wildtype', 'itr-1', 'inx-16', 'flr-1','unc-43(e408)'}
+prefix = '\dec10 candidates ';
+
+if length(genotypes) == 3
     figpos = [263.4000 369 761.6000 231.2000];
-    figpos2 = [447.4000 320.2000 703.2000 325.6000];
+    figpos2 = [447.4000 320.2000 211.2000 325.6000];
+elseif length(genotypes) == 4
+    figpos = [253.8000 581.8000 600.8000 156];
+    figpos2 = [305.8000 61 1.1704e+03 596];
+
+elseif length(genotypes) == 5
+    figpos = [135.4000 266.6000 1.0528e+03 241.6000];
+    figpos2 = [788.2000 181 345.6000 477.6000];
+else
+    figpos = [488 207.4000 784.2000 554.6000];
+    figpos2 = [488 207.4000 784.2000 554.6000];
 end
 
-w = length(genotypes);
+w = 1;%length(genotypes);
 h = ceil(length(genotypes)/w);
-prefix = '\dec_mutants ';
+
 
 %%
 
@@ -71,13 +85,13 @@ correlationfig = figure('Position', figpos);
 cort = tiledlayout(h, w,'Parent', correlationfig, 'TileSpacing','compact','Padding','compact');
 
 bulkfig = figure('Position', figpos2, 'Color', [1 1 1]);
-bulkt = tiledlayout(h, w,'Parent', bulkfig, 'TileSpacing','tight','Padding','tight');
+bulkt = tiledlayout(h, w,'Parent', bulkfig, 'TileSpacing','compact','Padding','tight');
 
 axialfig = figure('Position', figpos2, 'Color', [1 1 1]);
-axt = tiledlayout(h, w,'Parent', axialfig, 'TileSpacing','tight','Padding','tight');
+axt = tiledlayout(h, w,'Parent', axialfig, 'TileSpacing','compact','Padding','tight');
 
 overlayfig = figure('Position', figpos2, 'Color', [1 1 1]);
-olt = tiledlayout(h, w,'Parent', overlayfig, 'TileSpacing','tight','Padding','tight');
+olt = tiledlayout(h, w,'Parent', overlayfig, 'TileSpacing','compact','Padding','tight');
 
 
 
@@ -119,7 +133,7 @@ if nnz(mtflag) == 1
     mtpath = fullfile(d(mtflag).folder, d(mtflag).name); % find the mutant genotype path
 end
  
-[mtdata, wtdata] = parseWormData(mtpath);
+[mtdata, wtdata, settings] = processWormdata(fullfile(d(1).folder,d(1).name), settings);
 
 % 
 if strcmp(mtdata(1).genotype, 'wildtype') ==1 % make sure the first plot is wildtype
@@ -135,59 +149,59 @@ end
 %     plotcontrol = 0;
 % end
 
-%% spike profiles
-nexttile(spiket, q)
-plotSpikeProfiles(mtdata,plotcontrol, labelXAxis,labelYAxis)
-title(['\it' mtdata(1).genotype])
+  %% spike profiles
+    nexttile(spiket, q)
+    plotSpikeProfiles(mtdata,wtdata,settings, labelXAxis,labelYAxis)
+    title(['\it' mtdata(1).genotype])
 
 
 
 
-%% interval histogram 
-nexttile(histt, q)  
-plotIntervalHistogram(mtdata, plotcontrol,0,labelXAxis,labelYAxis)
-title(['\it' mtdata(1).genotype])
+    %% interval histogram
+    nexttile(histt, q)
+    plotIntervalHistogram(mtdata,wtdata,settings,0,labelXAxis,labelYAxis)
+    title(['\it' mtdata(1).genotype])
 
 
-%% coefficient of variation 
-nexttile(cvt,q)
-plotCV(mtdata, plotcontrol,labelYAxis);
-title(['\it' mtdata(1).genotype])
+    %% coefficient of variation
+    nexttile(cvt,q)
+    plotCV(mtdata,wtdata,settings,labelYAxis);
+    title(['\it' mtdata(1).genotype])
 
-%% interval correlation 
-nexttile(cort,q)
-plotEchos(mtdata, 0,labelXAxis,labelYAxis)
-title(['\it' mtdata(1).genotype])
+    %% interval correlation
+    nexttile(cort,q)
+    plotEchos(mtdata,[],settings,labelXAxis,labelYAxis)
+    title(['\it' mtdata(1).genotype])
 
 
 
-    %% axial signal 
-    
- 
-    nexttile(axt, q) 
-    plotAxialSignal(mtdata,0,plotlimit)
+    %% axial signal
+
+
+    nexttile(axt, q)
+    plotAxialSignal(mtdata,settings)
     title(['\it' mtdata(1).genotype],'FontSize', 8)
-    
+
     ax2 = gca;
     ax2.YTick = [];
     ax2.XTick = [];
     ax2.XLabel = [];
 
-%% bulk signal
+    %% bulk signal
 
     nexttile(bulkt, q)
-    plotBulkSignal(mtdata,0,plotlimit)
-     title(['\it' mtdata(1).genotype],'FontSize', 8)
+    plotBulkSignal(mtdata,settings)
+    title(['\it' mtdata(1).genotype],'FontSize', 8)
     ax = gca;
-    ax.YTick = []; 
+    ax.YTick = [];
     ax.XTick = [];
     ax.XLabel = [];
-%% Overlay Signal
+    %% Overlay Signal
     nexttile(olt, q)
-    plotOverlay(mtdata,0,plotlimit)
+    plotOverlay(mtdata,settings)
     title(['\it' mtdata(1).genotype],'FontSize', 8)
     ax0 = gca;
-    ax0.YTick = []; 
+    ax0.YTick = [];
     ax0.XTick = [];
     ax0.XLabel = [];
 

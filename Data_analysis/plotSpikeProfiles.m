@@ -1,4 +1,4 @@
-function [] = plotSpikeProfiles(mtdatapath, plotcontrol,labelXAxis,labelYAxis)
+function [] = plotSpikeProfiles(mtdata, wtdata,settings, labelXAxis,labelYAxis)
 %UNTITLED6 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -7,94 +7,28 @@ function [] = plotSpikeProfiles(mtdatapath, plotcontrol,labelXAxis,labelYAxis)
 % peakthreshold = 750;
 % traceylimits = [5000 12500];
 
-settings = returnPlotSettings();
+if isempty(wtdata)
+    plotcontrol = 0;
+else
+    plotcontrol = 1;
+end
+
+
 traceylimits = settings.traceylimit;
-peakthreshold = settings.peakthreshold;
-normalize = settings.normalize;
 secondsPrePost = settings.spikeProfileWindow;
+fps = settings.framerate;
+noalpha = 1;
 
-[mtdata, wtdata] = parseWormData(mtdatapath);
-
-
-wtprofiles = [];
-mtpeakprofiles = [];
-
+timePreSpike = fps*secondsPrePost;
+timePostSpike = fps*secondsPrePost;
 
 
-timePreSpike = 15*secondsPrePost;
-timePostSpike = 15*secondsPrePost;
-
-% midx = ~cellfun(@isempty,{mtdata.normalizedSignal});
-% mtbulksig = mtdata(midx).normalizedSignal;
-%
-
-for k = 1:length(mtdata)
-
-    if normalize == 1
-        mtsig = mtdata(k).normalizedSignal;
-    else
-        if isfield(mtdata, 'backgroundSignal')
-            background = mtdata(k).backgroundSignal;
-            rawsig = mtdata(k).bulkSignal;
-
-            mtsig = rawsig-background;
-        else
-            mtsig = mtdata(k).bulkSignal;
-        end
-    end
-
-    terpdata = fillmissing(mtsig, 'movmedian',100);
-    [pk, loc] = findpeaks(terpdata, 'MinPeakProminence', peakthreshold, 'MinPeakDistance',150);
-
-
-
-    for q = 1:length(loc)
-        pre = loc(q)-timePreSpike;
-        post = loc(q)+timePostSpike;
-
-        if pre>0 && post<= length(mtsig)
-            ttrace = mtsig(pre:post);
-
-            mtpeakprofiles = horzcat(mtpeakprofiles, ttrace);
-        end
-    end
+if plotcontrol ==1
+    wtprofiles = [wtdata(:).peakTraces];
 end
 
+mtprofiles = [mtdata(:).peakTraces];
 
-%% Control profiles
-if plotcontrol == 1
-
-    %     widx = ~cellfun(@isempty,{wtdata.normalizedSignal});
-    %     wtbulksig = wtdata(widx).normalizedSignal;
-
-    for k = 1:length(wtdata)
-        if normalize == 1
-            wtsig = wtdata(k).normalizedSignal;
-        else
-            if isfield(wtdata, 'backgroundSignal')
-                background = wtdata(k).backgroundSignal;
-                rawsig = wtdata(k).bulkSignal;
-
-                wtsig = rawsig-background;
-            else
-                wtsig = wtdata(k).bulkSignal;
-            end
-        end
-
-        terpdata = fillmissing(wtsig, 'movmedian',100);
-        [pk, loc] = findpeaks(terpdata, 'MinPeakProminence', peakthreshold, 'MinPeakDistance',150);
-
-
-        for q = 1:length(loc)
-            pre = loc(q)-timePreSpike;
-            post = loc(q)+timePostSpike;
-            if pre>0 && post<= length(wtsig)
-                wttrace = wtsig(pre:post);
-                wtprofiles = horzcat(wtprofiles, wttrace);
-            end
-        end
-    end
-end
 
 
 %% plotting
@@ -103,29 +37,40 @@ tracewidth = 1;
 tracelinewidth = 1;
 wtcolor = [0 0 0];
 mtcolor = [0.09 0.35 0.92];
-mttracecol = [0.7,0.85,0.99,0.6];
-wttracecol = [0.6 0.6 0.6 0.4];
+
+if noalpha == 1
+    mttracecol = [0.7,0.85,0.99];
+    wttracecol = [0.6 0.6 0.6];
+else
+    mttracecol = [0.7,0.85,0.99,0.6];
+    wttracecol = [0.6 0.6 0.6 0.4];
+end
+
 
 if plotcontrol == 0
     mtcolor = wtcolor;
     mttracecol = wttracecol;
+
 end
 
 
 
-wtpktime = linspace(-timePreSpike/15,timePostSpike/15,size(wtprofiles,1))';
-wtpktimemat = repmat(wtpktime, [1,size(wtprofiles,2)]);
-wtpk = max(mean(wtprofiles,2,'omitnan'));
 
-mtpktime = linspace(-timePreSpike/15,timePostSpike/15,size(mtpeakprofiles,1))';
-mtpktimemat = repmat(mtpktime, [1,size(mtpeakprofiles,2)]);
-mtpk = max(mean(mtpeakprofiles,2,'omitnan'));
+
+mtpktime = linspace(-timePreSpike/15,timePostSpike/15,size(mtprofiles,1))';
+mtpktimemat = repmat(mtpktime, [1,size(mtprofiles,2)]);
+mtpk = max(mean(mtprofiles,2,'omitnan'));
 
 
 
 
 hold on
 if plotcontrol ==1
+
+    wtpktime = linspace(-timePreSpike/15,timePostSpike/15,size(wtprofiles,1))';
+    wtpktimemat = repmat(wtpktime, [1,size(wtprofiles,2)]);
+    wtpk = max(mean(wtprofiles,2,'omitnan'));
+    
     if ~isempty(wtpktimemat)
         plot(wtpktimemat, wtprofiles, 'Color',wttracecol , 'LineWidth', singlewidth) % plot wild type individual traces
         line([-timePreSpike/15; timePostSpike/15], [wtpk; wtpk], 'Color', wtcolor, 'LineStyle', ':',...    %line at wild type mean
@@ -134,11 +79,11 @@ if plotcontrol ==1
 end
 
 if ~isempty(mtpktimemat)
-    plot(mtpktimemat, mtpeakprofiles, 'Color',mttracecol ,'LineWidth', singlewidth); % plot mutant individual traces
+    plot(mtpktimemat, mtprofiles, 'Color',mttracecol ,'LineWidth', singlewidth); % plot mutant individual traces
     line([-timePreSpike/15; timePostSpike/15], [mtpk; mtpk], 'Color', mtcolor, 'LineStyle', '--',... % line at mutant mean
         'LineWidth', tracelinewidth)
 
-    plot(mtpktime, mean(mtpeakprofiles,2,'omitnan'), 'Color', mtcolor, 'LineWidth', tracewidth); % plot mutant trace mean
+    plot(mtpktime, mean(mtprofiles,2,'omitnan'), 'Color', mtcolor, 'LineWidth', tracewidth); % plot mutant trace mean
 end
 
 if plotcontrol == 1
@@ -152,7 +97,7 @@ hold off
 
 
 
-xlim([-timePreSpike/15; timePostSpike/15])
+xlim([-timePreSpike/fps; timePostSpike/fps])
 ylim(traceylimits)
 title('Ca^2^+ Spike Profiles');
 if labelYAxis == 1
@@ -166,7 +111,7 @@ end
 %% t-test
 if plotcontrol == 1
     wtamp = max(wtprofiles);
-    mtamp = max(mtpeakprofiles);
+    mtamp = max(mtprofiles);
     if ~isempty(wtamp) && ~isempty(mtamp)
         [~, p] = ttest2(mtamp,wtamp);
         if p< 0.00001

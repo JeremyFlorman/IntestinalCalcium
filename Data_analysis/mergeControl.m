@@ -5,9 +5,8 @@ function [] = mergeControl(datafolder,controlname)
 %   assumed to be the mutant dataset.
 
 if nargin <1
-    %     datafolder = uigetdir('Z:\Calcium Imaging\Intestinal_Calcium_FreelyMoving')
-    datafolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\lgc-55;ser-2;tyra-2;tyra-3';
-    controlname = 'wildtype';
+    datafolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\5-HT\wildtype-30mM-5HT';
+    controlname = 'wildtype-control';
 end
 
 
@@ -22,7 +21,7 @@ else                    % if looping, remove hidden dirs.
     dirs(1:2) = 0;
     flds = flds(dirs);
     
-    ctrlflag = nan(length(flds),1);
+    ctrlflag = nan(length(flds),1); 
     for q = 1:length(flds)
         ctrlflag(q) = ~strcmp(flds(q).name, controlname);
         

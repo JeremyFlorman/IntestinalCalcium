@@ -1,9 +1,13 @@
-function [] = plot_MatchedControl(parentfolder)
+function [] = plot_MatchedControl(parentfolder,settings)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 
 if nargin<1
-parentfolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\egl-19(gf)';
+parentfolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\itr-1';
+end
+
+if nargin<2
+    settings = returnPlotSettings();
 end
 
 dd = dir(parentfolder);
@@ -22,21 +26,11 @@ for q = 1:length(dd)
     elseif dd == 1      % if no subfolders, just analyze the parentfolder
         datafolder = parentfolder;
     end
-%     datafolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\egl-19(lf)';
-settings = returnPlotSettings();
-
-peakthreshold = settings.peakthreshold; 
-traceYLimit = settings.traceylimit; 
-axylimit = settings.axylimit;
-overlayplots = 0; 
 
 
-tolimit = 20;             % set to 0 if you want to plot all bulk & axial signal plots.
-                         %  set to -1 if you want equal # of control and
-                         %  mutant plots, the latter is better for
-                         %  comparison as bulk signals will haveS identical
-                         %  y-axis scaling. To plot a specific number of
-                         %  plots, set tolimit to that number
+
+
+
                      
 
 d = dir([datafolder '\*_mergedData.mat']);
@@ -55,14 +49,17 @@ if nnz(mtflag) == 1
 end 
 
 
-[mtdata, wtdata] = parseWormData(mtpath);
+% [mtdata, wtdata,settings] = parseWormData(mtpath,settings);
+[mtdata, wtdata, settings] = processWormdata(mtpath, settings);
+
+tolimit = settings.tolimit;
+overlayplots = settings.overlayplots;
+controlname = settings.controlname;
 
 
-if strcmp(mtdata(1).genotype,'wildtype')== 1
+if strcmp(mtdata(1).genotype,controlname)== 1
     plotcontrol = 0; % dont plot additional control data if this is the control dataset
-    spikeprops = getSpikeLocs(mtdata,[],0);
-    mtdata = mtdata(spikeprops.mtsort);
-
+    wtdata = [];
 else 
     plotcontrol = 1; % if this is not the control dataset include matched control data. 
 end
@@ -98,23 +95,23 @@ if plotcontrol == 0 % add traces for control matched control data if this is the
     end
 if overlayplots == 0 
 nexttile([4 1])
-plotBulkSignal(chunk1,0,plotlimit)
+plotBulkSignal(chunk1,settings)
  
 nexttile([4 1])
-plotAxialSignal(chunk1,0,plotlimit)
+plotAxialSignal(chunk1,settings)
 
 nexttile([4 1])
-plotBulkSignal(chunk2,0,plotlimit)
+plotBulkSignal(chunk2,settings)
  
 nexttile([4 1])
-plotAxialSignal(chunk2,0,plotlimit)
+plotAxialSignal(chunk2,settings)
 
 elseif overlayplots == 1
         nexttile([4 2])
-        plotOverlay(chunk1,0,plotlimit)
+        plotOverlay(chunk1,settings)
         
         nexttile([4 2])
-        plotOverlay(chunk2,0,plotlimit)
+        plotOverlay(chunk2,settings)
 end
 
 
@@ -122,25 +119,25 @@ elseif plotcontrol == 1
 
     if overlayplots == 0
         nexttile([4 1])
-        plotBulkSignal(mtdata, 1,plotlimit)
+        plotBulkSignal(wtdata, settings)
 
 
         nexttile([4 1])
-        plotAxialSignal(mtdata, 1,plotlimit)
+        plotAxialSignal(wtdata, settings)
 
         nexttile([4 1])
-        plotBulkSignal(mtdata, 0,plotlimit)
+        plotBulkSignal(mtdata, settings)
 
 
         nexttile([4 1])
-        plotAxialSignal(mtdata, 0,plotlimit)
+        plotAxialSignal(mtdata, settings)
 
     elseif overlayplots ==1
         nexttile([4 2])
-        plotOverlay(mtdata,1,plotlimit)
+        plotOverlay(wtdata,settings)
 
         nexttile([4 2])
-        plotOverlay(mtdata,0,plotlimit)
+        plotOverlay(mtdata,settings)
     end
 
 end
@@ -149,24 +146,24 @@ end
 
 %% Spike Profiles
 nexttile([2 1])
-plotSpikeProfiles(mtdata,plotcontrol,1,1)
+plotSpikeProfiles(mtdata,wtdata,settings,1,1)
 
 
 
 
 %% interval histogram 
 nexttile([2,1]) 
-plotIntervalHistogram(mtdata, plotcontrol,1,1,1)
+plotIntervalHistogram(mtdata, wtdata, settings,1,1,1)
 
 
 
 %% coefficient of variation 
 nexttile([2,1])
-plotCV(mtdata, plotcontrol,1);
+plotCV(mtdata, wtdata,settings,1);
 
 %% interval correlation  
 nexttile([2,1])
-plotEchos(mtdata, plotcontrol,1,1)
+plotEchos(mtdata,wtdata,settings,1,1)
 
 %%
 % savename = [datafolder '\' mtname '_Matched_Control_Data.png'];
@@ -174,6 +171,8 @@ plotEchos(mtdata, plotcontrol,1,1)
 savename = [parentfolder '\' mtname '_matched_Control_Data.png']
 exportgraphics(gcf, savename, 'Resolution', 300);
 end
-% close all
+assignin('base', 'mtdata', mtdata)
+assignin('base', 'wtdata', wtdata)
+
 
 end

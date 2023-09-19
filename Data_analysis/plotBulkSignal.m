@@ -1,39 +1,14 @@
-function [] = plotBulkSignal(datapath, plotcontrol,plotlimit)
+function [] = plotBulkSignal(data, settings)
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
-% datapath = "C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\flr-1\flr-1_mergedData.mat";
-% plotcontrol = 1;
-% peakthreshold = 750;
-% traceylimit = [5000 12500];
-% plotlimit = 3;
 
-
-settings = returnPlotSettings();
-peakthreshold = settings.peakthreshold;
-peakdistance = settings.peakdistance;
-peakwidth = settings.peakwidth;
 traceylimit = settings.traceylimit;
-normalize = settings.normalize;
+fps = settings.framerate;
+plotlimit = settings.tolimit;
 
-[mtdata, wtdata] = parseWormData(datapath);
-
-spikeProperties = getSpikeLocs(datapath,peakthreshold,1);
-mtdata = mtdata(spikeProperties.mtsort);
-wtdata = wtdata(spikeProperties.wtsort);
-
-
-data = [];
-
-switch plotcontrol
-    case 0
-        data = mtdata;
-    case 1
-        data = wtdata;
-end
-
-mpf = 1/900; 
-time = mpf:mpf:length(data(1).bulkSignal)/900;
+mpf = 1/(fps*60); 
+time = mpf:mpf:length(data(1).bulkSignal)/(fps*60);
 tracediff = traceylimit(2)-traceylimit(1);
 
 if plotlimit == 0 || plotlimit>length(data)
@@ -43,36 +18,12 @@ else
 end
 
 
-% nidx = ~cellfun(@isempty,{data.normalizedSignal});
-% bulksig = data(nidx).normalizedSignal;
-% 
-% 
-% switch plotcontrol
-%     case 0
-%         bulksig = bulksig(:,mtsort);
-%     case 1
-%         bulksig = bulksig(:,wtsort);
-% end
-
 
 for i = 1:num2plot
     plotindex = num2plot-i+1; % use this to make sure the first plot is on top of axes.
-
-    if normalize == 1
-        sig = data(plotindex).normalizedSignal;
-    elseif normalize == 0
-        if  isfield(data, 'backgroundSignal')
-            background = data(plotindex).backgroundSignal;
-            rawsig = data(plotindex).bulkSignal;
-
-            sig = rawsig-background;
-        else
-            sig = data(plotindex).bulkSignal;
-        end
-    end
-    signal = fillmissing(sig, 'movmedian',100);
-    [tempamp, templocs] = findpeaks(signal, 'MinPeakProminence', peakthreshold, 'MinPeakDistance',peakdistance,'MinPeakWidth',peakwidth);
-
+    signal = data(plotindex).bulkSignal;
+    tempamp = data(plotindex).peakAmplitude;
+    templocs = data(plotindex).peakLoc;
 
     shift = tracediff*(i-1);
     shiftedSignal = signal+shift;
@@ -84,7 +35,7 @@ for i = 1:num2plot
     baseLine = repmat(baseline, [length(time),1]);
     line(time,baseLine, 'Color', [0.6 0.6 0.6])
     hold on
-    plot(templocs/900,shiftedamp+0.05*tracediff,'v','color' ,[0.7 0.2 0.4], 'MarkerSize',1)
+    plot(templocs/900,shiftedamp+0.05*tracediff,'v','color' ,[0.7 0.2 0.4], 'MarkerSize',3)
 
 
 end

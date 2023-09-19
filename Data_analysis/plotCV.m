@@ -1,4 +1,4 @@
-function [] = plotCV(mtdatapath, plotcontrol,labelYAxis)
+function [] = plotCV(mtdata,wtdata, settings,labelYAxis)
 %UNTITLED2 Summary of this function goes here
 %   optional inputs are 1: threshold used for detecting spikes. 2: whether
 %   to plot the CV within this function or just output the values.
@@ -9,55 +9,33 @@ function [] = plotCV(mtdatapath, plotcontrol,labelYAxis)
 
 
 
-[mtdata, wtdata] = parseWormData(mtdatapath);
-settings = returnPlotSettings();
-peakthreshold = settings.peakthreshold;
-peakdistance = settings.peakdistance;
-peakwidth = settings.peakwidth;
-wtcolor = settings.wtcolor;
+if isempty(wtdata)
+    plotcontrol = 0;
+else
+    plotcontrol = 1;
+end
+
+
 mtcolor = settings.mtcolor;
 mtedgecolor = settings.mtedgecolor;
-normalize = settings.normalize;
+
 
 wtcv = nan(length(wtdata),1);
 mtcv = nan(length(mtdata),1);
 
 
-% midx = ~cellfun(@isempty,{mtdata.normalizedSignal});
-% mtbulksig = mtdata(midx).normalizedSignal;
-
-
-
 for i = 1:length(mtdata)
-    if normalize == 1
-        sig = mtdata(i).normalizedSignal;
-    else 
-        sig = mtdata(i).bulkSignal;
-    end
-    terpdata = fillmissing(sig, 'movmedian',100);
-    [~, templocs] = findpeaks(terpdata, 'MinPeakProminence', peakthreshold, 'MinPeakDistance',peakdistance,'MinPeakWidth',peakwidth);
-    if length(templocs)>2
-        tempints = diff(templocs)/15;
+tempints = mtdata(i).peakIntervals;
+    if length(tempints)>2
         mtcv(i) = std(tempints)/mean(tempints,'omitnan')*100;
     end
 end
 
-% 
-% widx = ~cellfun(@isempty,{wtdata.normalizedSignal});
-% wtbulksig = wtdata(widx).normalizedSignal;
-%  
 
 if plotcontrol == 1
     for i = 1:length(wtdata)
-        if normalize == 1
-            sig = wtdata(i).normalizedSignal;
-        else 
-            sig = wtdata(i).bulkSignal;
-        end
-        terpdata = fillmissing(sig, 'movmedian',100);
-        [~, templocs] = findpeaks(terpdata, 'MinPeakProminence', peakthreshold, 'MinPeakDistance',peakdistance,'MinPeakWidth',peakwidth);
-        if length(templocs)>2
-            tempints = diff(templocs)/15;
+        tempints = wtdata(i).peakIntervals;
+        if length(tempints)>2
             wtcv(i) = std(tempints)/mean(tempints,'omitnan')*100;
         end
     end
@@ -95,7 +73,7 @@ elseif plotcontrol == 1
     ylim([0 100])
     ax = gca;
     ax.TickLabelInterpreter = 'tex';
-    ax.XTickLabel = {'Control', 'Mutant'}% ['\it' mtdata(1).genotype]};
+    ax.XTickLabel = {'Control', 'Mutant'};% ['\it' mtdata(1).genotype]};
     title('Coefficient of Variation')
     if labelYAxis == 1
         ylabel('% of Mean')

@@ -1,35 +1,11 @@
-function [] = overlayBulkSignal(datapath, plotcontrol,plotlimit)
+function [] = overlayBulkSignal(data, settings)
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
-% datapath = "C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\flr-1\flr-1_mergedData.mat";
-% plotcontrol = 1;
-% peakthreshold = 750;
-% traceylimit = [5000 12500];
-% plotlimit = 3;
-
-settings = returnPlotSettings();
-peakthreshold = settings.peakthreshold; 
 traceylimit = settings.traceylimit;
-normalize = settings.normalize;
-[mtdata, wtdata] = parseWormData(datapath);
-data = [];
+plotlimit = settings.tolimit;
 
-spikeProperties = getSpikeLocs(datapath,peakthreshold,1);
-mtsort = spikeProperties.mtsort;
-wtsort = spikeProperties.wtsort; 
-
-switch plotcontrol
-    case 0 
-        data = mtdata(mtsort);
-    case 1
-        data = wtdata(wtsort);
-end
-
-% mpf = 1/900;
-% time = mpf:mpf:length(data(1).bulkSignal)/900;
-time = 1:9000;
-
+time = 1:length(data(1).autoAxialSignal);
 tracediff = traceylimit(2)-traceylimit(1);
 
 if plotlimit == 0 || plotlimit>length(data)
@@ -38,28 +14,13 @@ else
     num2plot = plotlimit;
 end
 
-% nidx = ~cellfun(@isempty,{data.normalizedSignal});
-% bulksig = data(nidx).normalizedSignal;
+
 
 for i = 1:num2plot
-    plotindex = num2plot-i+1; % use this to make sure the first plot is on top of axes. 
-
-
-    if normalize == 1
-        sig = data(plotindex).normalizedSignal;
-    elseif normalize == 0
-        if isfield(data, 'backgroundSignal')
-            background = data(plotindex).backgroundSignal;
-            rawsig = data(plotindex).bulkSignal;
-
-            sig = rawsig-background;
-        else
-            sig = data(plotindex).bulkSignal;
-        end
-    end
-    
-    signal = fillmissing(sig, 'movmedian',100);
-
+    plotindex = num2plot-i+1; % use this to make sure the first plot is on top of axes.
+    signal = data(plotindex).bulkSignal;
+    tempamp = data(plotindex).peakAmplitude;
+    templocs = data(plotindex).peakLoc;
 
     shift = tracediff*(i-1);
     shiftedSignal = signal+shift;
@@ -67,7 +28,7 @@ for i = 1:num2plot
     
     %[0.7 0.2 0.4 0.7]
     hold on
-    plot(time, shiftedSignal,'Color', [.9 .9 .9 .7] ,'Marker', 'none', ...
+    plot(time, shiftedSignal,'Color', [.9 .9 .9] ,'Marker', 'none', ...
         'LineWidth',0.75, 'LineStyle', '-')
 
     line(time,baseline, 'Color', [0 0 0])

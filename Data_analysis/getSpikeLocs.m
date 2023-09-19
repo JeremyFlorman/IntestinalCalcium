@@ -1,4 +1,4 @@
-function [spikeProperties] = getSpikeLocs(datapath,peakthreshold, getControl)
+function [spikeProperties] = getSpikeLocs(datapath, getControl,settings)
 %UNTITLED5 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -8,8 +8,8 @@ function [spikeProperties] = getSpikeLocs(datapath,peakthreshold, getControl)
 % getControl =0;
 
 
-[mtdata, wtdata] = parseWormData(datapath);
-settings = returnPlotSettings;
+[mtdata, wtdata, settings] = parseWormData(datapath);
+
 peakdistance = settings.peakdistance;
 peakthreshold = settings.peakthreshold;
 peakwidth = settings.peakwidth;

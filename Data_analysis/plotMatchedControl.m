@@ -1,5 +1,7 @@
 
-parentfolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_Mutants\egl-19(lf)';
+parentfolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_Mutants\slcf-1';
+
+
 dd = dir(parentfolder);
 ddirflag = [dd.isdir];
 dd = dd(ddirflag);
@@ -22,16 +24,16 @@ settings = returnPlotSettings();
 peakthreshold = settings.peakthreshold; 
 traceYLimit = settings.traceylimit; 
 axylimit = settings.axylimit;
-overlayplots = 1; 
+overlayplots = 0; 
 
 
-tolimit = 5;             % set to 0 if you want to plot all bulk & axial signal plots.
+tolimit = 10;             % set to 0 if you want to plot all bulk & axial signal plots.
                          %  set to -1 if you want equal # of control and
                          %  mutant plots, the latter is better for
                          %  comparison as bulk signals will haveS identical
                          %  y-axis scaling. To plot a specific number of
                          %  plots, set tolimit to that number
-                     
+                      
 
 d = dir([datafolder '\*_mergedData.mat']);
 gn = regexp(datafolder, '\', 'split'); % find the mutant genotype name
@@ -77,10 +79,10 @@ end
 
 %% 
 
-%  figure('Position', [31.4000 113 1300 662.4000],'Color',[1 1 1])
-figure('Position', [497 88.2000 513.6000 662.4000],'Color',[1 1 1])
+ figure('Position', [31.4000 113 1300 662.4000],'Color',[1 1 1])
+% figure('Position', [497 88.2000 513.6000 662.4000],'Color',[1 1 1])
 
-t = tiledlayout(5,4, "TileSpacing","compact");
+t = tiledlayout(5,4, "TileSpacing","compact",  "Padding","tight");
 
 if plotcontrol == 0 % add traces for control matched control data if this is the control dataset
     if plotlimit >0 && plotlimit*2<length(mtdata)
