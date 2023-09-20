@@ -1,9 +1,9 @@
-fld = 'C:\Users\Jeremy\Desktop\Mahdi\ZFIS178\'; % Folder containing the data you want to analyze
+fld = 'C:\src\OpenAutoScope-v2\data\230919_zfis178_wildtype'; % Folder containing the data you want to analyze
 serverfolder = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\unc-43(e408)';  % upload everything to this location.
 
 %% settings
-startIndex = 1; % which video to start analysis.
-startframe =250; % what frame to begin analysis
+startIndex = 2; % which video to start analysis.
+startframe =1; % what frame to begin analysis
 
 uploadresults = 0; % upload data to remote location (serverfolder)?
 isremote = 0;    % is our tiff file on the server? If so, we'll copy to local
@@ -18,7 +18,7 @@ troubleshoot =0; % show binary images instead of regular plots
 showNormals = 1;
 showAxialSignal = 1;
 
-crop = 3; % num pixels to crop from image edge. set to 0 for no cropping.
+crop = 1; % num pixels to crop from image edge. set to 0 for no cropping.
 minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
 axSigLen = 200; % how many pixels to use for registering axial signal.
@@ -29,19 +29,15 @@ removevignette = 30; % if not zero, size of kernel to use for flatfield correcti
 
 
 %%
-imgDir = dir([fld '\**\processed.h5']);
+imgDir = dir([fld '\**\*behavior\*.h5']);
+imgDir = unique({imgDir.folder});
 
 
 
 
 for nf =startIndex:length(imgDir)
-     path = fullfile(imgDir(nf).folder, imgDir(nf).name);
-
-
-    info = h5info(path);
-    bf = h5read(path, '/data_behavior');
-    gfp = h5read(path,'/data_gfp_reindexed');
-
+    path = imgDir{nf}
+    [bf, gfp, time] = processH5(path);
 
     %%
     if plotstuff == 1 
@@ -103,16 +99,17 @@ for nf =startIndex:length(imgDir)
     wormIdx = [];
 
     % image registration transform
-    theta = -5.1;
-    translation = [-30 10];
-    tform = rigidtform2d(theta,translation);
-    rA = imref2d([imgWidth imgHeight]);
+%     theta = -5.1;
+%     translation = [-30 10];
+%     tform = rigidtform2d(theta,translation);
+%     rA = imref2d([imgWidth imgHeight]);
 
     %% Tracking Block
     for i = startframe:nFrames
 
         mCh = bf(:,:,i);
-        GFP = imwarp(gfp(:,:,i),tform,'OutputView',rA);
+        GFP = gfp(:,:,i);
+%         GFP = imwarp(gfp(:,:,i),tform,'OutputView',rA);
 
         if removevignette ~=0
             mCh = imflatfield(mCh,removevignette);
@@ -334,7 +331,7 @@ for nf =startIndex:length(imgDir)
 
                                 mpad_Outskel = padarray(outskel, [size(mpadTrace,1),0], 'post');
                                 mmergedImage = vertcat(mCh, mpadTrace);
-                                mmergedOverlay = imoverlay(imadjust(mmergedImage, [0.05 0.5]), mpad_Outskel, [1 0 0]);
+                                mmergedOverlay = imoverlay(imadjust(mmergedImage, [0.05 0.9]), mpad_Outskel, [1 0 0]);
                                 imshow(mmergedOverlay,'Parent', ax2)
                                 title(ax2,'Brightfield');
 
@@ -447,7 +444,7 @@ for nf =startIndex:length(imgDir)
 
 
     % peak analysis
-    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',10,'MinPeakDistance',150);
+    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',1,'MinPeakDistance',150);
     peakpad = fps*15; % framerate*time in seconds;
     pktime = linspace(-15,15, peakpad*2)';
     if isempty(loc)
@@ -474,9 +471,9 @@ for nf =startIndex:length(imgDir)
     pkmean = mean(pktraces,2,'omitnan');
 
     %% Save Stuff
-    [folder, name, ext] = fileparts(path);
-    outname = fullfile(folder, name);
-    datasavename = [outname 'OAS_wormdata.mat'];
+    [fold, nm, ~] = fileparts(path)
+    protopath = regexp(fold,'\', 'split');
+    datasavename = [fold '\' protopath{end} '_' num2str(nf) '_wormdata.mat'];
 
 
     wormdata = struct();
@@ -489,7 +486,7 @@ for nf =startIndex:length(imgDir)
     wormdata.area = area;
     wormdata.peakTraces = pktraces;
     wormdata.peakLoc = loc;
-    wormdata.include = 1;
+    wormdata.include = 1; 
 
     save(datasavename, 'wormdata')
 
@@ -506,10 +503,10 @@ for nf =startIndex:length(imgDir)
     % toc
     %% Plot traces
     if ~exist('time','var')
-        time = linspace(0,round((nFrames)/fps/60,1),ceil(nFrames)); %minutes per frame
+        time = linspace(0,round((nFrames)/fps/60,1),nFrames); %minutes per frame
     end
     if ~exist('pk','var')
-        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',10, 'MinPeakDistance',150);
+        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',1, 'MinPeakDistance',150);
         peakpad = fps*15;
         pktime = linspace(-15,15, peakpad*2)';
         pkmean = mean(pktraces,2,'omitnan');
@@ -522,7 +519,7 @@ for nf =startIndex:length(imgDir)
 
     nexttile([1 3])
     if ~isnan(locinmin)
-        plot(time,bulkSignal,locinmin,pk*1.01, 'rv')
+        plot(time,bulkSignal,time(loc),pk*1.01, 'rv')
     else
         plot(time,bulkSignal)
     end
@@ -559,7 +556,7 @@ for nf =startIndex:length(imgDir)
     box off
 
     xlabel('Time (min)')
-    ax.XTick = linspace(1,length(autoAxialSignal),length(xtl));
+    ax.XTick = xt*60*fps; %linspace(0,length(autoAxialSignal),length(xtl));
     ax.XTickLabels = xtl;
     ax.YTick = [20 size(autoAxialSignal,2)-20];
     ax.YTickLabel = {'Head', 'Tail'};
@@ -610,7 +607,7 @@ for nf =startIndex:length(imgDir)
     reg = reg{1};
     title(t, strrep(reg,'_', ' ' ));
 
-    saveas(gcf, [outname '_Summary_Plots.png'])
+    saveas(gcf, strrep(datasavename, 'wormdata.mat', 'Summary_Plots.png'))
 
 
 
