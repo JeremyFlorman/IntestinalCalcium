@@ -37,7 +37,11 @@ imgDir = unique({imgDir.folder});
 
 for nf =startIndex:length(imgDir)
     path = imgDir{nf}
-    [bf, gfp, time] = processH5(path);
+    [bf, gfp, ~] = processH5(path);
+
+    [fold, nm, ~] = fileparts(path);
+    protopath = regexp(fold,'\', 'split');
+    protosavename = [fold '\' protopath{end} '_' num2str(nf)];
 
     %%
     if plotstuff == 1 
@@ -67,7 +71,7 @@ for nf =startIndex:length(imgDir)
             if exist('v','var') == 1
                 close(v)
             end
-            videopath = [fld '\_Tracking_Video.mp4'];
+            videopath = [path '\_Tracking_Video.mp4'];
             v = VideoWriter(videopath,'MPEG-4');
             v.FrameRate = 15;
             open(v)
@@ -471,9 +475,8 @@ for nf =startIndex:length(imgDir)
     pkmean = mean(pktraces,2,'omitnan');
 
     %% Save Stuff
-    [fold, nm, ~] = fileparts(path)
-    protopath = regexp(fold,'\', 'split');
-    datasavename = [fold '\' protopath{end} '_' num2str(nf) '_wormdata.mat'];
+
+    datasavename = [protosavename '_wormdata.mat']
 
 
     wormdata = struct();
@@ -603,11 +606,11 @@ for nf =startIndex:length(imgDir)
 
 
 
-    reg = regexp(name, 'MMStack_Default.ome', 'split');
-    reg = reg{1};
-    title(t, strrep(reg,'_', ' ' ));
+    reg = regexp(path, '\', 'split');
+    reg = [reg{end-1} ' | ' reg{end}];
+    title(t, strrep(strrep(reg,'_', ' ' ), 'flircamera behavior', ''));
 
-    saveas(gcf, strrep(datasavename, 'wormdata.mat', 'Summary_Plots.png'))
+    saveas(gcf, [protosavename '_Summary_Plots.png'])
 
 
 
