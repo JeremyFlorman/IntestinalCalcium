@@ -52,7 +52,6 @@ for i = 1:length(d)
         gfp = cat(3,gfp, tempgfp);
         time = cat(1,time, temptime);
     end
-    plot(time)
 end
 
 

@@ -2,7 +2,7 @@ fld = 'C:\src\OpenAutoScope-v2\data\230919_zfis178_wildtype'; % Folder containin
 serverfolder = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\unc-43(e408)';  % upload everything to this location.
 
 %% settings
-startIndex = 2; % which video to start analysis.
+startIndex = 1; % which video to start analysis.
 startframe =1; % what frame to begin analysis
 
 uploadresults = 0; % upload data to remote location (serverfolder)?
@@ -335,7 +335,7 @@ for nf =startIndex:length(imgDir)
 
                                 mpad_Outskel = padarray(outskel, [size(mpadTrace,1),0], 'post');
                                 mmergedImage = vertcat(mCh, mpadTrace);
-                                mmergedOverlay = imoverlay(imadjust(mmergedImage, [0.05 0.9]), mpad_Outskel, [1 0 0]);
+                                mmergedOverlay = imoverlay(imadjust(mmergedImage, [0.5 1]), mpad_Outskel, [1 0 0]);
                                 imshow(mmergedOverlay,'Parent', ax2)
                                 title(ax2,'Brightfield');
 
@@ -350,14 +350,14 @@ for nf =startIndex:length(imgDir)
 
                                 gpad_Outskel = padarray(outskel, [size(gpadTrace,1),0], 'post');
                                 gmergedImage = vertcat(GFP, gpadTrace);
-                                gmergedOverlay = imoverlay(imadjust(gmergedImage, [0.06 0.2]), gpad_Outskel, [0 1 0]);
+                                gmergedOverlay = imoverlay(imadjust(gmergedImage, [0.09 0.14]), gpad_Outskel, [0 1 0]);
                                 imshow(gmergedOverlay,'Parent', ax3)
                                 title(ax3,'GCaMP');
                             catch
-                                imshow(imoverlay(imadjust(mCh, [0.05 0.5]), outskel, [1 0 0]), 'Parent', ax2)
+                                imshow(imoverlay(imadjust(mCh, [0.5 1]), outskel, [1 0 0]), 'Parent', ax2)
                                 title(ax2,'Brightfield');
 
-                                imshow(imoverlay(imadjust(GFP,[0.06 0.1]), outskel, [0 1 0]), 'Parent', ax3)
+                                imshow(imoverlay(imadjust(GFP,[0.09 0.14]), outskel, [0 1 0]), 'Parent', ax3)
                                 title(ax3,'GCaMP');
                             end
                         end
