@@ -1,18 +1,18 @@
-fld = 'C:\src\OpenAutoScope-v2\data\230919_zfis178_wildtype'; % Folder containing the data you want to analyze
-serverfolder = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\unc-43(e408)';  % upload everything to this location.
+fld = 'C:\src\OpenAutoScope-v2\data\230926_zfis178_wildtype+Tap'; % Folder containing the data you want to analyze
+serverfolder = 'Z:\OAS\230926_zfis178_wildtype+Tap';  % upload everything to this location.
 
 %% settings
 startIndex = 1; % which video to start analysis.
 startframe =1; % what frame to begin analysis
 
-uploadresults = 0; % upload data to remote location (serverfolder)?
+uploadresults = 1; % upload data to remote location (serverfolder)?
 isremote = 0;    % is our tiff file on the server? If so, we'll copy to local
 % folder to run the analysis then move the results to the
 % server.
 
 plotstuff = 1; % display tracking
 videostuff =1; % record video
-framerate = 15; % display video/plots every Nth iteration of loop.
+framerate = 7; % display video/plots every Nth iteration of loop.
 fps = 15;      % frames per sec of input tiff.
 troubleshoot =0; % show binary images instead of regular plots
 showNormals = 1;
@@ -37,7 +37,10 @@ imgDir = unique({imgDir.folder});
 
 for nf =startIndex:length(imgDir)
     path = imgDir{nf}
-    [bf, gfp, ~] = processH5(path);
+    h5Data = processH5(path);
+    gfp = h5Data.gfp;
+    bf = h5Data.bf;
+    stimTimes = h5Data.stimTimes;
 
     [fold, nm, ~] = fileparts(path);
     protopath = regexp(fold,'\', 'split');
@@ -71,7 +74,7 @@ for nf =startIndex:length(imgDir)
             if exist('v','var') == 1
                 close(v)
             end
-            videopath = [path '\_Tracking_Video.mp4'];
+            videopath = [fold '\' protopath{end} '_' num2str(nf) '_Tracking_Video.mp4'];
             v = VideoWriter(videopath,'MPEG-4');
             v.FrameRate = 15;
             open(v)
@@ -391,10 +394,27 @@ for nf =startIndex:length(imgDir)
                             ax4.YAxis.Visible = 0;
                             title(ax4,'Raw Axial Signal')
                             colormap turbo
-
+                        
+                            if ~isempty(stimTimes)
+                                for k =1:length(stimTimes)
+                                    hold(ax4, "on")
+                                    if i>= stimTimes(k)
+                                        plot(stimTimes(k),1,'Marker', 'diamond', 'Marker', 'v', 'MarkerSize', 9, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'Parent', ax4)
+                                    end
+                                    hold(ax4, "off")
+                                end
+                            end
                         end
 
                         plot(time,bulkSignal(:),time,backgroundSignal(:), 'Parent', ax7)
+                        if ~isempty(stimTimes)
+                            for k =1:length(stimTimes)
+                                hold(ax7, "on")
+                                plot(time(stimTimes(k)),ax7.YLim(2)*.98,'Marker', 'v', 'MarkerSize', 9, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
+                                hold(ax7, 'off')
+                            end
+                        end
+
                         if i>1
                             xlim([0 time(i)]);
                         end
@@ -417,7 +437,7 @@ for nf =startIndex:length(imgDir)
     end
 
     disp('file processed in:')
-    toc
+
 
     if exist('v','var') == 1
         close(v)
@@ -448,7 +468,7 @@ for nf =startIndex:length(imgDir)
 
 
     % peak analysis
-    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',1,'MinPeakDistance',150);
+    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',5,'MinPeakDistance',150);
     peakpad = fps*15; % framerate*time in seconds;
     pktime = linspace(-15,15, peakpad*2)';
     if isempty(loc)
@@ -490,6 +510,8 @@ for nf =startIndex:length(imgDir)
     wormdata.peakTraces = pktraces;
     wormdata.peakLoc = loc;
     wormdata.include = 1; 
+    wormdata.stimTimes = stimTimes;
+    wormdata.velocity = h5Data.velocity;
 
     save(datasavename, 'wormdata')
 
@@ -509,7 +531,7 @@ for nf =startIndex:length(imgDir)
         time = linspace(0,round((nFrames)/fps/60,1),nFrames); %minutes per frame
     end
     if ~exist('pk','var')
-        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',1, 'MinPeakDistance',150);
+        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',5, 'MinPeakDistance',150);
         peakpad = fps*15;
         pktime = linspace(-15,15, peakpad*2)';
         pkmean = mean(pktraces,2,'omitnan');
@@ -526,8 +548,12 @@ for nf =startIndex:length(imgDir)
     else
         plot(time,bulkSignal)
     end
-
     hold on
+    if ~isempty(stimTimes)
+        ax = gca;
+        plot(time(stimTimes),ax.YLim(2)*.98,'Marker', 'v', 'MarkerSize', 9, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
+    end
+
     plot(time, backgroundSignal)
     hold off
 
@@ -555,6 +581,7 @@ for nf =startIndex:length(imgDir)
     ct = gca;
     hold on
     plot(loc,1, 'vw', 'MarkerFaceColor' ,[.4 .5 .6]);
+    plot(stimTimes,1,'Marker', 'diamond', 'Marker', 'v', 'MarkerSize', 9, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
     hold off
     box off
 
