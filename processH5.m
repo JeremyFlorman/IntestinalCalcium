@@ -3,11 +3,11 @@ function [h5Data] = processH5(foldername)
 %   Detailed explanation goes here
 % foldername = 'C:\src\OpenAutoScope-v2\data\zfis178';
 
-foldername = 'C:\src_old\OpenAutoScope-v2\data\230926_zfis178_wildtype+Tap\2023_09_26_14_46_17_flircamera_behavior';
+% foldername = 'C:\src\OpenAutoScope-v2\data\231003_zfis178_wildtype+Tap\2023_10_03_11_02_26_flircamera_behavior';
 d = dir([foldername '\*.h5']);
 registerImage = 1;
 showRegistration = 0;
-translation = [-5 13 0];
+translation = [1 2 0];  %230926[-5 13 0];
 
 
 for i = 1:length(d)
@@ -83,6 +83,9 @@ for i = 1:length(logd)
 
     while~feof(fid)
         line = fgetl(fid);
+        l = regexp(line, ' ', 'split');
+        lTime = str2double(l{1}); % time at current line
+
         if contains(line, 'command sent: DO _writer_start') % find a line matching the beginning of the recording
             ls = regexp(line, ' ', 'split');
             logStart = str2double(ls{1});
@@ -92,15 +95,17 @@ for i = 1:length(logd)
             end
         end
 
-        if contains(line, num2str(time(end))) % stop acquisition when recording ends
+        % stop acquisition when recording ends
+        if lTime>max(time)
             disp(line)
             acq = 0;
+            break
         end
 
         if acq == 1
             if contains(line, '<CLIENT WITH GUI> command sent: DO _teensy_commands_set_led o 1')
                 stimTimes(end+1,1) = alignEvent(line,time);
-                disp(line)
+                disp(line) 
             end
         end
 
