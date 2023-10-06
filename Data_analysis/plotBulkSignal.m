@@ -7,8 +7,8 @@ traceylimit = settings.traceylimit;
 fps = settings.framerate;
 plotlimit = settings.tolimit;
 
-mpf = 1/(fps*60); 
-time = mpf:mpf:length(data(1).bulkSignal)/(fps*60);
+
+time = linspace(0,length(data(1).bulkSignal)/fps/60,length(data(1).bulkSignal));
 tracediff = traceylimit(2)-traceylimit(1);
 
 if plotlimit == 0 || plotlimit>length(data)
@@ -35,7 +35,12 @@ for i = 1:num2plot
     baseLine = repmat(baseline, [length(time),1]);
     line(time,baseLine, 'Color', [0.6 0.6 0.6])
     hold on
-    plot(templocs/900,shiftedamp+0.05*tracediff,'v','color' ,[0.7 0.2 0.4], 'MarkerSize',3)
+    plot(templocs/fps/60,shiftedamp+0.05*tracediff,'v','color' ,[0.7 0.2 0.4], 'MarkerSize',3)
+    if isfield(data, 'stimTimes')
+        stimTimes = data(plotindex).stimTimes;
+        stimY = repmat(shift+tracediff*0.9,length(stimTimes),1);
+        plot(stimTimes/fps/60,stimY,'v','color' ,[0.7 0.2 0.4], 'MarkerSize',3)
+    end
 
 
 end

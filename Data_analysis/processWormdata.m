@@ -6,9 +6,10 @@ if nargin<2
     settings = returnPlotSettings();
 end
 
-wormdata = "C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\wildtype\wildtype_mergedData.mat";
+% wormdata = "C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\OAS\Wildtype+Tap\wildtype+Tap_mergedData.mat";
 
 normalize = settings.normalize;
+trimExpLength = 1;
 
 
 
@@ -58,8 +59,13 @@ end
 mtdata = processSpikes(mtdata,settings);
 wtdata = processSpikes(wtdata,settings);
 
+if trimExpLength == 1
+    mtdata = trimExp(mtdata);
+    wtdata = trimExp(wtdata);
+end
 
-end 
+
+end
 %% background subtract bulk and axial Signal
 function [processedData] = subtractBackground(inputData, settings)
 for i = 1:length(inputData)
@@ -77,16 +83,14 @@ for i = 1:length(inputData)
     end
 
 
+
 end
 processedData = inputData;
 end
 
-
-
-
 %% Spike processing
-
 function [processedData] = processSpikes(inputData, settings)
+
 
 peakdistance = settings.peakdistance;
 peakthreshold = settings.peakthreshold;
@@ -95,8 +99,8 @@ sortType = settings.sortType;
 sortDir = settings.sortDir;
 secondsPrePost = settings.spikeProfileWindow;
 framerate = settings.framerate;
-validatePropagationRate = 1;
-propMethod =1; 
+validatePropagationRate = 0;
+propMethod =1;
 
 
 timePreSpike = framerate*secondsPrePost;
@@ -161,86 +165,86 @@ for i = 1:length(inputData)
 
                 headRise = head(1:hloc(1))';
                 tailRise = tail(1:tloc(1))';
-                
+
                 % find inflection point using derivative
                 [~, headmax] = max(diff(headRise));
                 [~, tailmax] = max(diff(tailRise));
 
-                % find inflection point using full-width@half-maximum               
-                hFWHM = find(headRise<= hpk(1)/2,1,'last');         
+                % find inflection point using full-width@half-maximum
+                hFWHM = find(headRise<= hpk(1)/2,1,'last');
                 tFWHM = find(tailRise<= tpk(1)/2,1,'last');
-                
-                
+
+
                 if propMethod == 1 % derivative
-                propagationRate(q) = (headmax-tailmax)/settings.framerate;
-                hInflect = headmax;
-                tInflect = tailmax;
+                    propagationRate(q) = (headmax-tailmax)/settings.framerate;
+                    hInflect = headmax;
+                    tInflect = tailmax;
 
                 elseif propMethod == 2 % full width @ half maximum
                     hInflect = hFWHM;
                     tInflect = tFWHM;
                     if ~isempty(hFWHM) && ~isempty(tFWHM)
                         propagationRate(q) = (hFWHM-tFWHM)/settings.framerate;
-                    end 
+                    end
                 elseif propMethod == 3 % peak location
                     hInflect = hloc(1);
                     tInflect = tloc(1);
                     if ~isempty(hloc) && ~isempty(tloc)
-                    propagationRate(q) = (hloc(1)-tloc(1))/settings.framerate;
+                        propagationRate(q) = (hloc(1)-tloc(1))/settings.framerate;
                     end
                 end
 
-                
+
                 if validatePropagationRate == 1
                     if propagationRate(q)>5 || propagationRate(q) <0
-                    x = 1:size(head,2);
-                    plot(x,head,x,tail,'Parent',propAx);
-                    
-                    hold(propAx, "on")
+                        x = 1:size(head,2);
+                        plot(x,head,x,tail,'Parent',propAx);
 
-                    plot(hloc(1),hpk(1)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
-                    if ~isempty(hInflect)
-                        plot(hInflect,head(hInflect)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
-                    end
-                    
-                    plot(tloc(1),tpk(1)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
-                    if ~isempty(tInflect)
-                    plot(tInflect,tail(tInflect)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
-                    end
- 
-                    hold(propAx, "off")
-                    xlim(propAx, [0 length(head)])
-% 
-%                     line([headmax headmax], propAx.YLim,'linestyle', ':', 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', propAx)
-%                     line([tailmax tailmax], propAx.YLim, 'linestyle', ':','Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', propAx)
-%                  
-                    imagesc(axialPeak,'Parent', axAx)
-                    pkSz = size(axialPeak);
-                    rectangle('Position',[0 pkSz(1)-chunksize pkSz(2) chunksize],'linestyle', ':','EdgeColor', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
-                    rectangle('Position',[0 headstart pkSz(2), chunksize],'linestyle', ':','EdgeColor', [.07 .62 1], 'linewidth', 1.5, 'Parent', axAx)
+                        hold(propAx, "on")
 
-                    line([hInflect hInflect], [headstart headstart+chunksize], 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', axAx)
-                    line([tInflect tInflect], [pkSz(1) pkSz(1)-chunksize],'Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
+                        plot(hloc(1),hpk(1)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
+                        if ~isempty(hInflect)
+                            plot(hInflect,head(hInflect)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
+                        end
 
-                    title(['Propagation time: ' num2str(propagationRate(q)) ' seconds'], 'Parent',axFig)
+                        plot(tloc(1),tpk(1)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
+                        if ~isempty(tInflect)
+                            plot(tInflect,tail(tInflect)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
+                        end
+
+                        hold(propAx, "off")
+                        xlim(propAx, [0 length(head)])
+                        %
+                        %                     line([headmax headmax], propAx.YLim,'linestyle', ':', 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', propAx)
+                        %                     line([tailmax tailmax], propAx.YLim, 'linestyle', ':','Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', propAx)
+                        %
+                        imagesc(axialPeak,'Parent', axAx)
+                        pkSz = size(axialPeak);
+                        rectangle('Position',[0 pkSz(1)-chunksize pkSz(2) chunksize],'linestyle', ':','EdgeColor', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
+                        rectangle('Position',[0 headstart pkSz(2), chunksize],'linestyle', ':','EdgeColor', [.07 .62 1], 'linewidth', 1.5, 'Parent', axAx)
+
+                        line([hInflect hInflect], [headstart headstart+chunksize], 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', axAx)
+                        line([tInflect tInflect], [pkSz(1) pkSz(1)-chunksize],'Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
+
+                        title(['Propagation time: ' num2str(propagationRate(q)) ' seconds'], 'Parent',axFig)
 
 
-                    
-                    txt = input("Look ok? if not press letter key before hitting enter. Type 'exit' to quit","s");     
-                   
-                    if ~isempty(txt)
-                        propagationRate(q) = NaN;
-                        
-                    end
 
-                    if ~isempty(txt) && strcmp(txt,'exit')
-                        validatePropagationRate = 0;
-                    end
-                    
+                        txt = input("Look ok? if not press letter key before hitting enter. Type 'exit' to quit","s");
+
+                        if ~isempty(txt)
+                            propagationRate(q) = NaN;
+
+                        end
+
+                        if ~isempty(txt) && strcmp(txt,'exit')
+                            validatePropagationRate = 0;
+                        end
+
                     end
 
                 end
-                
+
 
 
             end
@@ -396,7 +400,7 @@ if sortType == 0                % dont sort
     if strcmpi(sortDir, 'ascend')
         flipud(sortOrder)
     end
-    
+
 elseif sortType == 1            % sort by number of spikes
     mtsorttype = num;
     [~, sortOrder] = sort(mtsorttype,sortDir);
@@ -420,6 +424,38 @@ processedData(1).intervalVector = vertcat(inputData(:).peakIntervals);
 processedData(1).propagationVector = vertcat(inputData(:).propagationRate);
 end
 
+%% trim experiments
+function [processedData] = trimExp(inputData)
+lens = nan(length(inputData),1);
+
+for i = 1:length(inputData)
+    lens(i)=length(inputData(i).bulkSignal);
+end
+
+minlen = min(lens);
+
+for i = 1:length(inputData)
+    inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(1:minlen);
+    inputData(i).sumSignal = inputData(i).sumSignal(1:minlen);
+    inputData(i).bulkSignal = inputData(i).bulkSignal(1:minlen);
+    inputData(i).bulkAboveBkg = inputData(i).bulkAboveBkg(1:minlen);
+    inputData(i).backgroundSignal = inputData(i).backgroundSignal(1:minlen);
+    inputData(i).orientation = inputData(i).orientation(1:minlen);
+    inputData(i).area = inputData(i).area(1:minlen);
+    if isfield(inputData,'velocity')
+        inputData(i).velocity = inputData(i).velocity(1:minlen);
+    end
+
+    if isfield(inputData,'stimTimes')
+        validtimes = inputData(i).stimTimes<minlen;
+        inputData(i).stimTimes = inputData(i).stimTimes(validtimes);
+    end
+processedData = inputData;
+
+end
+
+
+end
 
 
 
