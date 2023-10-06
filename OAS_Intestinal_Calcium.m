@@ -1,5 +1,5 @@
-fld = 'C:\src\OpenAutoScope-v2\data\230104_zfis178_wildtype+Tap30s'; % Folder containing the data you want to analyze
-serverfolder = 'Z:\OAS\wildtype+Tap30s';  % upload everything to this location.
+fld = 'C:\src\OpenAutoScope-v2\data\231005_zfis178_wildtype+TapIncreasing'; % Folder containing the data you want to analyze
+serverfolder = 'Z:\OAS\wildtype+TapIncreasing';  % upload everything to this location.
 
 %% settings
 startIndex = 1; % which video to start analysis.
@@ -698,42 +698,79 @@ for nf =startIndex:length(imgDir)
     reg = [reg{end-1} ' | ' reg{end}];
     title(t, strrep(strrep(reg,'_', ' ' ), 'flircamera behavior', ''));
 
-    saveas(gcf, [protosavename '_Summary_Plots.png'])
+    summaryPlotName = [protosavename '_Summary_Plots.png'];
+
+    saveas(gcf, summaryPlotName)
 
 
 
     %% Copy to server
     if uploadresults == 1
         if isremote == 0  % if working with local files, upload to serverfolder (specified in settings)
-            [folder2Copy, ~]= fileparts(path);
+
             lastfolder = regexp(folder2Copy, '\', 'split');
             serverLocation = [serverfolder '\' expSuffix];
+
             if ~isfolder(serverLocation)
                 mkdir(serverLocation);
             end
-            [status,message,messageId]=copyfile(folder2Copy, serverLocation);
+            
+
+            % copy behavior h5 files
+            behaviorH5Dir = imgDir{nf};
+            [parentfolder, h5folder] = fileparts(behaviorH5Dir);
+            [statusbeh,~,~]=copyfile(behaviorH5Dir, [serverLocation '\' h5folder '\']);
+
+            % copy GCaMP h5 files
+            gcampH5Dir = strrep(behaviorH5Dir, 'behavior', 'gcamp');
+            [statusgc,~,~]=copyfile(gcampH5Dir, [serverLocation '\' strrep(h5folder, 'behavior', 'gcamp') '\']);
+            
+            % copy log files
+            
+            logDir = dir([parentfolder '\*log.txt']);
+            for li = 1:length(logDir)
+                [statuslog,~,~]=copyfile(fullfile(logDir(li).folder,logDir(li).name), serverLocation);
+            end
+
+            % copy wormdata
+            [statuswormdata,~,~]=copyfile(datasavename, serverLocation);
+
+            % copy summary plots
+            [statussummaryplot,~,~]=copyfile(summaryPlotName, serverLocation);
+
+            % copy summary plots
+            [statusvideoplot,~,~]=copyfile(videopath, serverLocation);
 
 
         elseif isremote == 1  % if working with remote files, moved analyzed results back to where we found them.
             clear('img')
 
-            tifFiles = dir([tempfolder '\*.tif']);
-            for j = 1:length(tifFiles)
-                delete(fullfile(tifFiles(j).folder,tifFiles(j).name))
-            end
+            % copy wormdata
+            [statuswormdata,~,~]=copyfile(datasavename, serverLocation);
 
-            otherFiles = dir(tempfolder);
-            otherFiles = otherFiles(3:end);
+            % copy summary plots
+            [statussummaryplot,~,~]=copyfile(summaryPlotName, serverLocation);
 
+            % copy summary plots
+            [statusvideoplot,~,~]=copyfile(videopath, serverLocation);
 
-            for ri = 1:length(otherFiles)   % copy results to server and clean up our mess.
-                file2copy = fullfile(otherFiles(ri).folder, otherFiles(ri).name);
-                [uploadLocation, ~]= fileparts(remotepath);
-                [status,message,messageId]= copyfile(file2copy,[uploadLocation '\']);
-                if status == 1
-                    delete(fullfile(otherFiles(ri).folder, otherFiles(ri).name));
-                end
-            end
+%             tifFiles = dir([tempfolder '\*.tif']);
+%             for j = 1:length(tifFiles)
+%                 delete(fullfile(tifFiles(j).folder,tifFiles(j).name))
+%             end
+% 
+%             otherFiles = dir(tempfolder);
+%             otherFiles = otherFiles(3:end);
+% 
+% 
+%             for ri = 1:length(otherFiles)   % copy results to server and clean up our mess.
+%                 file2copy = fullfile(otherFiles(ri).folder, otherFiles(ri).name);
+%                 [uploadLocation, ~]= fileparts(remotepath);
+%                 [status,message,messageId]= copyfile(file2copy,[uploadLocation '\']);
+%                 if status == 1
+%                     delete(fullfile(otherFiles(ri).folder, otherFiles(ri).name));
+%                 end
+%             end
 
         end
     end
