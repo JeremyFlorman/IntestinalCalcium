@@ -52,9 +52,9 @@ else
             plotSettings.peakthreshold = 1000;
         end
     else
-        plotSettings.traceylimit = [0 15];
+        plotSettings.traceylimit = [0 20];
         plotSettings.peakthreshold = 5;
-        plotSettings.axylimit = [0 35];
+        plotSettings.axylimit = [0 45];
 
     end
 

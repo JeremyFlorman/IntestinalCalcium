@@ -435,7 +435,7 @@ end
 minlen = min(lens);
 
 for i = 1:length(inputData)
-    inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(1:minlen);
+    inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(1:minlen,:);
     inputData(i).sumSignal = inputData(i).sumSignal(1:minlen);
     inputData(i).bulkSignal = inputData(i).bulkSignal(1:minlen);
     inputData(i).bulkAboveBkg = inputData(i).bulkAboveBkg(1:minlen);

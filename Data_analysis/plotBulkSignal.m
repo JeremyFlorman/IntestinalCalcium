@@ -39,7 +39,7 @@ for i = 1:num2plot
     if isfield(data, 'stimTimes')
         stimTimes = data(plotindex).stimTimes;
         stimY = repmat(shift+tracediff*0.9,length(stimTimes),1);
-        plot(stimTimes/fps/60,stimY,'v','color' ,[0.7 0.2 0.4], 'MarkerSize',3)
+        plot(stimTimes/fps/60,stimY,'v','color' ,[0 0 0],'MarkerFaceColor',[.8 .3 .4], 'MarkerSize',8)
     end
 
 
@@ -49,6 +49,7 @@ ax = gca;
 ax.YTickLabel = [];
 ax.YColor = 'none';
 ax.YLim = [traceylimit(1) num2plot*tracediff+traceylimit(1)];
+ax.XLim = [0, max(time)];
 xlabel('Time (min)')
 title(['\it' data(1).genotype])
 box off
