@@ -2,7 +2,7 @@ function [] = plotBulkSignal(data, settings)
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
-
+%this is a test
 traceylimit = settings.traceylimit;
 fps = settings.framerate;
 plotlimit = settings.tolimit;
