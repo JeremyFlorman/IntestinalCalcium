@@ -3,12 +3,12 @@ function [] = combineWormdata(datafolder)
 %   Detailed explanation goes here
 
 if nargin <1
-        datafolder = 'Y:\Calcium Imaging\Intestinal_Calcium\Exogenous_Tyramine\Receptor_Mutants\wildtype-30mM-TA'
+        datafolder = 'Y:\OAS\wildtype+Tap'
 end
  
 folderparts = regexp(datafolder, '\','split');
 
-combinedDataDir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\Exogenous_Tyramine\receptor_mutants\';
+combinedDataDir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\OAS\Wildtype+Tap\';
 
 combinedDataFolder = [combinedDataDir, folderparts{end}]
 controlname = 'wildtype-control';
