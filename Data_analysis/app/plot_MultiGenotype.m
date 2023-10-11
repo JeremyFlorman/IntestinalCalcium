@@ -2,7 +2,7 @@ function plot_MultiGenotype(parentfolder, settings)
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
-prefix = '\dec-mutants'
+prefix = '\Fig-2';
 
 genotypes = settings.genotypes;
 controlname = settings.controlname;
