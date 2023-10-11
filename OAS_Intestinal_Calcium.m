@@ -1,8 +1,8 @@
-fld = 'C:\src\OpenAutoScope-v2\data\231005_zfis178_wildtype+TapIncreasing'; % Folder containing the data you want to analyze
-serverfolder = 'Z:\OAS\wildtype+TapIncreasing';  % upload everything to this location.
+fld = 'C:\src\OpenAutoScope-v2\data\231011_zfis178_wildtype+5HT'; % Folder containing the data you want to analyze
+serverfolder = 'Z:\OAS\wildtype+5HT';  % upload everything to this location.
 
 %% settings
-startIndex = 1; % which video to start analysis.
+startIndex = 2; % which video to start analysis.
 startframe =1; % what frame to begin analysis
 
 uploadresults = 1; % upload data to remote location (serverfolder)?
@@ -25,7 +25,7 @@ axSigLen = 200; % how many pixels to use for registering axial signal.
 
 useautothreshold = 1;% set to 1 to calculate a threshold for each image.
 useadaptivethreshold = 0; % if useautothreshold is set to 0 adaptive thresholding can be used
-removevignette = 30; % if not zero, size of kernel to use for flatfield correction.
+removevignette = 50; % if not zero, size of kernel to use for flatfield correction.
 
 
 %%
@@ -579,7 +579,7 @@ for nf =startIndex:length(imgDir)
 
     % % % Bulk Signal % % % 
     nexttile([1 3])
-    if ~isempty(loc)
+    if ~isnan(loc)
         plot(time,bulkSignal,time(loc),pk*1.01, 'rv')
     else
         plot(time,bulkSignal)
@@ -708,7 +708,6 @@ for nf =startIndex:length(imgDir)
     if uploadresults == 1
         if isremote == 0  % if working with local files, upload to serverfolder (specified in settings)
 
-            lastfolder = regexp(folder2Copy, '\', 'split');
             serverLocation = [serverfolder '\' expSuffix];
 
             if ~isfolder(serverLocation)
