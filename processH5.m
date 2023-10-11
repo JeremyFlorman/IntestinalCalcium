@@ -7,7 +7,7 @@ function [h5Data] = processH5(foldername)
 d = dir([foldername '\*.h5']);
 registerImage = 1;
 showRegistration = 0;
-translation = [1 2 0];  %230926[-5 13 0];
+translation = [1 -1 0];  %230926[-5 13 0];
 
 
 for i = 1:length(d)

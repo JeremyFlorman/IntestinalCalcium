@@ -4,8 +4,8 @@ function combine_Wormdata(datadir,outputdir, controlname)
 
 isremote = 1;
 if nargin <1 % modify these paramaters for 
-    datadir = 'Y:\OAS\wildtype+TapIncreasing';
-    outputdir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\OAS\Wildtype+TapIncreasing';
+    datadir = 'Y:\Calcium Imaging\Intestinal_Calcium\Exogenous_Tyramine\Receptor_Mutants\wildtype-30mM-TA';
+    outputdir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\Exogenous_Tyramine\receptor_mutants\wildtype-30mM-TA';
     
 end
 

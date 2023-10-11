@@ -6,16 +6,13 @@ function [plotSettings] = returnPlotSettings(plotSettings)
 if nargin == 1
     plotSettings = plotSettings;
 else
-
-    plotsettings.OAS = 1; % are we using openAutoScope? this is an 8bit camera so pixel values need to be adjusted
-
     plotSettings.peakdistance = 15;
     plotSettings.peakwidth = 15;
     plotSettings.autoFixAxialSignal = 1;
     plotSettings.axSigToQuerry = 0.10;
     plotSettings.framerate = 15;
 
-    plotSettings.axylimit = [0 35000];
+    plotSettings.axylimit = [0 30000];
     plotSettings.wtcolor = [0.4 0.4 0.4];
     plotSettings.mtcolor = [0.66 0.74 0.91];
     plotSettings.mtedgecolor = [0.66 0.74 0.91] -.4;
@@ -32,30 +29,24 @@ else
     plotSettings.normalize = 0;
 
     plotSettings.tolimit =  4;              % set to 0 if you want to plot all bulk & axial signal plots.
-    %  set to -1 if you want equal # of control and
-    %  mutant plots, the latter is better for
-    %  comparison as bulk signals will haveS identical
-    %  y-axis scaling. To plot a specific number of
-    %  plots, set tolimit to that number
+                                             %  set to -1 if you want equal # of control and
+                                             %  mutant plots, the latter is better for
+                                             %  comparison as bulk signals will haveS identical
+                                             %  y-axis scaling. To plot a specific number of
+                                             %  plots, set tolimit to that number
 
-    plotSettings.overlayplots = 0;
-    plotSettings.controlname ='wildtype-control';
+     plotSettings.overlayplots = 0; 
+     plotSettings.controlname ='wildtype-control';
 
-    plotSettings.numColumns = 1;
+     plotSettings.numColumns = 1;
 
-    if plotsettings.OAS == 0
-        if plotSettings.normalize == 1
+    switch plotSettings.normalize
+        case 1
             plotSettings.traceylimit = [-.2 1];
             plotSettings.peakthreshold = .1;
-        else
+        case 0
             plotSettings.traceylimit = [0 8000];
             plotSettings.peakthreshold = 1000;
-        end
-    else
-        plotSettings.traceylimit = [0 20];
-        plotSettings.peakthreshold = 5;
-        plotSettings.axylimit = [0 45];
-
     end
 
 end

@@ -1,5 +1,5 @@
-fld = 'C:\src\OpenAutoScope-v2\data\231005_zfis178_wildtype+TapIncreasing'; % Folder containing the data you want to analyze
-serverfolder = 'Z:\OAS\wildtype+TapIncreasing';  % upload everything to this location.
+fld = 'C:\src\OpenAutoScope-v2\data\231011_zfis178_wildtype+5HT'; % Folder containing the data you want to analyze
+serverfolder = 'Z:\OAS\wildtype+5HT';  % upload everything to this location.
 
 %% settings
 startIndex = 1; % which video to start analysis.
@@ -579,7 +579,7 @@ for nf =startIndex:length(imgDir)
 
     % % % Bulk Signal % % % 
     nexttile([1 3])
-    if ~isempty(loc)
+    if ~isnan(loc)
         plot(time,bulkSignal,time(loc),pk*1.01, 'rv')
     else
         plot(time,bulkSignal)
@@ -753,25 +753,7 @@ for nf =startIndex:length(imgDir)
 
             % copy summary plots
             [statusvideoplot,~,~]=copyfile(videopath, serverLocation);
-
-%             tifFiles = dir([tempfolder '\*.tif']);
-%             for j = 1:length(tifFiles)
-%                 delete(fullfile(tifFiles(j).folder,tifFiles(j).name))
-%             end
-% 
-%             otherFiles = dir(tempfolder);
-%             otherFiles = otherFiles(3:end);
-% 
-% 
-%             for ri = 1:length(otherFiles)   % copy results to server and clean up our mess.
-%                 file2copy = fullfile(otherFiles(ri).folder, otherFiles(ri).name);
-%                 [uploadLocation, ~]= fileparts(remotepath);
-%                 [status,message,messageId]= copyfile(file2copy,[uploadLocation '\']);
-%                 if status == 1
-%                     delete(fullfile(otherFiles(ri).folder, otherFiles(ri).name));
-%                 end
-%             end
-
+            
         end
     end
 
