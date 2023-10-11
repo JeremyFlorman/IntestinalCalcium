@@ -2,7 +2,7 @@ fld = 'C:\src\OpenAutoScope-v2\data\231011_zfis178_wildtype+5HT'; % Folder conta
 serverfolder = 'Z:\OAS\wildtype+5HT';  % upload everything to this location.
 
 %% settings
-startIndex = 2; % which video to start analysis.
+startIndex = 1; % which video to start analysis.
 startframe =1; % what frame to begin analysis
 
 uploadresults = 1; % upload data to remote location (serverfolder)?
@@ -25,7 +25,7 @@ axSigLen = 200; % how many pixels to use for registering axial signal.
 
 useautothreshold = 1;% set to 1 to calculate a threshold for each image.
 useadaptivethreshold = 0; % if useautothreshold is set to 0 adaptive thresholding can be used
-removevignette = 50; % if not zero, size of kernel to use for flatfield correction.
+removevignette = 30; % if not zero, size of kernel to use for flatfield correction.
 
 
 %%
@@ -708,6 +708,7 @@ for nf =startIndex:length(imgDir)
     if uploadresults == 1
         if isremote == 0  % if working with local files, upload to serverfolder (specified in settings)
 
+            lastfolder = regexp(folder2Copy, '\', 'split');
             serverLocation = [serverfolder '\' expSuffix];
 
             if ~isfolder(serverLocation)
@@ -752,25 +753,7 @@ for nf =startIndex:length(imgDir)
 
             % copy summary plots
             [statusvideoplot,~,~]=copyfile(videopath, serverLocation);
-
-%             tifFiles = dir([tempfolder '\*.tif']);
-%             for j = 1:length(tifFiles)
-%                 delete(fullfile(tifFiles(j).folder,tifFiles(j).name))
-%             end
-% 
-%             otherFiles = dir(tempfolder);
-%             otherFiles = otherFiles(3:end);
-% 
-% 
-%             for ri = 1:length(otherFiles)   % copy results to server and clean up our mess.
-%                 file2copy = fullfile(otherFiles(ri).folder, otherFiles(ri).name);
-%                 [uploadLocation, ~]= fileparts(remotepath);
-%                 [status,message,messageId]= copyfile(file2copy,[uploadLocation '\']);
-%                 if status == 1
-%                     delete(fullfile(otherFiles(ri).folder, otherFiles(ri).name));
-%                 end
-%             end
-
+            
         end
     end
 
