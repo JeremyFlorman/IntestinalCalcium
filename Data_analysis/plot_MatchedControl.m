@@ -171,8 +171,8 @@ plotEchos(mtdata,wtdata,settings,1,1)
 savename = [parentfolder '\' mtname '_matched_Control_Data.png']
 exportgraphics(gcf, savename, 'Resolution', 300);
 end
-assignin('base', 'mtdata', mtdata)
-assignin('base', 'wtdata', wtdata)
+% assignin('base', 'mtdata', mtdata)
+% assignin('base', 'wtdata', wtdata)
 
 
 end
