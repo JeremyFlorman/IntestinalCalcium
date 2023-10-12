@@ -434,12 +434,24 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % Value changed function: AnalyzeOASdataCheckBox, 
         % ...and 1 other component
         function AnalyzeOASdataCheckBox_2ValueChanged(app, event)
-            value = app.AnalyzeOASdataCheckBox_2.Value;
-            if value == 1
+            OASvalue = app.AnalyzeOASdataCheckBox_2.Value;
+            normalizeValue = app.NormalizeCheckBox.Value;
+            if OASvalue == 1
                 app.bulkYLim.Value = '0 15';
                 app.axialYLim.Value = '0 45';
                 app.peakthreshold.Value = 2;
                 app.EqualizeExpDurationCheckBox.Value = 1;
+            end
+
+            if OASvalue == 0
+                app.EqualizeExpDurationCheckBox.Value = 0;
+                if normalizeValue == 0
+                    app.bulkYLim.Value = '-500 5000';
+                    app.peakthreshold.Value = 500;
+                elseif normalizeValue == 1
+                    app.bulkYLim.Value = '-0.2 1';
+                    app.peakthreshold.Value = 0.1;
+                end
             end
             
         end
@@ -814,7 +826,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create BulkSignallimitsLabel_2
             app.BulkSignallimitsLabel_2 = uilabel(app.XAxesPanel);
             app.BulkSignallimitsLabel_2.HorizontalAlignment = 'right';
-            app.BulkSignallimitsLabel_2.Position = [3 10 99 22];
+            app.BulkSignallimitsLabel_2.Position = [-1 10 99 22];
             app.BulkSignallimitsLabel_2.Text = 'Axial Signal Ticks';
 
             % Create axialXTickInt
