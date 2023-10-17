@@ -7,7 +7,7 @@ if nargin == 1
     plotSettings = plotSettings;
 else
 
-    plotsettings.OAS = 1; % are we using openAutoScope? this is an 8bit camera so pixel values need to be adjusted
+    plotsettings.OAS = 0; % are we using openAutoScope? this is an 8bit camera so pixel values need to be adjusted
 
     plotSettings.peakdistance = 15;
     plotSettings.peakwidth = 15;
@@ -32,7 +32,7 @@ else
     plotSettings.sortDir = 'descend';
     plotSettings.normalize = 0;
 
-    plotSettings.tolimit =  4;              % set to 0 if you want to plot all bulk & axial signal plots.
+    plotSettings.tolimit =  20;              % set to 0 if you want to plot all bulk & axial signal plots.
     %  set to -1 if you want equal # of control and
     %  mutant plots, the latter is better for
     %  comparison as bulk signals will haveS identical
@@ -52,6 +52,7 @@ else
             plotSettings.traceylimit = [0 8000];
             plotSettings.peakthreshold = 1000;
         end
+        plotSettings.trimExperimentLength =0;
     else
         plotSettings.traceylimit = [0 20];
         plotSettings.peakthreshold = 5;
