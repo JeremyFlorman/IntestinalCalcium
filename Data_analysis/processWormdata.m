@@ -6,7 +6,7 @@ if nargin<2
     settings = returnPlotSettings();
 end
 
-% wormdata = "C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\OAS\Wildtype+Tap\wildtype+Tap_mergedData.mat";
+% wormdata = "C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\dec-9\dec-9_mergedData.mat";
 
 normalize = settings.normalize;
 trimExperimentLength = settings.trimExperimentLength;
@@ -100,6 +100,7 @@ sortDir = settings.sortDir;
 secondsPrePost = settings.spikeProfileWindow;
 framerate = settings.framerate;
 validatePropagationRate = settings.validatePropagationRate;
+validateRiseFall = settings.validateRiseFall;
 propMethod =1;
 
 
@@ -122,6 +123,12 @@ if validatePropagationRate == 1
     axFig = tiledlayout(2,1);
     propAx = nexttile();
     axAx = nexttile();
+end
+
+if validateRiseFall == 1
+    figure();
+    rAx = axes;
+    keepValidating = 1;
 end
 
 
@@ -358,6 +365,40 @@ for i = 1:length(inputData)
                 line(riseX{j},riseY{j}, 'Color', 'g', 'LineStyle', ':','Marker','^', 'MarkerSize', 2)
                 line(fallX{j},fallY{j}, 'Color', 'r', 'LineStyle', ':','Marker', 'v','MarkerSize', 2)
             end
+
+            if settings.validateRiseFall == 1
+                if keepValidating == 1
+                    if j == 1
+                        plot(bulkSignal, Parent=rAx)
+                    end
+
+                    line(riseX{j},riseY{j}, 'Color', 'g', 'LineStyle', ':','Marker','^', 'MarkerSize', 2)
+                    if ~isempty(riseX{j})
+                        rtxt = input('Rise OK? (y/n)... type exit to quit','s');
+                        if strcmpi(rtxt, 'n')
+                            rTime(j) = nan;
+                        elseif strcmpi(rtxt, 'exit')
+                            keepValidating = 0;
+                            break
+                        end
+                    end
+
+                    line(fallX{j},fallY{j}, 'Color', 'r', 'LineStyle', ':','Marker', 'v','MarkerSize', 2)
+                    if ~isempty(fallX{j})
+                        ftxt = input('fall OK? (y/n)... type exit to quit','s');
+                        if strcmpi(ftxt, 'n')
+                            fTime(j) = nan;
+                        elseif strcmpi(ftxt, 'exit')
+                            keepValidating = 0;
+                            break
+                        end
+
+                    end
+                end
+            end
+
+
+
         end
 
 
@@ -422,6 +463,14 @@ processedData(1).fallVector = vertcat(inputData(:).fallTime);
 processedData(1).AUCVector = vertcat(inputData(:).AUC);
 processedData(1).intervalVector = vertcat(inputData(:).peakIntervals);
 processedData(1).propagationVector = vertcat(inputData(:).propagationRate);
+
+if validateRiseFall == 1 && keepValidating == 1
+    [file,path] = uiputfile('*.xlsx');
+    riseFallSaveName = fullfile(path,file);
+    writematrix(processedData(1).riseVector, riseFallSaveName, 'Sheet', 'Rise Time');
+    writematrix(processedData(1).fallVector, riseFallSaveName, 'Sheet', 'Fall Time');
+end
+
 end
 
 %% trim experiments
@@ -450,7 +499,7 @@ for i = 1:length(inputData)
         validtimes = inputData(i).stimTimes<minlen;
         inputData(i).stimTimes = inputData(i).stimTimes(validtimes);
     end
-processedData = inputData;
+    processedData = inputData;
 
 end
 

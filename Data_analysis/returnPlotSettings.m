@@ -25,6 +25,7 @@ else
     plotSettings.spikeProfileWindow = 40;
     plotSettings.showFitParams = 0;
     plotSettings.validatePropagationRate = 0;
+    plotSettings.validateRiseFall = 0;
 
     plotSettings.axialXticint = 2; % # x tick interval (in minutes) for axial signal plots.
 

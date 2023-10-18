@@ -53,9 +53,11 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         DataDir                        matlab.ui.control.EditField
         setDataDir                     matlab.ui.control.Button
         PlotSettingsTab                matlab.ui.container.Tab
+        validateRiseFallButton         matlab.ui.control.Button
         EqualizeExpDurationCheckBox    matlab.ui.control.CheckBox
         AnalyzeOASdataCheckBox_2       matlab.ui.control.CheckBox
         SpikeKineticsPanel             matlab.ui.container.Panel
+        validateRiseFall               matlab.ui.control.CheckBox
         validatePropagationRate        matlab.ui.control.CheckBox
         showFitParams                  matlab.ui.control.CheckBox
         PlotMultipleGenotypesButton_2  matlab.ui.control.Button
@@ -234,6 +236,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             %% Spike Kinetics and Validation Settings
             plotSettings.validatePropagationRate = app.validatePropagationRate.Value;
+            plotSettings.validateRiseFall = app.validateRiseFall.Value;
             plotSettings.showFitParams = app.showFitParams.Value;
 
 
@@ -454,6 +457,21 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                 end
             end
             
+        end
+
+        % Button pushed function: validateRiseFallButton
+        function validateRiseFallButtonPushed(app, event)
+            app.validateRiseFall.Value = 1;
+            
+            plotSettings = parsePlotSettings(app);
+            
+            [file,path] = uigetfile([app.outputDir.Value '*.mat']);
+
+            [~,~,~] = processWormdata(fullfile(path,file), plotSettings);
+
+            app.validateRiseFall.Value = 1;
+
+
         end
     end
 
@@ -1051,17 +1069,22 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.SpikeKineticsPanel = uipanel(app.PlotSettingsTab);
             app.SpikeKineticsPanel.Title = 'Spike Kinetics ';
             app.SpikeKineticsPanel.FontWeight = 'bold';
-            app.SpikeKineticsPanel.Position = [213 45 143 63];
+            app.SpikeKineticsPanel.Position = [213 21 143 87];
 
             % Create showFitParams
             app.showFitParams = uicheckbox(app.SpikeKineticsPanel);
             app.showFitParams.Text = 'Show rise/fall time fit?';
-            app.showFitParams.Position = [4 20 139 22];
+            app.showFitParams.Position = [3 44 139 22];
 
             % Create validatePropagationRate
             app.validatePropagationRate = uicheckbox(app.SpikeKineticsPanel);
             app.validatePropagationRate.Text = 'Validate propagation?';
-            app.validatePropagationRate.Position = [4 -1 138 24];
+            app.validatePropagationRate.Position = [1 2 138 24];
+
+            % Create validateRiseFall
+            app.validateRiseFall = uicheckbox(app.SpikeKineticsPanel);
+            app.validateRiseFall.Text = 'Validate rise/fall?';
+            app.validateRiseFall.Position = [2 25 138 24];
 
             % Create AnalyzeOASdataCheckBox_2
             app.AnalyzeOASdataCheckBox_2 = uicheckbox(app.PlotSettingsTab);
@@ -1077,6 +1100,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.EqualizeExpDurationCheckBox.Text = 'Equalize Exp Duration?';
             app.EqualizeExpDurationCheckBox.WordWrap = 'on';
             app.EqualizeExpDurationCheckBox.Position = [213 188 144 14];
+
+            % Create validateRiseFallButton
+            app.validateRiseFallButton = uibutton(app.PlotSettingsTab, 'push');
+            app.validateRiseFallButton.ButtonPushedFcn = createCallbackFcn(app, @validateRiseFallButtonPushed, true);
+            app.validateRiseFallButton.Position = [359 39 104 36];
+            app.validateRiseFallButton.Text = 'Validate Rise/Fall';
 
             % Create Tab
             app.Tab = uitab(app.TabGroup);
