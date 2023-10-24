@@ -1,5 +1,5 @@
-fld = 'C:\src\OpenAutoScope-v2\data\231011_zfis178_wildtype+5HT'; % Folder containing the data you want to analyze
-serverfolder = 'Z:\OAS\wildtype+5HT';  % upload everything to this location.
+fld = 'C:\src\OpenAutoScope-v2\data\5-HT\231019_zfis178_ser-7+5HT'; % Folder containing the data you want to analyze
+serverfolder = 'Z:\OAS\5-HT\ser-7+5HT';  % upload everything to this location.
 
 %% settings
 startIndex = 1; % which video to start analysis.
@@ -14,7 +14,7 @@ plotstuff = 1; % display tracking
 videostuff =1; % record video
 framerate = 7; % display video/plots every Nth iteration of loop.
 fps = 15;      % frames per sec of input tiff.
-troubleshoot =0; % show binary images instead of regular plots
+troubleshoot =0; % show binary images instead of0 regular plots
 showNormals = 1;
 showAxialSignal = 1;
 
@@ -501,7 +501,7 @@ for nf =startIndex:length(imgDir)
 
 
     % peak analysis
-    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',5,'MinPeakDistance',150);
+    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',3.5,'MinPeakDistance',150);
     peakpad = fps*15; % framerate*time in seconds;
     pktime = linspace(-15,15, peakpad*2)';
     if isempty(loc)
@@ -566,7 +566,7 @@ for nf =startIndex:length(imgDir)
         time = linspace(0,round((nFrames)/fps/60,1),nFrames); %minutes per frame
     end
     if ~exist('pk','var')
-        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',5, 'MinPeakDistance',150);
+        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',3.5, 'MinPeakDistance',150);
         peakpad = fps*15;
         pktime = linspace(-15,15, peakpad*2)';
         pkmean = mean(pktraces,2,'omitnan');
@@ -708,7 +708,7 @@ for nf =startIndex:length(imgDir)
     if uploadresults == 1
         if isremote == 0  % if working with local files, upload to serverfolder (specified in settings)
 
-            lastfolder = regexp(folder2Copy, '\', 'split');
+            
             serverLocation = [serverfolder '\' expSuffix];
 
             if ~isfolder(serverLocation)
