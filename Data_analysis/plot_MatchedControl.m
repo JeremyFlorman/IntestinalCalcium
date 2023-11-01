@@ -3,7 +3,7 @@ function [] = plot_MatchedControl(parentfolder,settings)
 %   Detailed explanation goes here
 
 if nargin<1
-parentfolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\itr-1';
+parentfolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\OAS\5-HT\wildtype+5HT';
 end
 
 if nargin<2
