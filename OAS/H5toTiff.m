@@ -1,8 +1,13 @@
-d = dir('Y:\OAS\5-HT\wildtype+5HT\');
+%% this function takes processed H5 recordings and creates tiff videos 
+% of the 30 seconds preceeding each calcium spike. This is useful for 
+% counting pumping rate. 
+
+d = dir('Z:\OAS\5-HT\ser-4+5HT');
 dirflag= [d(:).isdir];
 d = d(dirflag);
+d = d(3:end);
 
-for j = 3:length(d)
+for j = 1:length(d)
     folder = fullfile(d(j).folder,d(j).name)
 % folder = 'Y:\OAS\5-HT\wildtype+5HT\231006_zfis178_wildtype+5HT_1';
 
@@ -16,7 +21,9 @@ settings.trimExperimentLength =1;
 wd = dir([folder '\*wormdata.mat']);
 h5file = dir([folder '\*behavior\*.h5']);
 
-[mtdata, ~] = processWormdata(fullfile(wd(1).folder, wd(1).name), settings);
+wormdata = fullfile(wd(1).folder, wd(1).name);
+
+[mtdata, ~] = processWormdata(wormdata, settings);
 
 %%
 timePre = settings.framerate*30;

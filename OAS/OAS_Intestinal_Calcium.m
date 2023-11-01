@@ -1,5 +1,5 @@
-fld = 'C:\src\OpenAutoScope-v2\data\5-HT\231019_zfis178_ser-7+5HT'; % Folder containing the data you want to analyze
-serverfolder = 'Z:\OAS\5-HT\ser-7+5HT';  % upload everything to this location.
+fld = 'C:\src\OpenAutoScope-v2\data\long duration 5HT'; % Folder containing the data you want to analyze
+serverfolder = 'Z:\OAS\long duration';  % upload everything to this location.
 
 %% settings
 startIndex = 1; % which video to start analysis.
@@ -32,7 +32,7 @@ removevignette = 30; % if not zero, size of kernel to use for flatfield correcti
 imgDir = dir([fld '\**\*behavior\*.h5']);
 imgDir = unique({imgDir.folder});
 
-
+ 
 for nf =startIndex:length(imgDir)
     path = imgDir{nf}
     h5Data = processH5(path);
