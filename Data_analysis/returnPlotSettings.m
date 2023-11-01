@@ -29,7 +29,7 @@ else
 
     plotSettings.axialXticint = 2; % # x tick interval (in minutes) for axial signal plots.
 
-    plotSettings.sortType = 1; % 0=dont sort,  1=num spikes, 2=amplitude
+    plotSettings.sortType = 0; % 0=dont sort,  1=num spikes, 2=amplitude
     plotSettings.sortDir = 'descend';
     plotSettings.normalize = 0;
 
@@ -56,7 +56,7 @@ else
         plotSettings.trimExperimentLength =0;
     else
         plotSettings.traceylimit = [0 20];
-        plotSettings.peakthreshold = 5;
+        plotSettings.peakthreshold = 3;
         plotSettings.axylimit = [0 45];
         plotSettings.trimExperimentLength =1;
 
