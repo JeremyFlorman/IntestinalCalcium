@@ -3,10 +3,11 @@ function [h5Data] = processH5(foldername)
 %   Detailed explanation goes here
 % foldername = 'C:\src\OpenAutoScope-v2\data\zfis178';
 
-% foldername = 'C:\src\OpenAutoScope-v2\data\231003_zfis178_wildtype+Tap\2023_10_03_11_02_26_flircamera_behavior';
+% foldername = 'C:\src\OpenAutoScope-v2\data\RMG_GCaMP\231026_RMG_GCaMP\2023_10_26_13_06_15_flircamera_behavior';
 d = dir([foldername '\*.h5']);
 registerImage = 1;
 showRegistration = 0;
+videostuff = 0;
 translation = [1 -1 0];  %230926[-5 13 0];
 
 
@@ -24,6 +25,17 @@ for i = 1:length(d)
 
 
     idx = NaN(gFrames,1);
+
+    if videostuff == 1
+        if exist('v','var') == 1
+            close(v)
+        end
+        videopath = strrep(foldername, 'flircamera_behavior', 'Video.mp4');
+        v = VideoWriter(videopath,'MPEG-4');
+        v.FrameRate = 30;
+        open(v)
+    end
+
 
 
     for j=1:bFrames
@@ -60,11 +72,16 @@ if registerImage == 1
     gfp = imtranslate(gfp(:,:,:),translation);
 
     if showRegistration == 1
-        figure();
+        figure()
         for j = 1:length(gfp)
             imshowpair(bf(:,:,j) ,gfp(:,:,j))
             text(20,20, ['Time: ' num2str(round(time(j)-starttime,2)) ' sec'])
-            pause(0.0001)
+            %             pause(0.0001)
+
+            if videostuff  == 1
+                frame = getframe(gcf);
+                writeVideo(v,frame);
+            end
         end
     end
 end
@@ -105,7 +122,7 @@ for i = 1:length(logd)
         if acq == 1
             if contains(line, '<CLIENT WITH GUI> command sent: DO _teensy_commands_set_led o 1')
                 stimTimes(end+1,1) = alignEvent(line,time);
-                disp(line) 
+                disp(line)
             end
         end
 
@@ -135,9 +152,9 @@ sec = secondsec-firstsec;
 velocity =NaN(length(time),1);
 
 for i = 2:length(xLoc)-(sec+1)
-dx = xLoc(i)-xLoc(i+sec); %change in xLoc per second
-dy = yLoc(i)-yLoc(i+sec); %change in yLoc per second
-velocity(i) = sqrt(dx.^2 + dy.^2);
+    dx = xLoc(i)-xLoc(i+sec); %change in xLoc per second
+    dy = yLoc(i)-yLoc(i+sec); %change in yLoc per second
+    velocity(i) = sqrt(dx.^2 + dy.^2);
 end
 
 h5Data.gfp = gfp;
