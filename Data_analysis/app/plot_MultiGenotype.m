@@ -17,10 +17,10 @@ elseif length(genotypes) == 4
 
 elseif length(genotypes) == 5
     figpos = [135.4000 266.6000 1.0528e+03 241.6000];
-    figpos2 = [788.2000 181 345.6000 477.6000];
+    figpos2 = [118.6000 181 1.0152e+03 477.6000];
 else
-    figpos = [488 207.4000 784.2000 554.6000];
-    figpos2 = [488 207.4000 784.2000 554.6000];
+    figpos = [105 207.4000 1.1672e+03 290.4000];
+    figpos2 = [118.6000 181 1.0152e+03 477.6000];
 end
 
 w = settings.numColumns;
@@ -70,6 +70,15 @@ for q = 1:length(genotypes)
 
 
     d = dir([parentfolder '\**\*' genotypes{q} '_mergedData.mat']);
+    
+    if length(d)>1 % if there is more than one file (like in a double mutant) exclude partial matches
+        matchIdx = nan(length(d),1);
+        for n = 1:length(d)
+            matchIdx(n) = strcmpi(strrep(d(n).name,'_mergedData.mat',''), genotypes{q});
+        end
+        d = d(logical(matchIdx));
+    end
+
 
     if length(d)>1    % if there is more than one file (like with control) use the biggest.
         [~,idx] = sort([d(:).bytes],'descend');
@@ -79,7 +88,7 @@ for q = 1:length(genotypes)
     [mtdata, wtdata, settings] = processWormdata(fullfile(d(1).folder,d(1).name), settings);
 
     if strcmp(genotypes(q), controlname) ==1
-        wtdata = [];
+        wtdata = []; 
     end
   
     
