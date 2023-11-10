@@ -3,12 +3,12 @@ function [h5Data] = processH5(foldername)
 %   Detailed explanation goes here
 % foldername = 'C:\src\OpenAutoScope-v2\data\zfis178';
 
-% foldername = 'C:\src\OpenAutoScope-v2\data\RMG_GCaMP\231026_RMG_GCaMP\2023_10_26_13_06_15_flircamera_behavior';
+% foldername = 'C:\src\OpenAutoScope-v2\data\5-HT\231109_zfis178_ser-7+Food\2023_11_09_15_25_23_flircamera_behavior'
 d = dir([foldername '\*.h5']);
 registerImage = 1;
-showRegistration = 0;
+showRegistration = 1;
 videostuff = 0;
-translation = [1 -1 0];  %230926[-5 13 0];
+translation = [1 -3 0];  %230926[-5 13 0];
 
 
 for i = 1:length(d)
@@ -172,7 +172,3 @@ et = regexp(event, ' ', 'split');
 eTime = str2double(et{1});
 idx = find(time>=eTime,1);
 end
-
-
-
-
