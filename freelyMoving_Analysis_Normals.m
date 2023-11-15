@@ -1,18 +1,18 @@
-fld = 'E:\Jeremy Acquisitions\DMP_Mutants\unc-43(e408)'; % Folder containing the data you want to analyze
+fld = 'C:\Users\Jeremy\Desktop\230316_zfis178_wildtype_1'; % Folder containing the data you want to analyze
 serverfolder = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\unc-43(e408)';  % upload everything to this location.
 
 %% settings
 startIndex = 1; % which video to start analysis.
 startframe =1; % what frame to begin analysis
 
-uploadresults = 1; % upload data to remote location (serverfolder)?
+uploadresults = 0; % upload data to remote location (serverfolder)?
 isremote = 0;    % is our tiff file on the server? If so, we'll copy to local
 % folder to run the analysis then move the results to the
 % server.
 
 plotstuff = 1; % display tracking
 videostuff =1; % record video 
-framerate = 15; % display video/plots every Nth iteration of loop.
+framerate = 1; % display video/plots every Nth iteration of loop.
 fps = 15;      % frames per sec of input tiff.
 troubleshoot =0; % show binary images instead of regular plots
 showNormals = 1;
@@ -58,13 +58,14 @@ for nf =startIndex:length(tdir)
         ax6 = nexttile([1 1]);
         ax7 = nexttile([1 3]);
        elseif showAxialSignal == 1
-        figure('Position',[668 128 1064 653],'Color',[1 1 1]);
-        tiledlayout(4,3,'Padding','compact')
-        ax1 = nexttile([2 1]);
-        ax2 = nexttile([2 1]);
-        ax3 = nexttile([2 1]);
-        ax4 = nexttile([1 3]);
-        ax7 = nexttile([1 3]);
+        figure('Position',[380.2000 77 690.4000 688.8000],'Color',[1 1 1]);
+            tiledlayout(9,3,'TileSpacing', 'compact', 'Padding','tight')
+            ax1 = nexttile([3 1]);
+            ax2 = nexttile([3 1]);
+            ax3 = nexttile([3 1]);
+            ax4 = nexttile([2 3]);
+            ax7 = nexttile([2 3]);
+            areaAx = nexttile([2 3]);
        end
 
 
@@ -75,7 +76,7 @@ for nf =startIndex:length(tdir)
             end
             videopath = strrep(path, '_MMStack_Default.ome.tif', '_Tracking_Video.mp4');
             v = VideoWriter(videopath,'MPEG-4');
-            v.FrameRate = 15;
+            v.FrameRate = 60;
             open(v)
         end
     end
@@ -415,21 +416,39 @@ for nf =startIndex:length(tdir)
                        axsig = smoothdata(axialSignal(1:i,:),1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
                         imagesc(axsig,'Parent',ax4)  
                         ax4.CLim = [-500 30000];
+                        ax4.XLim = [1, length(axialSignal)];
                         ax4.XAxis.Visible = 0;
-                        ax4.YAxis.Visible = 0;
-                        title(ax4,'Raw Axial Signal')
+                        ax4.YTickLabel = [];
+                        ax4.YTick = [];
+                        ylabel(ax4, 'Axial Ca^2^+ Signal')
+                        box(ax4, 'off')
+                        ax4.TickLength = [0.005 0.005];
                         colormap turbo
                         
                     end
 
-                    plot(time,bulkSignal(:),time,backgroundSignal(:), 'Parent', ax7)
-                    if i>1
-                    xlim([0 time(i)]);
-                    end
-                    title(ax7, 'Whole Body Ca^2^+ Signal')
-                    ylabel(ax7, 'Mean Fluorescent Intensity (a.u.)');
-                    xlabel(ax7,'Time (min)');
+                    % BulkSignal
+                    plot(time(1:i),bulkSignal(1:i),time(1:i),backgroundSignal(1:i), 'Parent', ax7)
+                    
+                    xlim(ax7,[0 time(end)]);
+%                     title(ax7, 'Bulk Ca^2^+ Signal')
+                    ylabel(ax7, 'Bulk Ca^2^+ Signal');
+                    ax7.XAxis.Visible = 0;
+                    box(ax7, 'off')
+                    ax7.TickLength = [0.005 0.005];
+
+
+                    % Area
+                    plot(time(1:i),smoothdata(area(1:i), 'gaussian', 30), 'Parent', areaAx)
+                    ylabel(areaAx, 'Worm Area');
+                    areaAx.TickLength = [0.005 0.005];
+                    box(areaAx, 'off');
+                    xlim(areaAx,[0 time(end)]);
+                    xlabel(areaAx,'Time (min)');
+
                     drawnow
+
+
 
                     if videostuff == 1
                         frame = getframe(vidfig);
