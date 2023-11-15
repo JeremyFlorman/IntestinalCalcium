@@ -1,5 +1,5 @@
-fld = 'C:\src\OpenAutoScope-v2\data\long duration 5HT'; % Folder containing the data you want to analyze
-serverfolder = 'Z:\OAS\long duration';  % upload everything to this location.
+fld = 'C:\src\OpenAutoScope-v2\data\5-HT\231109_zfis178_ser-7+Food'; % Folder containing the data you want to analyze
+serverfolder = 'Z:\OAS\5-HT\+Food\ser-7+Food';  % upload everything to this location.
 
 %% settings
 startIndex = 1; % which video to start analysis.
@@ -60,13 +60,14 @@ for nf =startIndex:length(imgDir)
             ax6 = nexttile([1 1]);
             ax7 = nexttile([1 3]);
         elseif showAxialSignal == 1
-            figure('Position',[978 233 719 653],'Color',[1 1 1]);
-            tiledlayout(9,3,'Padding','compact')
+            figure('Position',[308 144 732 768],'Color',[1 1 1]);
+            tiledlayout(11,3,'TileSpacing', 'compact', 'Padding','tight')
             ax1 = nexttile([3 1]);
             ax2 = nexttile([3 1]);
             ax3 = nexttile([3 1]);
             ax4 = nexttile([2 3]);
             ax7 = nexttile([2 3]);
+            areaAx = nexttile([2 3]);
             velAx = nexttile([2 3]);
 
         end
@@ -435,9 +436,16 @@ for nf =startIndex:length(imgDir)
                         box(ax7, 'off')
                         ax7.TickLength = [0.005 0.005];
 
+                        % Area
+                        plot(time(1:i),smoothdata(area(1:i), 'gaussian', 30), 'Parent', areaAx)                      
+                        ylabel(areaAx, 'Worm Area');
+                        areaAx.TickLength = [0.005 0.005];
+                        box(areaAx, 'off');
+                        xlim(areaAx,[0 time(end)]);
+
 
                         % velocity
-                        plot(time(1:i),velocity(1:i), 'Parent', velAx)
+                        plot(time(1:i),smoothdata(velocity(1:i),'gaussian', 30), 'Parent', velAx)
                         if ~isempty(stimTimes)
                             for k =1:length(stimTimes)
                                 if i>= stimTimes(k)
@@ -448,7 +456,7 @@ for nf =startIndex:length(imgDir)
                             end
                         end
                         
-                        xlim([0 time(end)]);
+                        xlim(velAx,[0 time(end)]);
                         ylabel(velAx, 'Velocity');
                         xlabel(velAx,'Time (min)');
                         velAx.TickLength = [0.005 0.005];
@@ -646,6 +654,27 @@ for nf =startIndex:length(imgDir)
     xlabel(gca,'Time (s)');
     ylabel(gca,'Count');
     box off
+    % % % Worm Area % % %
+    nexttile([1 3]);
+    plot(time,smoothdata(area,'gaussian', 30))
+    xlim([0 time(end)])
+    title(gca, 'Worm Area')
+    ylabel(gca,'Pixels')
+%     xlabel(gca,'Time (min)')
+    ax =  gca;
+    ax.TickLength = [0.005 0.005];
+    box off 
+
+% % % Peak Widths % % % 
+    nexttile([1 1])
+    histogram(w./fps,'BinEdges', 1:15);
+    ylim([0 10])
+    xlim([0 15])
+    title(gca,'Peak Widths');
+    ylabel(gca,'Count');
+    xlabel(gca,'Time (s)');
+    box off 
+
 
     % % % Velocity  % % %
     nexttile([1 3]);
@@ -659,30 +688,9 @@ for nf =startIndex:length(imgDir)
     xlim([0 time(end)])
     title(gca, 'Velocity')
     ylabel(gca,'Steps/sec')
-    %     xlabel(gca,'Time (min)')
+    xlabel(gca,'Time (min)')
     ax.TickLength = [0.005 0.005];
     box off
-
-% % % Peak Widths % % % 
-    nexttile([1 1])
-    histogram(w./fps,'BinEdges', 1:15);
-    ylim([0 10])
-    xlim([0 15])
-    title(gca,'Peak Widths');
-    ylabel(gca,'Count');
-    xlabel(gca,'Time (s)');
-    box off 
-% % % Worm Area % % %
-    nexttile([1 3]);
-    plot(time,smoothdata(area,'gaussian', 30))
-    xlim([0 time(end)])
-    title(gca, 'Worm Area')
-    ylabel(gca,'Pixels')
-    xlabel(gca,'Time (min)')
-    ax =  gca;
-    ax.TickLength = [0.005 0.005];
-    box off 
-
 
     %     nexttile([1 1]);
     %     plot(orientation,time);
@@ -799,5 +807,3 @@ end
 %     copyfile(fullfile(axial.folder, axial.name), [remotepath '\'])
 %     copyfile(fullfile(plots.folder, plots.name), [remotepath '\'])
 % end
-
-

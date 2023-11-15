@@ -3,12 +3,12 @@ function [] = combineWormdata(datafolder)
 %   Detailed explanation goes here
 
 if nargin <1
-        datafolder = 'Y:\Calcium Imaging\Intestinal_Calcium\Exogenous_Tyramine\Receptor_Mutants\wildtype-30mM-TA'
+        datafolder = 'Y:\OAS\5-HT\-Food'
 end
  
 folderparts = regexp(datafolder, '\','split');
 
-combinedDataDir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\Exogenous_Tyramine\receptor_mutants\';
+combinedDataDir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\OAS\5-HT\-Food';
 
 combinedDataFolder = [combinedDataDir, folderparts{end}]
 controlname = 'wildtype-control';
@@ -96,9 +96,9 @@ for k = 1:length(genotypes)
     
 end
 disp("Done Combining wormdata")
-
-mergeControl(combinedDataFolder,controlname)
-disp("Done merging control")
-
-plot_MatchedControl(combinedDataFolder)
-disp('done plotting!!!!!')
+% 
+% mergeControl(combinedDataFolder,controlname)
+% disp("Done merging control")
+% 
+% plot_MatchedControl(combinedDataFolder)
+% disp('done plotting!!!!!')

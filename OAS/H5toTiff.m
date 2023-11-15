@@ -2,7 +2,7 @@
 % of the 30 seconds preceeding each calcium spike. This is useful for 
 % counting pumping rate. 
 
-d = dir('Z:\OAS\5-HT\-Food\eat-2-noFood');
+d = dir('Y:\OAS\5-HT\+Food\unc-31+Food');
 dirflag= [d(:).isdir];
 d = d(dirflag);
 d = d(3:end);
@@ -49,7 +49,7 @@ if isempty(locs)
 locs = floor(length(img/2));
 end
 
-for i = 1:length(locs)
+for i = 2:4%1:length(locs)
     if i == 1
         interval = 'NA';
     else

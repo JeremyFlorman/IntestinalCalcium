@@ -6,7 +6,7 @@ function [h5Data] = processH5(foldername)
 % foldername = 'C:\src\OpenAutoScope-v2\data\5-HT\231109_zfis178_ser-7+Food\2023_11_09_15_25_23_flircamera_behavior'
 d = dir([foldername '\*.h5']);
 registerImage = 1;
-showRegistration = 1;
+showRegistration = 0;
 videostuff = 0;
 translation = [1 -3 0];  %230926[-5 13 0];
 

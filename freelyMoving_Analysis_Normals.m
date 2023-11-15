@@ -2,7 +2,7 @@ fld = 'E:\Jeremy Acquisitions\DMP_Mutants\unc-43(e408)'; % Folder containing the
 serverfolder = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\unc-43(e408)';  % upload everything to this location.
 
 %% settings
-startIndex = 3; % which video to start analysis.
+startIndex = 1; % which video to start analysis.
 startframe =1; % what frame to begin analysis
 
 uploadresults = 1; % upload data to remote location (serverfolder)?
