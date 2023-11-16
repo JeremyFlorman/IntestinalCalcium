@@ -35,9 +35,9 @@ for q = 1:length(dd)
 
 d = dir([datafolder '\*_mergedData.mat']);
 gn = regexp(datafolder, '\', 'split'); % find the mutant genotype name
-if ~strcmp(gn{end}, '') 
+if ~strcmpi(gn{end}, '') 
     mtname = gn{end};  
-elseif ~strcmp(gn{end-1}, '')
+elseif ~strcmpi(gn{end-1}, '')
     mtname = gn{end-1};
 end
     
@@ -46,7 +46,9 @@ mtflag = contains(datanames, mtname);
  
 if nnz(mtflag) == 1
     mtpath = fullfile(d(mtflag).folder, d(mtflag).name); % find the mutant genotype path
-end 
+elseif length(d)  == 1
+    mtpath = fullfile(d.folder, d.name);
+end
 
 
 % [mtdata, wtdata,settings] = parseWormData(mtpath,settings);
