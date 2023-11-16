@@ -7,7 +7,7 @@ if nargin == 1
     plotSettings = plotSettings;
 else
 
-    plotsettings.OAS = 0; % are we using openAutoScope? this is an 8bit camera so pixel values need to be adjusted
+    plotsettings.OAS = 1; % are we using openAutoScope? this is an 8bit camera so pixel values need to be adjusted
 
     plotSettings.peakdistance = 15;
     plotSettings.peakwidth = 15;

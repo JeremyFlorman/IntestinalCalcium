@@ -30,7 +30,7 @@ end
 
 
 imagesc(smoothdata(axialMatrix,'movmedian',60)',axylimit)
-colormap("viridis")
+colormap("turbo")
 
 if isfield(data, 'stimTimes')
     hold on

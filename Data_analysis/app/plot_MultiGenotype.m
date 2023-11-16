@@ -10,10 +10,10 @@ controlname = settings.controlname;
 
 if length(genotypes) == 3
     figpos = [263.4000 369 761.6000 231.2000];
-    figpos2 = [447.4000 320.2000 211.2000 325.6000];
+    figpos2 = [771.4000 109.8000 682.4000 585.6000];
 elseif length(genotypes) == 4
     figpos = [253.8000 581.8000 600.8000 156];
-    figpos2 = [305.8000 61 1.1704e+03 596];
+    figpos2 = [172.2000 233.8000 1.1264e+03 384.8000];
 
 elseif length(genotypes) == 5
     figpos = [135.4000 266.6000 1.0528e+03 241.6000];
