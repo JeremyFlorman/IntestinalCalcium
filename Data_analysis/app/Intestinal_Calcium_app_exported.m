@@ -72,6 +72,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         OverlayButton                  matlab.ui.control.RadioButton
         SeparateButton                 matlab.ui.control.RadioButton
         SortDirectionButtonGroup       matlab.ui.container.ButtonGroup
+        shuffleButton                  matlab.ui.control.RadioButton
         ascendButton                   matlab.ui.control.RadioButton
         descendButton                  matlab.ui.control.RadioButton
         FractiontoQuerrylengthLabel    matlab.ui.control.Label
@@ -132,6 +133,11 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         mutantcolorEditFieldLabel      matlab.ui.control.Label
     end
 
+    
+    properties (Access = private)
+        defaultDataDir='Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants'; % Description
+        defaultOutputDir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants';
+    end
 
     methods (Access = public)
 
@@ -218,6 +224,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                 plotSettings.sortDir = 'descend';
             elseif app.ascendButton.Value
                 plotSettings.sortDir = 'ascend';
+            elseif app.shuffleButton.Value
+                plotSettings.sortDir = 'shuffle';
             end
 
             if app.SeparateButton.Value
@@ -846,30 +854,30 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.PlotMultipleGenotypesButton = uibutton(app.Panel_2, 'push');
             app.PlotMultipleGenotypesButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMultipleGenotypesButtonPushed, true);
             app.PlotMultipleGenotypesButton.FontWeight = 'bold';
-            app.PlotMultipleGenotypesButton.Position = [21 119 187 32];
+            app.PlotMultipleGenotypesButton.Position = [21 114 187 32];
             app.PlotMultipleGenotypesButton.Text = 'Plot Multiple Genotypes';
 
             % Create mutantgenotypesEditFieldLabel
             app.mutantgenotypesEditFieldLabel = uilabel(app.Panel_2);
             app.mutantgenotypesEditFieldLabel.HorizontalAlignment = 'right';
-            app.mutantgenotypesEditFieldLabel.Position = [65 93 100 22];
+            app.mutantgenotypesEditFieldLabel.Position = [65 90 100 22];
             app.mutantgenotypesEditFieldLabel.Text = 'mutant genotypes';
 
             % Create mutantgenotypesEditField
             app.mutantgenotypesEditField = uieditfield(app.Panel_2, 'text');
             app.mutantgenotypesEditField.Tooltip = {'list genotypes to plot together. Must match the filenames of merged data files (eg wildtype would correspond to the file "wildtype_mergedData.mat")'};
-            app.mutantgenotypesEditField.Position = [23 68 183 28];
+            app.mutantgenotypesEditField.Position = [23 65 183 28];
 
             % Create ColumnsEditFieldLabel
             app.ColumnsEditFieldLabel = uilabel(app.Panel_2);
             app.ColumnsEditFieldLabel.HorizontalAlignment = 'right';
-            app.ColumnsEditFieldLabel.Position = [62 42 63 22];
+            app.ColumnsEditFieldLabel.Position = [62 38 63 22];
             app.ColumnsEditFieldLabel.Text = '# Columns';
 
             % Create numColumns
             app.numColumns = uieditfield(app.Panel_2, 'numeric');
             app.numColumns.Tooltip = {'Hint - set to zero to have the same number of columns as genotypes. '};
-            app.numColumns.Position = [137 42 31 22];
+            app.numColumns.Position = [137 38 31 22];
 
             % Create PrefixEditFieldLabel
             app.PrefixEditFieldLabel = uilabel(app.Panel_2);
@@ -1119,7 +1127,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.NormalizeCheckBox = uicheckbox(app.PlotSettingsTab);
             app.NormalizeCheckBox.ValueChangedFcn = createCallbackFcn(app, @NormalizeCheckBoxValueChanged, true);
             app.NormalizeCheckBox.Text = 'Normalize Bulk Signal';
-            app.NormalizeCheckBox.Position = [207 243 154 22];
+            app.NormalizeCheckBox.Position = [207 235 154 22];
 
             % Create AutoFixAxialSignalCheckBox
             app.AutoFixAxialSignalCheckBox = uicheckbox(app.PlotSettingsTab);
@@ -1145,18 +1153,24 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.SortDirectionButtonGroup = uibuttongroup(app.PlotSettingsTab);
             app.SortDirectionButtonGroup.Title = 'Sort Direction';
             app.SortDirectionButtonGroup.FontWeight = 'bold';
-            app.SortDirectionButtonGroup.Position = [207 276 120 62];
+            app.SortDirectionButtonGroup.Position = [207 259 120 79];
 
             % Create descendButton
             app.descendButton = uiradiobutton(app.SortDirectionButtonGroup);
             app.descendButton.Text = 'descend';
-            app.descendButton.Position = [10 22 67 22];
+            app.descendButton.Position = [10 38 67 22];
             app.descendButton.Value = true;
 
             % Create ascendButton
             app.ascendButton = uiradiobutton(app.SortDirectionButtonGroup);
             app.ascendButton.Text = 'ascend';
-            app.ascendButton.Position = [10 0 65 22];
+            app.ascendButton.Position = [10 20 65 22];
+
+            % Create shuffleButton
+            app.shuffleButton = uiradiobutton(app.SortDirectionButtonGroup);
+            app.shuffleButton.Tooltip = {'Only works with "dont sort"'};
+            app.shuffleButton.Text = 'shuffle';
+            app.shuffleButton.Position = [10 1 65 22];
 
             % Create BulkSignalPlotsButtonGroup
             app.BulkSignalPlotsButtonGroup = uibuttongroup(app.PlotSettingsTab);
@@ -1204,14 +1218,14 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create AnalyzeOASdataCheckBox_2
             app.AnalyzeOASdataCheckBox_2 = uicheckbox(app.PlotSettingsTab);
             app.AnalyzeOASdataCheckBox_2.ValueChangedFcn = createCallbackFcn(app, @AnalyzeOASdataCheckBox_2ValueChanged, true);
-            app.AnalyzeOASdataCheckBox_2.Tooltip = {'Check this box if data is on a server. This will temporarily copy Tif to local drive to analyze '};
+            app.AnalyzeOASdataCheckBox_2.Tooltip = {'Check if working with OpenAutoScope data. This will toggle several required settings'};
             app.AnalyzeOASdataCheckBox_2.Text = 'Analyze OAS data?';
             app.AnalyzeOASdataCheckBox_2.WordWrap = 'on';
             app.AnalyzeOASdataCheckBox_2.Position = [207 207 144 18];
 
             % Create EqualizeExpDurationCheckBox
             app.EqualizeExpDurationCheckBox = uicheckbox(app.PlotSettingsTab);
-            app.EqualizeExpDurationCheckBox.Tooltip = {'Check this box if data is on a server. This will temporarily copy Tif to local drive to analyze '};
+            app.EqualizeExpDurationCheckBox.Tooltip = {'check to trim all experiments to the length of the shortest recording. Required for OAS.'};
             app.EqualizeExpDurationCheckBox.Text = 'Equalize Exp Duration?';
             app.EqualizeExpDurationCheckBox.WordWrap = 'on';
             app.EqualizeExpDurationCheckBox.Position = [207 188 144 14];

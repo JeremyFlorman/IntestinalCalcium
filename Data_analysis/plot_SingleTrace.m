@@ -27,7 +27,7 @@ traceylimits= settings.traceylimit;
 axylimits= settings.axylimit;
 singlespike =settings.singleSpike;
 windowInSeconds = settings.spikeWindow;
-axSigCMap = settings.axSignalCMap;
+axSigCMap = settings.axSigCMap;
 % traceylimits = [0 8000];
 % axylimits=[0 20000];
 

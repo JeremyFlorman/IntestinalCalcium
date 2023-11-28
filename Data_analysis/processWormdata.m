@@ -20,13 +20,13 @@ elseif isstruct(wormdata)
     mtdata = wormdata;
 end
 
-if isfield(mtdata, 'include')
-    mtdata = mtdata(logical([mtdata.include]));
-end
-
 
 if isfield(mtdata, 'controlData')
-    wtdata = mtdata(1).controlData;
+    for i = 1:length(mtdata) % find a non-empty cell
+        if~isempty(mtdata(i).controlData)
+            wtdata = mtdata(i).controlData;
+        end
+    end
     if isfield(wtdata, 'include')
         wtdata = wtdata(logical([wtdata.include]));
     end
@@ -34,6 +34,9 @@ else
     wtdata = mtdata;
 end
 
+if isfield(mtdata, 'include')
+    mtdata = mtdata(logical([mtdata.include]));
+end
 
 wtdata = subtractBackground(wtdata, settings);
 mtdata = subtractBackground(mtdata, settings);
@@ -205,55 +208,55 @@ for i = 1:length(inputData)
                 end
 
 
-                    if validatePropagationRate == 1
-                        if propagationRate(q)>5 || propagationRate(q) <0
-                            x = 1:size(head,2);
-                            plot(x,head,x,tail,'Parent',propAx);
+                if validatePropagationRate == 1
+                    if propagationRate(q)>5 || propagationRate(q) <0
+                        x = 1:size(head,2);
+                        plot(x,head,x,tail,'Parent',propAx);
 
-                            hold(propAx, "on")
+                        hold(propAx, "on")
 
-                            plot(hloc(1),hpk(1)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
-                            if ~isempty(hInflect)
-                                plot(hInflect,head(hInflect)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
-                            end
+                        plot(hloc(1),hpk(1)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
+                        if ~isempty(hInflect)
+                            plot(hInflect,head(hInflect)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
+                        end
 
-                            plot(tloc(1),tpk(1)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
-                            if ~isempty(tInflect)
-                                plot(tInflect,tail(tInflect)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
-                            end
+                        plot(tloc(1),tpk(1)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
+                        if ~isempty(tInflect)
+                            plot(tInflect,tail(tInflect)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
+                        end
 
-                            hold(propAx, "off")
-                            xlim(propAx, [0 length(head)])
-                            %
-                            %                     line([headmax headmax], propAx.YLim,'linestyle', ':', 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', propAx)
-                            %                     line([tailmax tailmax], propAx.YLim, 'linestyle', ':','Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', propAx)
-                            %
-                            imagesc(axialPeak,'Parent', axAx)
-                            pkSz = size(axialPeak);
-                            rectangle('Position',[0 pkSz(1)-chunksize pkSz(2) chunksize],'linestyle', ':','EdgeColor', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
-                            rectangle('Position',[0 headstart pkSz(2), chunksize],'linestyle', ':','EdgeColor', [.07 .62 1], 'linewidth', 1.5, 'Parent', axAx)
+                        hold(propAx, "off")
+                        xlim(propAx, [0 length(head)])
+                        %
+                        %                     line([headmax headmax], propAx.YLim,'linestyle', ':', 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', propAx)
+                        %                     line([tailmax tailmax], propAx.YLim, 'linestyle', ':','Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', propAx)
+                        %
+                        imagesc(axialPeak,'Parent', axAx)
+                        pkSz = size(axialPeak);
+                        rectangle('Position',[0 pkSz(1)-chunksize pkSz(2) chunksize],'linestyle', ':','EdgeColor', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
+                        rectangle('Position',[0 headstart pkSz(2), chunksize],'linestyle', ':','EdgeColor', [.07 .62 1], 'linewidth', 1.5, 'Parent', axAx)
 
-                            line([hInflect hInflect], [headstart headstart+chunksize], 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', axAx)
-                            line([tInflect tInflect], [pkSz(1) pkSz(1)-chunksize],'Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
+                        line([hInflect hInflect], [headstart headstart+chunksize], 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', axAx)
+                        line([tInflect tInflect], [pkSz(1) pkSz(1)-chunksize],'Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
 
-                            title(['Propagation time: ' num2str(propagationRate(q)) ' seconds'], 'Parent',axFig)
+                        title(['Propagation time: ' num2str(propagationRate(q)) ' seconds'], 'Parent',axFig)
 
 
 
-                            txt = input("Look ok? if not press letter key before hitting enter. Type 'exit' to quit","s");
+                        txt = input("Look ok? if not press letter key before hitting enter. Type 'exit' to quit","s");
 
-                            if ~isempty(txt)
-                                propagationRate(q) = NaN;
-
-                            end
-
-                            if ~isempty(txt) && strcmp(txt,'exit')
-                                validatePropagationRate = 0;
-                            end
+                        if ~isempty(txt)
+                            propagationRate(q) = NaN;
 
                         end
 
+                        if ~isempty(txt) && strcmp(txt,'exit')
+                            validatePropagationRate = 0;
+                        end
+
                     end
+
+                end
 
 
 
@@ -442,14 +445,24 @@ end
 if sortType == 0                % dont sort
     sortOrder = 1:length(inputData);
     if strcmpi(sortDir, 'ascend')
-        %         sortOrder = fliplr(sortOrder);
-        sortOrder = sortOrder(randperm(length(sortOrder))); %shuffle 
+        sortOrder = fliplr(sortOrder);
+    elseif strcmpi(sortDir, 'shuffle')
+        sortOrder = sortOrder(randperm(length(sortOrder))); %shuffle
     end
 
 elseif sortType == 1            % sort by number of spikes
+    if strcmpi(sortDir, 'shuffle')
+        disp('Shuffle only works with "dont sort", using descending order')
+        sortDir = 'descend';
+    end
     mtsorttype = num;
     [~, sortOrder] = sort(mtsorttype,sortDir);
+
 elseif sortType == 2            % sort by spike amplitude
+    if strcmpi(sortDir, 'shuffle')
+        disp('Shuffle only works with "dont sort", using descending order')
+        sortDir = 'descend';
+    end
     mtsorttype = AvAmp;
     [~, sortOrder] = sort(mtsorttype,sortDir);
 end

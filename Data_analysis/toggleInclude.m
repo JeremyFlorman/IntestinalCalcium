@@ -1,10 +1,10 @@
-file = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\egl-19(gf)\egl-19(gf)_mergedData.mat';
+file = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\flr-1\flr-1_mergedData.mat';
 [folder, name, ~] = fileparts(file);
 
 % [name, folder]  = uigetfile('C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\Sammy\tir-1(qd4)\');
 
-toggleMutant = [1 2 5 6];
-toggleControl = [1 2 5 6];
+toggleMutant = [1];
+toggleControl = [];
  
  wormdata = load(fullfile(folder, name)); 
  wormdata = wormdata.wormdata; 
