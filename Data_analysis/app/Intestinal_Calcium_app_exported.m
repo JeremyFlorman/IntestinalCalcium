@@ -238,7 +238,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.controlname = app.controlnameEditField.Value;
             
             %% Genotype Parsing for plot_MultiGenotype
-            gtyps = split(app.mutantgenotypesEditField.Value, {' ' , ',', ';'});
+            gtyps = split(app.mutantgenotypesEditField.Value, {' ' , ','});
             gtyps = gtyps(~cellfun(@isempty,gtyps));
 
             if length(gtyps) == 1
