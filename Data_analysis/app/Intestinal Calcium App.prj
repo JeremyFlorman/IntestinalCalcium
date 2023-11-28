@@ -1,5 +1,5 @@
 <deployment-project plugin="plugin.apptool" plugin-version="1.0">
-  <configuration build-checksum="665968401" file="C:\Users\Jeremy\Documents\MATLAB\Intestinal Calcium App.prj" location="C:\Users\Jeremy\Documents\MATLAB" name="Intestinal Calcium App" target="target.mlapps" target-name="Package App">
+  <configuration build-checksum="665968401" file="C:\Users\Jeremy\Documents\MATLAB\IntestinalCalcium\Data_analysis\app\Intestinal Calcium App.prj" location="C:\Users\Jeremy\Documents\MATLAB\IntestinalCalcium\Data_analysis\app" name="Intestinal Calcium App" target="target.mlapps" target-name="Package App">
     <param.appname>Intestinal Calcium App</param.appname>
     <param.authnamewatermark>Jeremy Florman</param.authnamewatermark>
     <param.email>Jeremy.Florman@umassmed.edu</param.email>
@@ -8,7 +8,7 @@
     <param.icons />
     <param.summary>Analysis suite for tracking calcium signals in freely moving C. elegans</param.summary>
     <param.description />
-    <param.screenshot>C:\Users\Jeremy\AppData\Local\Temp\tp67364652_0494_431e_9d14_39f8438d95d7.png</param.screenshot>
+    <param.screenshot />
     <param.version>1.0</param.version>
     <param.products.name>
       <item>MATLAB</item>
@@ -31,6 +31,7 @@
       <param.icon />
       <param.icons />
       <param.description />
+      <param.screenshot />
       <param.version />
       <param.output />
     </unset>
@@ -66,7 +67,7 @@
     <fileset.resources />
     <fileset.package />
     <build-deliverables>
-      <file location="C:\Users\Jeremy\Documents" name="MATLAB" optional="false">C:\Users\Jeremy\Documents\MATLAB</file>
+      <file location="C:\Users\Jeremy\Documents\MATLAB\IntestinalCalcium\Data_analysis" name="app" optional="false">C:\Users\Jeremy\Documents\MATLAB\IntestinalCalcium\Data_analysis\app</file>
     </build-deliverables>
     <workflow />
     <matlab>

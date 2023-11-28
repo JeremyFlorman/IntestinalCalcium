@@ -7,8 +7,10 @@ prefix = settings.prefix;
 genotypes = settings.genotypes;
 controlname = settings.controlname;
 
-
-if length(genotypes) == 3
+if isfield(settings, 'graphPos')
+    figpos = settings.graphPos;
+    figpos2 = settings.tracePos;
+elseif length(genotypes) == 3
     figpos = [263.4000 369 761.6000 231.2000];
     figpos2 = [771.4000 109.8000 682.4000 585.6000];
 elseif length(genotypes) == 4
@@ -17,7 +19,7 @@ elseif length(genotypes) == 4
 
 elseif length(genotypes) == 5
     figpos = [135.4000 266.6000 1.0528e+03 241.6000];
-    figpos2 = [118.6000 181 1.0152e+03 477.6000];
+    figpos2 = [161 489.8000 1036 174.4000];
 else
     figpos = [105 207.4000 1.1672e+03 290.4000];
     figpos2 = [118.6000 181 1.0152e+03 477.6000];
@@ -78,7 +80,7 @@ for q = 1:length(genotypes)
         end
         d = d(logical(matchIdx));
     end
-
+ 
 
     if length(d)>1    % if there is more than one file (like with control) use the biggest.
         [~,idx] = sort([d(:).bytes],'descend');
@@ -139,28 +141,28 @@ for q = 1:length(genotypes)
     plotAxialSignal(mtdata,settings)
     title(['\it' mtdata(1).genotype],'FontSize', 8)
 
-    ax2 = gca;
-    ax2.YTick = [];
-    ax2.XTick = [];
-    ax2.XLabel = [];
+%     ax2 = gca;
+%     ax2.YTick = [];
+%     ax2.XTick = [];
+%     ax2.XLabel = [];
 
     %% bulk signal
 
     nexttile(bulkt, q)
     plotBulkSignal(mtdata,settings)
     title(['\it' mtdata(1).genotype],'FontSize', 8)
-    ax = gca;
-    ax.YTick = [];
-    ax.XTick = [];
-    ax.XLabel = [];
+%     ax = gca;
+%     ax.YTick = [];
+%     ax.XTick = [];
+%     ax.XLabel = [];
     %% Overlay Signal
     nexttile(olt, q)
     plotOverlay(mtdata,settings)
     title(['\it' mtdata(1).genotype],'FontSize', 8)
-    ax0 = gca;
-    ax0.YTick = [];
-    ax0.XTick = [];
-    ax0.XLabel = [];
+%     ax0 = gca;
+%     ax0.YTick = [];
+%     ax0.XTick = [];
+%     ax0.XLabel = [];
 
 end
 

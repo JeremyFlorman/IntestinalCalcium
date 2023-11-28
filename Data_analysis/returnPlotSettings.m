@@ -16,9 +16,12 @@ else
     plotSettings.framerate = 15;
 
     plotSettings.axylimit = [0 35000];
+    plotSettings.axSigCMap = 'viridis';
     plotSettings.wtcolor = [0.4 0.4 0.4];
     plotSettings.mtcolor = [0.66 0.74 0.91];
     plotSettings.mtedgecolor = [0.66 0.74 0.91] -.4;
+
+
     plotSettings.loclinewidth = 1.5;
     plotSettings.binedges = 0:2:90;     % for histograms/correlation
     plotSettings.xlimits = [0 10];  % for traces
@@ -32,6 +35,10 @@ else
     plotSettings.sortType = 0; % 0=dont sort,  1=num spikes, 2=amplitude
     plotSettings.sortDir = 'descend';
     plotSettings.normalize = 0;
+
+    plotSettings.graphPos = [253 581 600 156];
+    plotSettings.tracePos = [147 281 1205 396];
+
 
     plotSettings.tolimit =  20;              % set to 0 if you want to plot all bulk & axial signal plots.
     %  set to -1 if you want equal # of control and
@@ -61,6 +68,10 @@ else
         plotSettings.trimExperimentLength =1;
 
     end
+
+    %% plot single trace
+    plotSettings.singleSpike = 1;
+    plotSettings.spikeWindow = 10;
 
 end
 end

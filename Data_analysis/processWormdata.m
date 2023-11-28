@@ -161,96 +161,99 @@ for i = 1:length(inputData)
             axPre = templocs(q)-floor(timePreSpike/3);
             axPost = templocs(q)+floor(timePreSpike/3);
             if axPre>0 && axPost<= length(axialSignal)
+                try
+                    axialPeak = smoothdata(axialSignal(axPre:axPost,:)',2, 'movmean', 60,'omitnan');
 
-                axialPeak = smoothdata(axialSignal(axPre:axPost,:)',2, 'movmean', 60,'omitnan');
+                    headstart = 25;
+                    head = mean(axialPeak(headstart:chunksize+headstart,:),1); % axial signal in head segment
+                    tail = mean(axialPeak(end-chunksize:end,:),1);  % axial signal in tail segment
+                    [hpk, hloc] = findpeaks(head, 'SortStr','descend');
+                    [tpk, tloc] = findpeaks(tail, 'SortStr', 'descend');
 
-                headstart = 25;
-                head = mean(axialPeak(headstart:chunksize+headstart,:),1); % axial signal in head segment
-                tail = mean(axialPeak(end-chunksize:end,:),1);  % axial signal in tail segment
-                [hpk, hloc] = findpeaks(head, 'SortStr','descend');
-                [tpk, tloc] = findpeaks(tail, 'SortStr', 'descend');
+                    headRise = head(1:hloc(1))';
+                    tailRise = tail(1:tloc(1))';
 
-                headRise = head(1:hloc(1))';
-                tailRise = tail(1:tloc(1))';
+                    % find inflection point using derivative
+                    [~, headmax] = max(diff(headRise));
+                    [~, tailmax] = max(diff(tailRise));
 
-                % find inflection point using derivative
-                [~, headmax] = max(diff(headRise));
-                [~, tailmax] = max(diff(tailRise));
-
-                % find inflection point using full-width@half-maximum
-                hFWHM = find(headRise<= hpk(1)/2,1,'last');
-                tFWHM = find(tailRise<= tpk(1)/2,1,'last');
+                    % find inflection point using full-width@half-maximum
+                    hFWHM = find(headRise<= hpk(1)/2,1,'last');
+                    tFWHM = find(tailRise<= tpk(1)/2,1,'last');
 
 
-                if propMethod == 1 % derivative
-                    propagationRate(q) = (headmax-tailmax)/settings.framerate;
-                    hInflect = headmax;
-                    tInflect = tailmax;
+                    if propMethod == 1 % derivative
+                        propagationRate(q) = (headmax-tailmax)/settings.framerate;
+                        hInflect = headmax;
+                        tInflect = tailmax;
 
-                elseif propMethod == 2 % full width @ half maximum
-                    hInflect = hFWHM;
-                    tInflect = tFWHM;
-                    if ~isempty(hFWHM) && ~isempty(tFWHM)
-                        propagationRate(q) = (hFWHM-tFWHM)/settings.framerate;
+                    elseif propMethod == 2 % full width @ half maximum
+                        hInflect = hFWHM;
+                        tInflect = tFWHM;
+                        if ~isempty(hFWHM) && ~isempty(tFWHM)
+                            propagationRate(q) = (hFWHM-tFWHM)/settings.framerate;
+                        end
+                    elseif propMethod == 3 % peak location
+                        hInflect = hloc(1);
+                        tInflect = tloc(1);
+                        if ~isempty(hloc) && ~isempty(tloc)
+                            propagationRate(q) = (hloc(1)-tloc(1))/settings.framerate;
+                        end
                     end
-                elseif propMethod == 3 % peak location
-                    hInflect = hloc(1);
-                    tInflect = tloc(1);
-                    if ~isempty(hloc) && ~isempty(tloc)
-                        propagationRate(q) = (hloc(1)-tloc(1))/settings.framerate;
-                    end
+
+                catch
                 end
 
 
-                if validatePropagationRate == 1
-                    if propagationRate(q)>5 || propagationRate(q) <0
-                        x = 1:size(head,2);
-                        plot(x,head,x,tail,'Parent',propAx);
+                    if validatePropagationRate == 1
+                        if propagationRate(q)>5 || propagationRate(q) <0
+                            x = 1:size(head,2);
+                            plot(x,head,x,tail,'Parent',propAx);
 
-                        hold(propAx, "on")
+                            hold(propAx, "on")
 
-                        plot(hloc(1),hpk(1)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
-                        if ~isempty(hInflect)
-                            plot(hInflect,head(hInflect)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
-                        end
+                            plot(hloc(1),hpk(1)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
+                            if ~isempty(hInflect)
+                                plot(hInflect,head(hInflect)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
+                            end
 
-                        plot(tloc(1),tpk(1)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
-                        if ~isempty(tInflect)
-                            plot(tInflect,tail(tInflect)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
-                        end
+                            plot(tloc(1),tpk(1)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
+                            if ~isempty(tInflect)
+                                plot(tInflect,tail(tInflect)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
+                            end
 
-                        hold(propAx, "off")
-                        xlim(propAx, [0 length(head)])
-                        %
-                        %                     line([headmax headmax], propAx.YLim,'linestyle', ':', 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', propAx)
-                        %                     line([tailmax tailmax], propAx.YLim, 'linestyle', ':','Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', propAx)
-                        %
-                        imagesc(axialPeak,'Parent', axAx)
-                        pkSz = size(axialPeak);
-                        rectangle('Position',[0 pkSz(1)-chunksize pkSz(2) chunksize],'linestyle', ':','EdgeColor', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
-                        rectangle('Position',[0 headstart pkSz(2), chunksize],'linestyle', ':','EdgeColor', [.07 .62 1], 'linewidth', 1.5, 'Parent', axAx)
+                            hold(propAx, "off")
+                            xlim(propAx, [0 length(head)])
+                            %
+                            %                     line([headmax headmax], propAx.YLim,'linestyle', ':', 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', propAx)
+                            %                     line([tailmax tailmax], propAx.YLim, 'linestyle', ':','Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', propAx)
+                            %
+                            imagesc(axialPeak,'Parent', axAx)
+                            pkSz = size(axialPeak);
+                            rectangle('Position',[0 pkSz(1)-chunksize pkSz(2) chunksize],'linestyle', ':','EdgeColor', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
+                            rectangle('Position',[0 headstart pkSz(2), chunksize],'linestyle', ':','EdgeColor', [.07 .62 1], 'linewidth', 1.5, 'Parent', axAx)
 
-                        line([hInflect hInflect], [headstart headstart+chunksize], 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', axAx)
-                        line([tInflect tInflect], [pkSz(1) pkSz(1)-chunksize],'Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
+                            line([hInflect hInflect], [headstart headstart+chunksize], 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', axAx)
+                            line([tInflect tInflect], [pkSz(1) pkSz(1)-chunksize],'Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
 
-                        title(['Propagation time: ' num2str(propagationRate(q)) ' seconds'], 'Parent',axFig)
+                            title(['Propagation time: ' num2str(propagationRate(q)) ' seconds'], 'Parent',axFig)
 
 
 
-                        txt = input("Look ok? if not press letter key before hitting enter. Type 'exit' to quit","s");
+                            txt = input("Look ok? if not press letter key before hitting enter. Type 'exit' to quit","s");
 
-                        if ~isempty(txt)
-                            propagationRate(q) = NaN;
+                            if ~isempty(txt)
+                                propagationRate(q) = NaN;
 
-                        end
+                            end
 
-                        if ~isempty(txt) && strcmp(txt,'exit')
-                            validatePropagationRate = 0;
+                            if ~isempty(txt) && strcmp(txt,'exit')
+                                validatePropagationRate = 0;
+                            end
+
                         end
 
                     end
-
-                end
 
 
 
@@ -439,7 +442,8 @@ end
 if sortType == 0                % dont sort
     sortOrder = 1:length(inputData);
     if strcmpi(sortDir, 'ascend')
-        flipud(sortOrder)
+        %         sortOrder = fliplr(sortOrder);
+        sortOrder = sortOrder(randperm(length(sortOrder))); %shuffle 
     end
 
 elseif sortType == 1            % sort by number of spikes

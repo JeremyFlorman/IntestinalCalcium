@@ -5,6 +5,7 @@ function [] = plotAxialSignal(data,settings)
 axylimit = settings.axylimit;
 XTickInt = settings.axialXticint;
 plotlimit = settings.tolimit;
+axSigCMap = settings.axSigCMap;
 
 if plotlimit == 0 || plotlimit>length(data) 
     num2plot = length(data);
@@ -30,7 +31,7 @@ end
 
 
 imagesc(smoothdata(axialMatrix,'movmedian',60)',axylimit)
-colormap("turbo")
+colormap(axSigCMap);
 
 if isfield(data, 'stimTimes')
     hold on
