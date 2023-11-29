@@ -3,8 +3,9 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
     % Properties that correspond to app components
     properties (Access = public)
         IntestinalCalciumAppUIFigure   matlab.ui.Figure
-        Menu                           matlab.ui.container.Menu
+        FileMenu                       matlab.ui.container.Menu
         saveSettings                   matlab.ui.container.Menu
+        savedefaultsettingsMenu        matlab.ui.container.Menu
         loadSettings                   matlab.ui.container.Menu
         TabGroup                       matlab.ui.container.TabGroup
         TrackingTab                    matlab.ui.container.Tab
@@ -355,6 +356,13 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
     % Callbacks that handle component events
     methods (Access = private)
 
+        % Code that executes after component creation
+        function startupFcn(app)
+            [path, ~, ~] = fileparts(mfilename("fullpath"));
+            load(fullfile(path, 'defaultPlotSettings.mat'), 'defaultPlotSettings');
+            applyPlotSettings(app, defaultPlotSettings)
+        end
+
         % Button pushed function: setTiffDirButton
         function setTiffDirButtonButtonPushed(app, event)
             prevDir = app.tiffDir.Value;
@@ -616,6 +624,14 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             figure(app.IntestinalCalciumAppUIFigure)
             applyPlotSettings(app,plotSettings);
         end
+
+        % Menu selected function: savedefaultsettingsMenu
+        function savedefaultsettingsMenuSelected(app, event)
+            defaultPlotSettings = parsePlotSettings(app);
+            [path, ~, ~] = fileparts(mfilename("fullpath"));
+            save(fullfile(path, 'defaultPlotSettings.mat'),"defaultPlotSettings");
+
+        end
     end
 
     % Component initialization
@@ -629,17 +645,22 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.IntestinalCalciumAppUIFigure.Position = [100 100 473 475];
             app.IntestinalCalciumAppUIFigure.Name = 'Intestinal Calcium App';
 
-            % Create Menu
-            app.Menu = uimenu(app.IntestinalCalciumAppUIFigure);
-            app.Menu.Text = 'Menu';
+            % Create FileMenu
+            app.FileMenu = uimenu(app.IntestinalCalciumAppUIFigure);
+            app.FileMenu.Text = 'File';
 
             % Create saveSettings
-            app.saveSettings = uimenu(app.Menu);
+            app.saveSettings = uimenu(app.FileMenu);
             app.saveSettings.MenuSelectedFcn = createCallbackFcn(app, @saveSettingsMenuSelected, true);
             app.saveSettings.Text = 'save settings';
 
+            % Create savedefaultsettingsMenu
+            app.savedefaultsettingsMenu = uimenu(app.FileMenu);
+            app.savedefaultsettingsMenu.MenuSelectedFcn = createCallbackFcn(app, @savedefaultsettingsMenuSelected, true);
+            app.savedefaultsettingsMenu.Text = 'save default settings';
+
             % Create loadSettings
-            app.loadSettings = uimenu(app.Menu);
+            app.loadSettings = uimenu(app.FileMenu);
             app.loadSettings.MenuSelectedFcn = createCallbackFcn(app, @loadSettingsMenuSelected, true);
             app.loadSettings.Separator = 'on';
             app.loadSettings.Text = 'load settings';
@@ -886,7 +907,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.PlotMatchedControlButton = uibutton(app.PlottingTab, 'push');
             app.PlotMatchedControlButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMatchedControlButtonPushed, true);
             app.PlotMatchedControlButton.FontWeight = 'bold';
-            app.PlotMatchedControlButton.Position = [27 149 187 32];
+            app.PlotMatchedControlButton.Position = [27 129 187 32];
             app.PlotMatchedControlButton.Text = 'Plot Matched Control';
 
             % Create MergeControlButton
@@ -906,7 +927,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             % Create Panel
             app.Panel = uipanel(app.PlottingTab);
-            app.Panel.Position = [16 31 212 102];
+            app.Panel.Position = [16 11 212 102];
 
             % Create PlotSingleTraceButton
             app.PlotSingleTraceButton = uibutton(app.Panel, 'push');
@@ -939,7 +960,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             % Create Panel_2
             app.Panel_2 = uipanel(app.PlottingTab);
-            app.Panel_2.Position = [238 31 222 156];
+            app.Panel_2.Position = [238 11 222 156];
 
             % Create PlotMultipleGenotypesButton
             app.PlotMultipleGenotypesButton = uibutton(app.Panel_2, 'push');
@@ -989,6 +1010,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.MultigenotypefigurepositionPanel = uipanel(app.PlotSettingsTab);
             app.MultigenotypefigurepositionPanel.TitlePosition = 'centertop';
             app.MultigenotypefigurepositionPanel.Title = 'Multi-genotype figure position';
+            app.MultigenotypefigurepositionPanel.FontWeight = 'bold';
             app.MultigenotypefigurepositionPanel.Position = [203 9 251 79];
 
             % Create GraphsEditFieldLabel
@@ -1267,18 +1289,20 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.BulkSignalPlotsButtonGroup = uibuttongroup(app.PlotSettingsTab);
             app.BulkSignalPlotsButtonGroup.Tooltip = {'should bulk signal be plotted in its own axis or overlaid on the axialSignal'};
             app.BulkSignalPlotsButtonGroup.Title = 'Bulk Signal Plots';
+            app.BulkSignalPlotsButtonGroup.FontWeight = 'bold';
+            app.BulkSignalPlotsButtonGroup.FontSize = 11;
             app.BulkSignalPlotsButtonGroup.Position = [361 231 100 70];
 
             % Create SeparateButton
             app.SeparateButton = uiradiobutton(app.BulkSignalPlotsButtonGroup);
             app.SeparateButton.Text = 'Separate';
-            app.SeparateButton.Position = [11 24 71 22];
+            app.SeparateButton.Position = [11 25 71 22];
             app.SeparateButton.Value = true;
 
             % Create OverlayButton
             app.OverlayButton = uiradiobutton(app.BulkSignalPlotsButtonGroup);
             app.OverlayButton.Text = 'Overlay';
-            app.OverlayButton.Position = [11 2 65 22];
+            app.OverlayButton.Position = [11 3 65 22];
 
             % Create PlotsEditFieldLabel
             app.PlotsEditFieldLabel = uilabel(app.PlotSettingsTab);
@@ -1420,6 +1444,9 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             % Register the app with App Designer
             registerApp(app, app.IntestinalCalciumAppUIFigure)
+
+            % Execute the startup function
+            runStartupFcn(app, @startupFcn)
 
             if nargout == 0
                 clear app
