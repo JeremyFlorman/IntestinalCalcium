@@ -3,6 +3,9 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
     % Properties that correspond to app components
     properties (Access = public)
         IntestinalCalciumAppUIFigure   matlab.ui.Figure
+        Menu                           matlab.ui.container.Menu
+        saveSettings                   matlab.ui.container.Menu
+        loadSettings                   matlab.ui.container.Menu
         TabGroup                       matlab.ui.container.TabGroup
         TrackingTab                    matlab.ui.container.Tab
         AnalyzeOASdataCheckBox         matlab.ui.control.CheckBox
@@ -275,9 +278,77 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         end
 
+            
+        function applyPlotSettings(app,plotSettings)
+            %% axis limits
+            app.axialYLim.Value=  num2str(plotSettings.axylimit);
+            app.bulkYLim.Value= num2str(plotSettings.traceylimit);
+            app.bulkXLim.Value = num2str(plotSettings.xlimits);
+            app.axialXTickInt.Value = num2str(plotSettings.axialXticint);
+            %% peak detection
+            app.peakthreshold.Value = plotSettings.peakthreshold;
+            app.peakdistance.Value= plotSettings.peakdistance;
+            app.peakwidth.Value= plotSettings.peakwidth;
+            app.spikeProfileWindow.Value= plotSettings.spikeProfileWindow;
+
+            app.NormalizeCheckBox.Value = plotSettings.normalize;
+
+            app.AutoFixAxialSignalCheckBox.Value= plotSettings.autoFixAxialSignal;
+            app.toQuerry.Value = plotSettings.axSigToQuerry;
+
+            app.FrameRateEditField.Value = plotSettings.framerate;
+            %% plot color
+            app.wtColor.Value = num2str(plotSettings.wtcolor);
+            app.mtColor.Value= num2str(plotSettings.mtcolor);
+            app.wtEdgeColor.Value = num2str(plotSettings.mtedgecolor);
+
+            app.AxialSignalColorDropDown.Value = plotSettings.axSigCMap;
+            
+            %% histogram Bins
+            app.MinEditField.Value = plotSettings.binedges(1);
+            app.MaxEditField.Value = plotSettings.binedges(end);
+            app.IncrementEditField.Value = plotSettings.binedges(end)/(length(plotSettings.binedges)-1);
+            
+            %% sorting
+
+            switch plotSettings.sortType
+                case 0
+                    app.dontSort.Value = 1;
+                case 1
+                    app.sortFreq.Value = 1;
+                case 2
+                    app.sortAmp.Value = 1;
+            end
 
 
+            if strcmpi(plotSettings.sortDir,'descend')
+                app.descendButton.Value = 1;
+            elseif strcmpi(plotSettings.sortDir,'ascend')
+                app.ascendButton.Value = 1;
+            elseif strcmpi(plotSettings.sortDir,'shuffle')
+                app.shuffleButton.Value = 1;
+            end
+            
+            if plotSettings.overlayplots
+                app.OverlayButton.Value = 1;
+            else
+                app.SeparateButton.Value = 1;
+            end
 
+            app.numPlotsEditField.Value = plotSettings.tolimit;
+            app.controlnameEditField.Value = plotSettings.controlname;
+
+
+            app.GraphsEditField.Value = num2str(plotSettings.graphPos);
+            app.TracesEditField.Value = num2str(plotSettings.tracePos);
+
+            %% OAS related settings
+            app.AnalyzeOASdataCheckBox.Value = plotSettings.isOAS;
+            app.EqualizeExpDurationCheckBox.Value = plotSettings.trimExperimentLength;
+            
+
+            
+        end
     end
 
 
@@ -407,11 +478,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             mergeControl(outputdir, app.controlnameEditField.Value)
         end
 
-        % Callback function
-        function testButtonPushed(app, event)
-            settings = parsePlotSettings(app);
-        end
-
         % Value changed function: NormalizeCheckBox
         function NormalizeCheckBoxValueChanged(app, event)
             value = app.NormalizeCheckBox.Value;
@@ -529,16 +595,26 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             else
                 searchStart = 'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
             end
-            
-
+ 
             [file, path] = uigetfile([searchStart '\*.mat']);
             figure(app.IntestinalCalciumAppUIFigure)
-            
             app.DataDir.Value = path;
-
             plotSettings = parsePlotSettings(app);
-
             plot_SingleTrace(fullfile(path,file), plotSettings)
+        end
+
+        % Menu selected function: saveSettings
+        function saveSettingsMenuSelected(app, event)
+            plotSettings = parsePlotSettings(app);
+            uisave('plotSettings')
+            figure(app.IntestinalCalciumAppUIFigure)
+        end
+
+        % Menu selected function: loadSettings
+        function loadSettingsMenuSelected(app, event)
+            uiload()
+            figure(app.IntestinalCalciumAppUIFigure)
+            applyPlotSettings(app,plotSettings);
         end
     end
 
@@ -552,6 +628,21 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.IntestinalCalciumAppUIFigure = uifigure('Visible', 'off');
             app.IntestinalCalciumAppUIFigure.Position = [100 100 473 475];
             app.IntestinalCalciumAppUIFigure.Name = 'Intestinal Calcium App';
+
+            % Create Menu
+            app.Menu = uimenu(app.IntestinalCalciumAppUIFigure);
+            app.Menu.Text = 'Menu';
+
+            % Create saveSettings
+            app.saveSettings = uimenu(app.Menu);
+            app.saveSettings.MenuSelectedFcn = createCallbackFcn(app, @saveSettingsMenuSelected, true);
+            app.saveSettings.Text = 'save settings';
+
+            % Create loadSettings
+            app.loadSettings = uimenu(app.Menu);
+            app.loadSettings.MenuSelectedFcn = createCallbackFcn(app, @loadSettingsMenuSelected, true);
+            app.loadSettings.Separator = 'on';
+            app.loadSettings.Text = 'load settings';
 
             % Create TabGroup
             app.TabGroup = uitabgroup(app.IntestinalCalciumAppUIFigure);
@@ -744,7 +835,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create AnalyzeOASdataCheckBox
             app.AnalyzeOASdataCheckBox = uicheckbox(app.TrackingTab);
             app.AnalyzeOASdataCheckBox.ValueChangedFcn = createCallbackFcn(app, @AnalyzeOASdataCheckBox_2ValueChanged, true);
-            app.AnalyzeOASdataCheckBox.Tooltip = {'Check this box if data is on a server. This will temporarily copy Tif to local drive to analyze '};
+            app.AnalyzeOASdataCheckBox.Tooltip = {'Check this box if you are analyzing OAS data to run the proper tracking function'};
             app.AnalyzeOASdataCheckBox.Text = 'Analyze OAS data?';
             app.AnalyzeOASdataCheckBox.WordWrap = 'on';
             app.AnalyzeOASdataCheckBox.Position = [303 116 144 44];
