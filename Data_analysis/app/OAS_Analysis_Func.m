@@ -29,6 +29,8 @@ loadtiff =inputs.loadTiff; % read entire tiff into memory? faster analysis but r
 minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
 axSigLen = 200; % how many pixels to use for registering axial signal.
+axSigHeight = 20; % how many pixels to use sample perpindicular to the midline.
+saveAxialMatrix = 1;
 
 %%
 %%
@@ -51,7 +53,7 @@ for nf =startIndex:length(imgDir)
     protosavename = [fold '\' expSuffix];
 
     %%
-    if plotstuff == 1 
+    if plotstuff == 1
         if showAxialSignal == 0
             figure('Position', [978 233 719 653],'Color',[1 1 1]);
             tiledlayout(4,3,'Padding','compact')
@@ -93,12 +95,12 @@ for nf =startIndex:length(imgDir)
     %     end
 
     [imgWidth ,imgHeight, nFrames] = size(bf);
-    
+
 
 
 
     axialSignal = NaN(nFrames, axSigLen);
-    autoAxialSignal = NaN(nFrames, axSigLen);
+    %     autoAxialSignal = NaN(nFrames, axSigLen);
     axialBF = NaN(nFrames, axSigLen);
     sumSignal = NaN(nFrames,1);
     bulkSignal = NaN(nFrames,1);
@@ -106,23 +108,21 @@ for nf =startIndex:length(imgDir)
     backgroundSignal = NaN(nFrames,1);
     orientation = NaN(nFrames,1);
     area = NaN(nFrames,1);
-    mag = NaN(nFrames,1);
+
 
     time = linspace(0,round((nFrames)/fps/60,1),ceil(nFrames)); %minutes per frame
     wormIdx = [];
 
-    % image registration transform
-%     theta = -5.1;
-%     translation = [-30 10];
-%     tform = rigidtform2d(theta,translation);
-%     rA = imref2d([imgWidth imgHeight]);
+    if saveAxialMatrix == 1
+        axialMatrix = NaN(axSigHeight, axSigLen,nFrames);
+    end
 
     %% Tracking Block
     for i = startframe:nFrames
 
         mCh = bf(:,:,i);
         GFP = gfp(:,:,i);
-%         GFP = imwarp(gfp(:,:,i),tform,'OutputView',rA);
+        %         GFP = imwarp(gfp(:,:,i),tform,'OutputView',rA);
 
         if removevignette ~=0
             mCh = imflatfield(mCh,removevignette);
@@ -218,7 +218,7 @@ for nf =startIndex:length(imgDir)
                     sortSkel = sortSkel(1:ceil(length(sortSkel)/2),:);
 
                     stepSize = 3; % # of points along spine for each spine segment
-                    Clen = 20; % length of perpendicular line to sample
+                    Clen = axSigHeight; % length of perpendicular line to sample
 
                     temptrace = cell(1,length(sortSkel)-1); %NaN(Clen,length(sortSkel)-1);
                     tempbf = cell(1,length(sortSkel)-1); %NaN(Clen,length(sortSkel)-1);
@@ -252,7 +252,7 @@ for nf =startIndex:length(imgDir)
                         ABmid = (A + B)/2;
                         % Compute new points C and D, each at a ditance
                         % Clen off the line. Note that since ABperp is
-                        % a vector with unit eEuclidean norm, if I
+                        % a vector with unit Euclidean norm, if I
                         % multiply it by Clen, then it has length Clen.
                         C = ABmid + Clen*ABperp;
                         D = ABmid - Clen*ABperp;
@@ -275,12 +275,14 @@ for nf =startIndex:length(imgDir)
                     perpX = cell2mat(perpX);
                     perpY = cell2mat(perpY);
 
-                    %                 h1 = plot(perpX,perpY);
-
+                    
+                    
 
 
 
                     if ~isempty(temptrace)
+                        rsAxMat = resample(temptrace,axSigLen,size(temptrace,2));
+
                         tt = resample(max(temptrace), size(axialSignal,2), size(temptrace,2),5,20);  % max?
                         abf = resample(mean(tempbf), size(axialSignal,2), size(tempbf,2),5,20);
 
@@ -344,7 +346,7 @@ for nf =startIndex:length(imgDir)
 
                                 bfAdj = [0 1];
                                 gfpAdj = [0 0.3];
-                                
+
                                 mpad_Outskel = padarray(outskel, [size(mpadTrace,1),0], 'post');
                                 mmergedImage = vertcat(mCh, mpadTrace);
                                 mmergedOverlay = imoverlay(imadjust(mmergedImage, bfAdj), mpad_Outskel, [1 0 0]);
@@ -395,7 +397,7 @@ for nf =startIndex:length(imgDir)
                             xlabel(ax6, 'head <--- Distance (pixels) ---> tail');
                             legend(ax6,{'GCaMP6', 'Brightfield'}, 'Location', 'northwest', ...
                                 'Box', 'off');
-                        % axial signal
+                            % axial signal
                         elseif showAxialSignal == 1
                             axsig = smoothdata(axialSignal(1:i,:),1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
                             imagesc(axsig,'Parent',ax4)
@@ -407,7 +409,7 @@ for nf =startIndex:length(imgDir)
                             ylabel(ax4, 'Axial Ca^2^+ Signal')
                             box(ax4, 'off')
                             colormap turbo
-                        
+
                             if ~isempty(stimTimes)
                                 for k =1:length(stimTimes)
                                     hold(ax4, "on")
@@ -423,15 +425,15 @@ for nf =startIndex:length(imgDir)
                         plot(time,bulkSignal,time',backgroundSignal, 'Parent', ax7)
                         ax7.XLim = [0 time(end)];
                         ylabel(ax7, 'Bulk Ca^2^+ Signal');
-                       
 
-%                         
+
+                        %
                         if ~isempty(stimTimes)
                             for k =1:length(stimTimes)
                                 if i>= stimTimes(k)
-                                hold(ax7, "on")
-                                plot(time(stimTimes(k)),ax7.YLim(2)*0.99,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'Parent', ax7)
-                                hold(ax7, 'off')
+                                    hold(ax7, "on")
+                                    plot(time(stimTimes(k)),ax7.YLim(2)*0.99,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'Parent', ax7)
+                                    hold(ax7, 'off')
                                 end
                             end
                         end
@@ -444,13 +446,13 @@ for nf =startIndex:length(imgDir)
                         if ~isempty(stimTimes)
                             for k =1:length(stimTimes)
                                 if i>= stimTimes(k)
-                                hold(velAx, "on")
-                                plot(time(stimTimes(k)),velAx.YLim(2)*0.99,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
-                                hold(velAx, 'off')
+                                    hold(velAx, "on")
+                                    plot(time(stimTimes(k)),velAx.YLim(2)*0.99,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
+                                    hold(velAx, 'off')
                                 end
                             end
                         end
-                        
+
                         xlim([0 time(end)]);
                         ylabel(velAx, 'Velocity');
                         xlabel(velAx,'Time (min)');
@@ -543,7 +545,7 @@ for nf =startIndex:length(imgDir)
     wormdata.area = area;
     wormdata.peakTraces = pktraces;
     wormdata.peakLoc = loc;
-    wormdata.include = 1; 
+    wormdata.include = 1;
     wormdata.stimTimes = stimTimes;
     wormdata.velocity = h5Data.velocity;
 
@@ -551,19 +553,19 @@ for nf =startIndex:length(imgDir)
 
     %% load stuff
     % tic
-%     load(datasavename)
-%     autoAxialSignal = wormdata.autoAxialSignal;
-%     sumSignal = wormdata.sumSignal;
-%     bulkSignal = wormdata.bulkSignal;
-%     bulkAboveBkg = wormdata.bulkAboveBkg;
-%     backgroundSignal =wormdata.backgroundSignal; 
-%     wormdata.orientation = orientation;
-%     area = wormdata.area; 
-%     pktraces = wormdata.peakTraces;
-%     loc = wormdata.peakLoc;
-%     stimTimes = wormdata.stimTimes;
-%     velocity = wormdata.velocity;
-    
+    %     load(datasavename)
+    %     autoAxialSignal = wormdata.autoAxialSignal;
+    %     sumSignal = wormdata.sumSignal;
+    %     bulkSignal = wormdata.bulkSignal;
+    %     bulkAboveBkg = wormdata.bulkAboveBkg;
+    %     backgroundSignal =wormdata.backgroundSignal;
+    %     wormdata.orientation = orientation;
+    %     area = wormdata.area;
+    %     pktraces = wormdata.peakTraces;
+    %     loc = wormdata.peakLoc;
+    %     stimTimes = wormdata.stimTimes;
+    %     velocity = wormdata.velocity;
+
     %% Plot traces
     if ~exist('time','var')
         time = linspace(0,round((nFrames)/fps/60,1),nFrames); %minutes per frame
@@ -580,7 +582,7 @@ for nf =startIndex:length(imgDir)
     figure('Position', [135.4000 142.6000 902.6000 586.4000],Color=[1 1 1])
     t = tiledlayout(4,4,'TileSpacing','compact','Padding','tight');
 
-    % % % Bulk Signal % % % 
+    % % % Bulk Signal % % %
     nexttile([1 3])
     if ~isnan(loc)
         plot(time,bulkSignal,time(loc),pk*1.01, 'rv')
@@ -597,7 +599,7 @@ for nf =startIndex:length(imgDir)
     hold off
 
     xlim([0 time(end)])
-%     xlabel(gca, 'Time (min)')
+    %     xlabel(gca, 'Time (min)')
     ylabel(gca,'Fluorescence (a.u.)');
     title(gca, 'Whole Animal Calcium Trace')
     ax = gca;
@@ -605,8 +607,8 @@ for nf =startIndex:length(imgDir)
     xtl = ax.XTickLabels;
     ax.TickLength =[0.005 0.005];
     box off
-    
-    % % % Peak Profile % % % 
+
+    % % % Peak Profile % % %
     nexttile([1 1])
     plot(pktime, pktraces, 'Color', [0.7 0.7 0.7])
     hold on
@@ -617,19 +619,19 @@ for nf =startIndex:length(imgDir)
     colormap bone
     box off
 
-  % % % Axial Signal % % % 
+    % % % Axial Signal % % %
     ax = nexttile([1 3]);
     imagesc(smoothdata(autoAxialSignal,1,'gaussian',60)'-median(backgroundSignal,'omitnan'))
     title(gca, 'Axial Calcium Trace')
     hold on
     plot(loc,1, 'vw', 'MarkerFaceColor' ,[.4 .5 .6]);
     if ~isempty(stimTimes)
-    plot(stimTimes,1,'Marker', 'diamond', 'Marker', 'v', 'MarkerSize', 9, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
+        plot(stimTimes,1,'Marker', 'diamond', 'Marker', 'v', 'MarkerSize', 9, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
     end
     hold off
     box off
 
-%     xlabel('Time (min)')
+    %     xlabel('Time (min)')
     ax.XTick = xt*60*fps; %linspace(0,length(autoAxialSignal),length(xtl));
     ax.XTickLabels = xtl;
     ax.YTick = [20 size(autoAxialSignal,2)-20];
@@ -639,7 +641,7 @@ for nf =startIndex:length(imgDir)
     ax.TickLength = [0.001 0.001];
 
 
-  % % % Interval Histogram % % % 
+    % % % Interval Histogram % % %
     nexttile([1 1])
     edges = 0:2:120;
     histogram(diff(loc)./fps,'BinEdges',edges);
@@ -666,7 +668,7 @@ for nf =startIndex:length(imgDir)
     ax.TickLength = [0.005 0.005];
     box off
 
-% % % Peak Widths % % % 
+    % % % Peak Widths % % %
     nexttile([1 1])
     histogram(w./fps,'BinEdges', 1:15);
     ylim([0 10])
@@ -674,8 +676,8 @@ for nf =startIndex:length(imgDir)
     title(gca,'Peak Widths');
     ylabel(gca,'Count');
     xlabel(gca,'Time (s)');
-    box off 
-% % % Worm Area % % %
+    box off
+    % % % Worm Area % % %
     nexttile([1 3]);
     plot(time,smoothdata(area,'gaussian', 30))
     xlim([0 time(end)])
@@ -684,7 +686,7 @@ for nf =startIndex:length(imgDir)
     xlabel(gca,'Time (min)')
     ax =  gca;
     ax.TickLength = [0.005 0.005];
-    box off 
+    box off
 
 
     %     nexttile([1 1]);
@@ -717,7 +719,7 @@ for nf =startIndex:length(imgDir)
             if ~isfolder(serverLocation)
                 mkdir(serverLocation);
             end
-            
+
 
             % copy behavior h5 files
             behaviorH5Dir = imgDir{nf};
@@ -727,9 +729,9 @@ for nf =startIndex:length(imgDir)
             % copy GCaMP h5 files
             gcampH5Dir = strrep(behaviorH5Dir, 'behavior', 'gcamp');
             [statusgc,~,~]=copyfile(gcampH5Dir, [serverLocation '\' strrep(h5folder, 'behavior', 'gcamp') '\']);
-            
+
             % copy log files
-            
+
             logDir = dir([parentfolder '\*log.txt']);
             for li = 1:length(logDir)
                 [statuslog,~,~]=copyfile(fullfile(logDir(li).folder,logDir(li).name), serverLocation);
@@ -756,7 +758,7 @@ for nf =startIndex:length(imgDir)
 
             % copy summary plots
             [statusvideoplot,~,~]=copyfile(videopath, serverLocation);
-            
+
         end
     end
 

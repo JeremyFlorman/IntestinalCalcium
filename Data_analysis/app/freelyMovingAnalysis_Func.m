@@ -30,6 +30,7 @@ minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
 axSigLen = 200; % how many pixels to use for registering axial signal.
 
+
 %%
 tdir = dir([fld '\**\*.tif']);
 
@@ -97,7 +98,7 @@ for nf =startIndex:length(tdir)
 
 
     axialSignal = NaN(length(info)/2, axSigLen);
-    autoAxialSignal = NaN(length(info)/2, axSigLen);
+    
     axialBF = NaN(length(info)/2, axSigLen);
     sumSignal = NaN(length(info)/2,1);
     bulkSignal = NaN(length(info)/2,1);
@@ -105,10 +106,14 @@ for nf =startIndex:length(tdir)
     backgroundSignal = NaN(length(info)/2,1);
     orientation = NaN(length(info)/2,1);
     area = NaN(length(info)/2,1);
-    mag = NaN(length(info)/2,1);
+    
 
     time = linspace(0,round((length(info)/2)/fps/60,1),ceil(length(info)/2)); %minutes per frame
     wormIdx = [];
+
+    if saveAxialMatrix == 1
+        axialMatrix = NaN(axSigHeight+1, axSigLen,length(info)/2);
+    end
 
 
     %% Get comments if available
@@ -241,7 +246,7 @@ for nf =startIndex:length(tdir)
                     sortSkel = sortSkel(1:ceil(length(sortSkel)/2),:);
 
                     stepSize = 3; % # of points along spine for each spine segment
-                    Clen = 20; % length of perpendicular line to sample
+                    Clen = axSigHeight; % length of perpendicular line to sample
 
                     temptrace = cell(1,length(sortSkel)-1); %NaN(Clen,length(sortSkel)-1);
                     tempbf = cell(1,length(sortSkel)-1); %NaN(Clen,length(sortSkel)-1);
@@ -304,8 +309,14 @@ for nf =startIndex:length(tdir)
 
 
                     if ~isempty(temptrace)
-                        tt = resample(max(temptrace), size(axialSignal,2), size(temptrace,2),5,20);  % max?
-                        abf = resample(mean(tempbf), size(axialSignal,2), size(tempbf,2),5,20);
+                        % resample axial images
+                        x1 = linspace(1,size(temptrace,2), size(temptrace,2));
+                        x2 = linspace(1,size(temptrace,2),axSigLen);
+                        temptrace = interp1(x1, temptrace',x2)';
+                        tempbf = interp1(x1, tempbf',x2)';
+
+                        tt = max(temptrace);
+
 
                         % % % % real-time autoFixSignal % % %
                         querryLength = length(tt)*0.1; % fraction of signal to querry
@@ -314,13 +325,16 @@ for nf =startIndex:length(tdir)
 
                         if leftMean>rightMean
                             tt = fliplr(tt);
-                            abf = fliplr(abf);
                         end
 
                         % % % % % % % % % % % % % % % % % % % %
 
                         axialBF(i,1:size(abf,2)) = abf;
                         axialSignal(i,1:size(tt,2)) = tt;
+
+                        if saveAxialMatrix == 1
+                            axialMatrix(:,:,i) = temptrace;
+                        end
                     end
                 end
 
@@ -514,6 +528,9 @@ for nf =startIndex:length(tdir)
 
     wormdata = struct();
     wormdata.autoAxialSignal = autoAxialSignal;
+    if saveAxialMatrix == 1
+        wormdata.axialMatrix = axialMatrix;
+    end
     wormdata.sumSignal = sumSignal;
     wormdata.bulkSignal = bulkSignal;
     wormdata.bulkAboveBkg = bulkAboveBkg;
