@@ -37,7 +37,7 @@ genotypes = unique([names{:}]);
 
 
 for i = 1:length(genotypes)  
-    d = dir([datadir '\**\*' genotypes{i} '*wormdata.mat']);
+    d = dir([datadir '\**\*' genotypes{i} '_*_wormdata.mat']);
 
     disp(['Found ' num2str(length(d)) ' files with genotype ' genotypes{i}])
     
