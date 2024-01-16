@@ -39,7 +39,13 @@ for i = 1:length(flds)
     d = dir([subfolder '\**\*mergeddata.mat']);
     names = {d(:).name};
 
-    cont = contains(names, controlname,"IgnoreCase",true);
+    cont = zeros(length(names),1);
+    for j = 1:length(names)
+        cont(j) = strcmpi(strrep(names(j), '_mergedData.mat', ''), controlname);
+    end
+
+    cont = logical(cont);
+    
     if nnz(cont) == 0
         disp('Cant find control genotype... check value of "controlname"')
     end
