@@ -18,6 +18,7 @@ fps = inputs.inputFramerate;      % frames per sec of input tiff.
 troubleshoot =inputs.troubleshoot; % show binary images instead of regular plots
 showNormals = inputs.showNormals;
 showAxialSignal = inputs.showAxialSignal;
+saveAxialMatrix = 0;
 
 crop = inputs.crop; % num pixels to crop from image edge. set to 0 for no cropping.
 useautothreshold = inputs.autoThreshold;% set to 1 to calculate a threshold for each image.
@@ -29,6 +30,7 @@ loadtiff =inputs.loadTiff; % read entire tiff into memory? faster analysis but r
 minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
 axSigLen = 200; % how many pixels to use for registering axial signal.
+axSigHeight = 20; 
 
 
 %%
@@ -164,7 +166,7 @@ for nf =startIndex:length(tdir)
             imgWidth = size(mCh, 2);
             imgHeight = size(mCh,1);
         end
-        %         imshow(imadjust(mCh))
+
         % set up thresholding and binary image processing
         if useautothreshold ==1
             T = graythresh(mCh);

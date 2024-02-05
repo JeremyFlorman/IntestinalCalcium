@@ -491,6 +491,16 @@ for nf =startIndex:length(imgDir)
                         ax7.TickLength = [0.005 0.005];
                         colormap turbo
 
+                        if ~isempty(stimTimes)
+                            for k =1:length(stimTimes)
+                                hold(ax7, "on")
+                                if i>= stimTimes(k)
+                                    plot(stimTimes(k),1,'Marker', 'diamond', 'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'Parent', ax4)
+                                end
+                                hold(ax7, "off")
+                            end
+                        end
+
                         % Area
                         plot(time(1:i),smoothdata(quadTop(1:i), 'gaussian', 3),...
                             time(1:i),smoothdata(quadBot(1:i), 'gaussian', 3),...
@@ -500,6 +510,16 @@ for nf =startIndex:length(imgDir)
                         box(areaAx, 'off');
                         xlim(areaAx,[0 time(end)]);
                         xlabel(areaAx,'Time (min)');
+
+                        if ~isempty(stimTimes)
+                            for k =1:length(stimTimes)
+                                if i>= stimTimes(k)
+                                    hold(areaAx, "on")
+                                    plot(time(stimTimes(k)),areaAx.YLim(2)*0.99,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
+                                    hold(areaAx, 'off')
+                                end
+                            end
+                        end
 
 
 
