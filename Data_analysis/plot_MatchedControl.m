@@ -3,7 +3,7 @@ function [] = plot_MatchedControl(parentfolder,settings)
 %   Detailed explanation goes here
 
 if nargin<1
-parentfolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\OAS\5-HT\wildtype+5HT';
+parentfolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\OAS\5-HT\+Food\myo-2HisCL+Food+HA';
 end
 
 if nargin<2
@@ -42,13 +42,14 @@ elseif ~strcmpi(gn{end-1}, '')
 end
     
 datanames = {d(:).name};
+
 mtflag = contains(datanames, mtname); 
  
 if nnz(mtflag) == 1
     mtpath = fullfile(d(mtflag).folder, d(mtflag).name); % find the mutant genotype path
 elseif length(d)  == 1
     mtpath = fullfile(d.folder, d.name);
-end
+end 
 
 
 % [mtdata, wtdata,settings] = parseWormData(mtpath,settings);
