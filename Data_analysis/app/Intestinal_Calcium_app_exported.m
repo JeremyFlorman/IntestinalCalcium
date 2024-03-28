@@ -139,7 +139,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
     
     properties (Access = private)
-        defaultDataDir='Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants'; % Description
+        defaultDataDir='Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants'; % Description
         defaultOutputDir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants';
     end
 
@@ -369,7 +369,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if isfolder(prevDir)
                 searchStart = prevDir;
             else
-                searchStart = 'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
+                searchStart = app.defaultOutputDir; % 'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
             end
 
             selectedDir = uigetdir(searchStart, 'Select tiff directory');
@@ -388,7 +388,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if isfolder(prevDir)
                 searchStart = prevDir;
             else
-                searchStart = 'Y:\';
+                searchStart = 'Z:\';
             end
 
             selectedDir = uigetdir(searchStart, 'Select tiff directory');
@@ -418,7 +418,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if isfolder(prevDir)
                 searchStart = prevDir;
             else
-                searchStart = 'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
+                searchStart = app.defaultDataDir; %'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
             end
 
             selectedDir = uigetdir(searchStart, 'Select wormdata.mat directory');
@@ -435,7 +435,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if isfolder(prevDir)
                 searchStart = prevDir;
             else
-                searchStart = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\';
+                searchStart = app.defaultOutputDir;% 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\';
             end
 
             selectedDir = uigetdir(searchStart, 'Select mergedData directory');
@@ -451,7 +451,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         function CombinewormDataButtonPushed(app, event)
             datadir = app.DataDir.Value;
             if ~isfolder(datadir)
-                datadir = uigetdir('Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants',...
+                datadir = uigetdir(app.defaultDataDir,...
                     'Oops! looks like you forgot to select your data directory!');
                 figure(app.IntestinalCalciumAppUIFigure)
             end
@@ -477,7 +477,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                 if isfolder(app.DataDir.Value)
                     outputdir = app.DataDir.Value;
                 else
-                    outputdir = uigetdir('Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants',...
+                    outputdir = uigetdir(app.defaultDataDir,...
                         'Oops! looks like you forgot to select your data directory!');
                     app.DataDir.Value = outputdir;
                     figure(app.IntestinalCalciumAppUIFigure)
@@ -509,7 +509,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                 if isfolder(app.DataDir.Value)
                     outputdir = app.DataDir.Value;
                 else
-                    outputdir = uigetdir('Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants',...
+                    outputdir = uigetdir(app.defaultDataDir,...
                         'Oops! looks like you forgot to select your data directory!');
                     app.DataDir.Value = outputdir;
                     figure(app.IntestinalCalciumAppUIFigure)
@@ -529,7 +529,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                 if isfolder(app.DataDir.Value)
                     outputdir = app.DataDir.Value;
                 else
-                    outputdir = uigetdir('Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants',...
+                    outputdir = uigetdir(app.defaultDataDir,...
                         'Oops! looks like you forgot to select your data directory!');
                     app.DataDir.Value = outputdir;
                     figure(app.IntestinalCalciumAppUIFigure)
@@ -601,7 +601,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if isfolder(prevDir)
                 searchStart = prevDir;
             else
-                searchStart = 'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
+                searchStart = app.defaultDataDir;
             end
  
             [file, path] = uigetfile([searchStart '\*.mat']);
