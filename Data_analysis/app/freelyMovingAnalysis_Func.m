@@ -15,7 +15,7 @@ plotstuff = inputs.plotResults; % display tracking
 videostuff =inputs.recordVideo; % record video
 framerate = inputs.videoFramerate; % display video/plots every Nth iteration of loop.
 fps = inputs.inputFramerate;      % frames per sec of input tiff.
-troubleshoot =inputs.troubleshoot; % show binary images instead of regular plots
+troubleshoot =inputs.troubleshoot; % show binary images instead of regular plots 
 showNormals = inputs.showNormals;
 showAxialSignal = inputs.showAxialSignal;
 saveAxialMatrix = 0;
@@ -25,12 +25,12 @@ useautothreshold = inputs.autoThreshold;% set to 1 to calculate a threshold for 
 useadaptivethreshold = inputs.adaptiveThreshold; % if useautothreshold is set to 0 adaptive thresholding can be used
 removevignette = inputs.flatField; % if not zero, size of kernel to use for flatfield correction.
 loadtiff =inputs.loadTiff; % read entire tiff into memory? faster analysis but requires more ram.
-
+ 
 
 minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
-axSigLen = 200; % how many pixels to use for registering axial signal.
-axSigHeight = 20; 
+axSigLen = 200; % how many pixels to use for registering axial signal.(i.e. pixels from head to tail)
+axSigHeight = 15; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
 
 
 %%
@@ -41,14 +41,20 @@ for nf =startIndex:length(tdir)
 
 
     if isremote == 1
-        tic
+
         uploadresults = 1;
         tempfolder = 'C:\tmp'; %set temp directory for copying tiff files.
-        disp(['Copying file to: ' tempfolder ' for local processing'])
-        copyfile(path, tempfolder)
+
+        if ~exist(fullfile(tempfolder, tdir(nf).name), "file")
+            tic
+            disp(['Copying file to: ' tempfolder ' for local processing'])
+            copyfile(path, tempfolder)
+            disp(['Filed copied in ' num2str(toc)])
+        end
+
         remotepath = path;                         % save the original path for later uploading.
         path = fullfile(tempfolder, tdir(nf).name); % rename path to the local path.
-        disp(['Filed copied in ' num2str(toc)])
+
     end
 
     %%
@@ -100,7 +106,7 @@ for nf =startIndex:length(tdir)
 
 
     axialSignal = NaN(length(info)/2, axSigLen);
-    
+
     axialBF = NaN(length(info)/2, axSigLen);
     sumSignal = NaN(length(info)/2,1);
     bulkSignal = NaN(length(info)/2,1);
@@ -108,7 +114,7 @@ for nf =startIndex:length(tdir)
     backgroundSignal = NaN(length(info)/2,1);
     orientation = NaN(length(info)/2,1);
     area = NaN(length(info)/2,1);
-    
+
 
     time = linspace(0,round((length(info)/2)/fps/60,1),ceil(length(info)/2)); %minutes per frame
     wormIdx = [];
@@ -136,6 +142,7 @@ for nf =startIndex:length(tdir)
             war = warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
             warning('off', 'MATLAB:imagesci:tifftagsread:expectedTagDataFormat');
             warning('off','imageio:tiffmexutils:libtiffWarning')
+            warning('off','imageio:tiffutils:libtiffWarning')
         else
             disp('This Code works way faster with the TiffStack function: https://github.com/DylanMuir/TIFFStack')
             img = tiffreadVolume(path);
@@ -179,17 +186,15 @@ for nf =startIndex:length(tdir)
         BW = imcomplement(BW);
         BW = bwmorph(BW,'clean');
         BW = bwmorph(BW,'fill');
-
-
         tempb = BW;
-        BW = imdilate(BW,strel('disk',7));
-        BW = imerode(BW,strel('disk',7));
-
-        %         BW = imerode(BW,strel('disk',7));
-        %         B =bwmorph(B,'open',1);
-
-
+        
+        BW = ~bwareaopen(~BW, 500);
+        BW = imdilate(BW,strel('disk',4));
+        BW = imerode(BW,strel('disk',4));
         tempb2 = BW;
+        
+        
+
 
         % identify connected objects
         CC = bwconncomp(BW);
@@ -232,12 +237,22 @@ for nf =startIndex:length(tdir)
 
                 % generate mask, outline and skeleton
                 mask = logical(Lw);
+                % 
+                % D = bwdist(~mask);
+                % ws = watershed(D,4);
+                % imshow(D, [0 20],Parent=ax2)    
+                % mask(ws==0)=0;
+                % imshow(mask,Parent=ax3)
+
                 outline = bwmorph(mask, 'remove',1);
-                %             skel = bwskel(mask,'MinBranchLength', 20);
                 skel = bwmorph(mask,'thin', inf);
+
+
+
 
                 outskel = logical(outline+skel);
                 [ep] = bwmorph(skel,'endpoints');
+
 
 
                 % Extract Axial signal by sampling perpendicular lines from skeleton %
@@ -311,31 +326,36 @@ for nf =startIndex:length(tdir)
 
 
                     if ~isempty(temptrace)
-                        % resample axial images
-                        x1 = linspace(1,size(temptrace,2), size(temptrace,2));
-                        x2 = linspace(1,size(temptrace,2),axSigLen);
-                        temptrace = interp1(x1, temptrace',x2)';
-                        tempbf = interp1(x1, tempbf',x2)';
+                        try
+                            % resample axial images
+                            x1 = linspace(1,size(temptrace,2), size(temptrace,2));
+                            x2 = linspace(1,size(temptrace,2),axSigLen);
+                            temptrace = interp1(x1, temptrace',x2)';
+                            tempbf = interp1(x1, tempbf',x2)';
 
-                        tt = max(temptrace);
+                            tt = max(temptrace);
+                            abf = mean(tempbf);
 
 
-                        % % % % real-time autoFixSignal % % %
-                        querryLength = length(tt)*0.1; % fraction of signal to querry
-                        leftMean = mean(tt(1:querryLength),'omitnan');
-                        rightMean = mean(tt(length(tt)-querryLength:length(tt)),'omitnan');
+                            % % % % real-time autoFixSignal % % %
+                            querryLength = length(tt)*0.1; % fraction of signal to querry
+                            leftMean = mean(tt(1:querryLength),'omitnan');
+                            rightMean = mean(tt(length(tt)-querryLength:length(tt)),'omitnan');
 
-                        if leftMean>rightMean
-                            tt = fliplr(tt);
-                        end
+                            if leftMean>rightMean
+                                tt = fliplr(tt);
+                                abf = fliplr(abf);
+                            end
 
-                        % % % % % % % % % % % % % % % % % % % %
+                            % % % % % % % % % % % % % % % % % % % %
 
-                        axialBF(i,1:size(abf,2)) = abf;
-                        axialSignal(i,1:size(tt,2)) = tt;
+                            axialBF(i,1:size(abf,2)) = abf;
+                            axialSignal(i,1:size(tt,2)) = tt;
 
-                        if saveAxialMatrix == 1
-                            axialMatrix(:,:,i) = temptrace;
+                            if saveAxialMatrix == 1
+                                axialMatrix(:,:,i) = temptrace;
+                            end
+                        catch
                         end
                     end
                 end
@@ -432,7 +452,7 @@ for nf =startIndex:length(tdir)
                                 'Box', 'off');
 
                         elseif showAxialSignal == 1
-                            axsig = smoothdata(axialSignal(1:i,:),1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
+                            axsig = smoothdata(axialSignal,1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
                             imagesc(axsig,'Parent',ax4)
                             ax4.CLim = [-500 30000];
                             ax4.XAxis.Visible = 0;
@@ -444,7 +464,7 @@ for nf =startIndex:length(tdir)
 
                         plot(time,bulkSignal(:),time,backgroundSignal(:), 'Parent', ax7)
                         if i>1
-                            xlim([0 time(i)]);
+                            xlim(ax7,[0 time(end)]);
                         end
                         title(ax7, 'Whole Body Ca^2^+ Signal')
                         ylabel(ax7, 'Mean Fluorescent Intensity (a.u.)');
