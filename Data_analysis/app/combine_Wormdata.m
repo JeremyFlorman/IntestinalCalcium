@@ -3,22 +3,16 @@ function combine_Wormdata(datadir,outputdir, controlname)
 %   Detailed explanation goes here
 
 isremote = 1;
-if nargin <1 % modify these paramaters for 
+if nargin <1 % modify these paramaters for use without the app
     datadir = 'Y:\OAS\5-HT\+Food\';
     outputdir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\Exogenous_Tyramine\receptor_mutants\wildtype-30mM-TA';
     
 end
 
-
-
 if isempty(outputdir)
     outputdir = datadir;
     isremote = 0;
 end
-
-
-
-% genotypes = {mtname controlname};
 
 dd = dir([datadir '\**\*_wormdata.mat' ]);
 
@@ -31,18 +25,12 @@ end
 
 genotypes = unique([names{:}]);
 
-
-
-
-
-
 for i = 1:length(genotypes)  
     d = dir([datadir '\**\*' genotypes{i} '_*_wormdata.mat']);
 
     disp(['Found ' num2str(length(d)) ' files with genotype ' genotypes{i}])
     
     mergedstructure = struct();
-
 
     pt = '';
     for j = 1:length(d)
