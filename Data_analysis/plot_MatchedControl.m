@@ -43,7 +43,7 @@ end
     
 datanames = {d(:).name};
 
-mtflag = contains(datanames, mtname); 
+mtflag = contains(datanames, mtname, 'IgnoreCase',true); 
  
 if nnz(mtflag) == 1
     mtpath = fullfile(d(mtflag).folder, d(mtflag).name); % find the mutant genotype path
@@ -98,23 +98,23 @@ if plotcontrol == 0 % add traces for control matched control data if this is the
     end
 if overlayplots == 0 
 nexttile([4 1])
-plotBulkSignal(chunk1,settings)
+plotBulkSignal(chunk1,settings, 1)
  
 nexttile([4 1])
-plotAxialSignal(chunk1,settings)
+plotAxialSignal(chunk1,settings, 1)
 
 nexttile([4 1])
-plotBulkSignal(chunk2,settings)
+plotBulkSignal(chunk2,settings, 1)
  
 nexttile([4 1])
-plotAxialSignal(chunk2,settings)
+plotAxialSignal(chunk2,settings, 1)
 
 elseif overlayplots == 1
         nexttile([4 2])
-        plotOverlay(chunk1,settings)
+        plotOverlay(chunk1,settings,1)
         
         nexttile([4 2])
-        plotOverlay(chunk2,settings)
+        plotOverlay(chunk2,settings, 1)
 end
 
 
@@ -122,25 +122,25 @@ elseif plotcontrol == 1
 
     if overlayplots == 0
         nexttile([4 1])
-        plotBulkSignal(wtdata, settings)
+        plotBulkSignal(wtdata, settings,1)
 
 
         nexttile([4 1])
-        plotAxialSignal(wtdata, settings)
+        plotAxialSignal(wtdata, settings,1)
 
         nexttile([4 1])
-        plotBulkSignal(mtdata, settings)
+        plotBulkSignal(mtdata, settings, 1)
 
 
         nexttile([4 1])
-        plotAxialSignal(mtdata, settings)
+        plotAxialSignal(mtdata, settings, 1)
 
     elseif overlayplots ==1
         nexttile([4 2])
-        plotOverlay(wtdata,settings)
+        plotOverlay(wtdata,settings, 1)
 
         nexttile([4 2])
-        plotOverlay(mtdata,settings)
+        plotOverlay(mtdata,settings, 1)
     end
 
 end

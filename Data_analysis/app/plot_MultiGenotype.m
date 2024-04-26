@@ -70,6 +70,7 @@ olt = tiledlayout(h, w,'Parent', overlayfig, 'TileSpacing','compact','Padding','
 for q = 1:length(genotypes)
 
 
+%     searchquerry = [parentfolder '\**\*' genotypes{q} '*_mergedData.mat']
 
     d = dir([parentfolder '\**\*' genotypes{q} '_mergedData.mat']);
     
@@ -93,7 +94,14 @@ for q = 1:length(genotypes)
         wtdata = []; 
     end
   
-    
+    if ~isfield(mtdata,'genotype')
+    mtdata(1).genotype = genotypes{q};
+    end
+
+    if ~isfield(wtdata, 'genotype')
+    wtdata(1).genotype = genotypes{q};
+    end
+
     %% shut off interior axis labels
 
     if  mod(q-1,w) == 0
@@ -102,11 +110,20 @@ for q = 1:length(genotypes)
         labelYAxis = 0;
     end
 
+%     % for multi column figures.
     if q > h*w-w
         labelXAxis = 1;
     else
         labelXAxis = 0;
     end
+
+    % for 1 colum figures
+
+%     if q<length(genotypes)
+%         labelXAxis = 0;
+%     else
+%         labelXAxis =1;
+%     end
 
     %% spike profiles
     nexttile(spiket, q)
@@ -138,7 +155,7 @@ for q = 1:length(genotypes)
 
 
     nexttile(axt, q)
-    plotAxialSignal(mtdata,settings)
+    plotAxialSignal(mtdata,settings,labelXAxis)
     title(['\it' mtdata(1).genotype],'FontSize', 8)
 
 %     ax2 = gca;
@@ -149,7 +166,7 @@ for q = 1:length(genotypes)
     %% bulk signal
 
     nexttile(bulkt, q)
-    plotBulkSignal(mtdata,settings)
+    plotBulkSignal(mtdata,settings,labelXAxis)
     title(['\it' mtdata(1).genotype],'FontSize', 8)
 %     ax = gca;
 %     ax.YTick = [];
@@ -157,7 +174,7 @@ for q = 1:length(genotypes)
 %     ax.XLabel = [];
     %% Overlay Signal
     nexttile(olt, q)
-    plotOverlay(mtdata,settings)
+    plotOverlay(mtdata,settings,labelXAxis)
     title(['\it' mtdata(1).genotype],'FontSize', 8)
 %     ax0 = gca;
 %     ax0.YTick = [];

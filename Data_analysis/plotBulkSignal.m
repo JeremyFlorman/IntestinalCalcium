@@ -1,4 +1,4 @@
-function [] = plotBulkSignal(data, settings)
+function [] = plotBulkSignal(data, settings, labelXAxis)
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -50,9 +50,13 @@ ax.YTickLabel = [];
 ax.YColor = 'none';
 ax.YLim = [traceylimit(1) num2plot*tracediff+traceylimit(1)];
 ax.XLim = [0, max(time)];
-xlabel('Time (min)')
 title(['\it' data(1).genotype])
 box off
 
+if labelXAxis ==1
+xlabel('Time (min)')
+else
+    ax.XTickLabel = [];
+end
 
 end

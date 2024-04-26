@@ -1,4 +1,4 @@
-function [] = plotAxialSignal(data,settings)
+function [] = plotAxialSignal(data,settings,labelXAxis)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -59,5 +59,11 @@ ax.XTick = xt;
 ax.XTickLabel = xtl;
 ax.YTickLabel = [];
 box off
-xlabel('Time (min)');
+
+if labelXAxis ==1
+xlabel('Time (min)')
+else
+    ax.XTickLabel = [];
+end
+
 end

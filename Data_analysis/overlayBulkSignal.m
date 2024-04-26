@@ -1,4 +1,4 @@
-function [] = overlayBulkSignal(data, settings)
+function [] = overlayBulkSignal(data, settings,labelXAxis)
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -25,14 +25,14 @@ for i = 1:num2plot
     shift = tracediff*(i-1);
     shiftedSignal = signal+shift;
     baseline = repmat(traceylimit(1)+shift, [length(time),1]);
-    
+
     %[0.7 0.2 0.4 0.7]
     hold on
     plot(time, shiftedSignal,'Color', [.9 .9 .9] ,'Marker', 'none', ...
         'LineWidth',0.75, 'LineStyle', '-')
 
     line(time,baseline, 'Color', [0 0 0])
-    
+
 
 end
 hold off
@@ -40,11 +40,15 @@ ax = gca;
 ax.YTickLabel = [];
 
 ax.YLim = [traceylimit(1) num2plot*tracediff+traceylimit(1)];
-xlabel('Time (min)')
+
 title(['\it' data(1).genotype])
 box off
 ax.YColor = [1 1 1];
 
-
+if labelXAxis ==1
+    xlabel('Time (min)')
+else
+    ax.XTickLabel = [];
+end
 
 end

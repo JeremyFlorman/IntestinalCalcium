@@ -369,7 +369,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if isfolder(prevDir)
                 searchStart = prevDir;
             else
-                searchStart = app.defaultOutputDir; % 'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
+                searchStart = app.defaultDataDir; % 'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
             end
 
             selectedDir = uigetdir(searchStart, 'Select tiff directory');
@@ -388,7 +388,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if isfolder(prevDir)
                 searchStart = prevDir;
             else
-                searchStart = 'Z:\';
+                searchStart = app.defaultOutputDir';
             end
 
             selectedDir = uigetdir(searchStart, 'Select tiff directory');
