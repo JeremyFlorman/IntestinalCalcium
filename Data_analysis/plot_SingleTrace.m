@@ -51,7 +51,7 @@ tracecolor = [0.2 0.2 0.2];
 % 
 % 
 
-axsig = smoothdata(wormdata.autoAxialSignal, 'movmedian', 60);
+axsig = smoothdata(wormdata.autoAxialSignal, 'movmedian', 15);
 bulkSignal = wormdata.bulkSignal;
 loc = wormdata.peakLoc;
 pk = wormdata.peakAmplitude;
