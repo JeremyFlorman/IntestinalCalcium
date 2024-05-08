@@ -31,7 +31,7 @@ for i = 1:num2plot
     plot(time, shiftedSignal,'Color', [.9 .9 .9] ,'Marker', 'none', ...
         'LineWidth',0.75, 'LineStyle', '-')
 
-    line(time,baseline, 'Color', [0 0 0])
+    % line(time,baseline, 'Color', [0 0 0],'Marker', 'none')
 
 
 end
