@@ -17,25 +17,30 @@ tempdir = 'C:\tmp';
 wormdata = copyLoadClear(filename, tempdir);
 wormdata = wormdata.wormdata;
 
+if length(wormdata) >1
+    wormdata = wormdata(4);
+end
+
 [wormdata, ~, ~] = processWormdata(wormdata,settings);
 %%
 % settings = returnPlotSettings();
 
-peakthreshold=settings.peakthreshold;
-peakdistance = settings.peakdistance;
+% peakthreshold=settings.peakthreshold;
+% peakdistance = settings.peakdistance;
 traceylimits= settings.traceylimit;
 axylimits= settings.axylimit;
 singlespike =settings.singleSpike;
 windowInSeconds = settings.spikeWindow;
 axSigCMap = settings.axSigCMap;
+expLengthInMin = ceil((length(wormdata.bulkSignal)/settings.framerate)/60);
 % traceylimits = [0 8000];
 % axylimits=[0 20000];
+ 
 
 
+window = settings.framerate*windowInSeconds;
 
-window = 15*windowInSeconds;
-
-time = linspace(0,10,length(wormdata.bulkSignal));
+time = linspace(0,expLengthInMin,length(wormdata.bulkSignal));
 
 tracecolor = [0.2 0.2 0.2];
 
@@ -51,7 +56,7 @@ tracecolor = [0.2 0.2 0.2];
 % 
 % 
 
-axsig = smoothdata(wormdata.autoAxialSignal, 'movmedian', 15);
+axsig = smoothdata(wormdata.autoAxialSignal,1, 'movmedian', 7);
 bulkSignal = wormdata.bulkSignal;
 loc = wormdata.peakLoc;
 pk = wormdata.peakAmplitude;
@@ -61,14 +66,14 @@ for idx = singlespike %:length(loc)
     singlespike = idx;
     figure('Position', [49.8000 222.6000 1060 407.2000], 'Color', [1 1 1])
     t = tiledlayout(2,7,'Padding','tight');
-    nexttile([1 3])
+    nexttile([1 5])
 
     plot(time,bulkSignal, 'Color', tracecolor, 'LineWidth', 1)
     xtl = get(gca,'XTickLabels');
     
     set(gca, 'Box', 'off','Clipping', 'off')
 
-    xlim([0 10])
+    xlim([0 expLengthInMin])
     if ~isempty(pk)
         hold on
         plot(locinmin, pk*1.15, 'v', 'MarkerSize', 6, 'MarkerEdgeColor', [0.2 0.2 0.2]);
@@ -90,26 +95,26 @@ for idx = singlespike %:length(loc)
         post = 900+window;
     end
     
-    nexttile([2,2])
-    singleBulk = bulkSignal(pre:post,1);
-%     [spk, sloc] = findpeaks(singleBulk, 'MinPeakProminence', peakthreshold, 'MinPeakDistance',peakdistance);
-
-    singleTime = linspace(-windowInSeconds,windowInSeconds,length(singleBulk));
-    plot(singleTime,singleBulk, 'Color', tracecolor, 'LineWidth', 1)
-    hold on
-    if ~isempty(pk)
-    plot(0, pk(singlespike)*1.05, 'v', 'MarkerSize', 10, 'MarkerEdgeColor', [0.2 0.2 0.2])
-    hold off
-    end
-    
-    ax = gca;
-    ax.XTick = linspace(-windowInSeconds, windowInSeconds, 5);
-    ax.XTickLabel = linspace(-windowInSeconds, windowInSeconds, 5);
-    ax.XLim = [singleTime(1) singleTime(end)];
-    title('Bulk Signal')
-    xlabel('Time (s)')
-    ylabel('Signal Intensity (a.u.)');
-    box off
+%     nexttile([2,2])
+%     singleBulk = bulkSignal(pre:post,1);
+% %     [spk, sloc] = findpeaks(singleBulk, 'MinPeakProminence', peakthreshold, 'MinPeakDistance',peakdistance);
+% 
+%     singleTime = linspace(-windowInSeconds,windowInSeconds,length(singleBulk));
+%     plot(singleTime,singleBulk, 'Color', tracecolor, 'LineWidth', 1)
+%     hold on
+%     if ~isempty(pk)
+%     plot(0, pk(singlespike)*1.05, 'v', 'MarkerSize', 10, 'MarkerEdgeColor', [0.2 0.2 0.2])
+%     hold off
+%     end
+% 
+%     ax = gca;
+%     ax.XTick = linspace(-windowInSeconds, windowInSeconds, 5);
+%     ax.XTickLabel = linspace(-windowInSeconds, windowInSeconds, 5);
+%     ax.XLim = [singleTime(1) singleTime(end)];
+%     title('Bulk Signal')
+%     xlabel('Time (s)')
+%     ylabel('Signal Intensity (a.u.)');
+%     box off
     
     % % % % % % Axial Signal single spike % % % % % 
     nexttile([2,2])
@@ -134,14 +139,14 @@ for idx = singlespike %:length(loc)
 
 
 % % % % %  % axial signal % % % % % % % 
-    nexttile([1,3])
-    imagesc(axsig', axylimits)
+    nexttile([1,5])
+    imagesc(smoothdata(axsig', 1,'movmean',7), axylimits)
     set(gca, 'XTick', linspace(1, length(axsig),length(xtl)),'XTickLabels',xtl,...
         'YTick', [25 size(axsig,2)-25], 'YTickLabels', {'Head', 'Tail'});
-    colormap(gca, 'viridis');
+    colormap(gca, axSigCMap);
     xlabel('Time (min)')
 
-%     title('Axial Signal');
+%     title('Axial Signal'); 
 
 
 
