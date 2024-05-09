@@ -7,7 +7,7 @@ function [] = plotSpikeProfiles(mtdata, wtdata,settings, labelXAxis,labelYAxis)
 % peakthreshold = 750;
 % traceylimits = [5000 12500];
 
-if isempty(wtdata)
+if ~isfield(wtdata,'bulkSignal')
     plotcontrol = 0;
 else
     plotcontrol = 1;
@@ -28,8 +28,8 @@ if plotcontrol ==1
 end
 
 mtprofiles = [mtdata(:).peakTraces];
-
-
+ 
+ 
 
 %% plotting
 singlewidth = 0.5;
@@ -73,15 +73,15 @@ if plotcontrol ==1
     
     if ~isempty(wtpktimemat)
         plot(wtpktimemat, wtprofiles, 'Color',wttracecol , 'LineWidth', singlewidth) % plot wild type individual traces
-        line([-timePreSpike/15; timePostSpike/15], [wtpk; wtpk], 'Color', wtcolor, 'LineStyle', ':',...    %line at wild type mean
-            'LineWidth', tracelinewidth)
+        % line([-timePreSpike/15; timePostSpike/15], [wtpk; wtpk], 'Color', wtcolor, 'LineStyle', ':',...    %line at wild type mean
+            % 'LineWidth', tracelinewidth)
     end
 end
 
 if ~isempty(mtpktimemat)
     plot(mtpktimemat, mtprofiles, 'Color',mttracecol ,'LineWidth', singlewidth); % plot mutant individual traces
-    line([-timePreSpike/15; timePostSpike/15], [mtpk; mtpk], 'Color', mtcolor, 'LineStyle', '--',... % line at mutant mean
-        'LineWidth', tracelinewidth)
+    % line([-timePreSpike/15; timePostSpike/15], [mtpk; mtpk], 'Color', mtcolor, 'LineStyle', '--',... % line at mutant mean
+        % 'LineWidth', tracelinewidth)
 
     plot(mtpktime, mean(mtprofiles,2,'omitnan'), 'Color', mtcolor, 'LineWidth', tracewidth); % plot mutant trace mean
 end
@@ -95,13 +95,14 @@ end
 hold off
 
 
-
+normalization = settings.normalize;
+titles = {'Mean Fluorescence (a.u.)', 'Z-Score (s.d.)', 'Normalized Fluorescence (a.u.)'};
 
 xlim([-timePreSpike/fps; timePostSpike/fps])
 ylim(traceylimits)
 title('Ca^2^+ Spike Profiles');
 if labelYAxis == 1
-    ylabel('Signal Intensity (a.u.)')
+    ylabel(titles(normalization))
 end
 
 if labelXAxis ==1

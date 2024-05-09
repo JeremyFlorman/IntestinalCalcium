@@ -47,7 +47,7 @@ mtflag = contains(datanames, mtname, 'IgnoreCase',true);
  
 if nnz(mtflag) == 1
     mtpath = fullfile(d(mtflag).folder, d(mtflag).name); % find the mutant genotype path
-elseif length(d)  == 1
+elseif isscalar(d)
     mtpath = fullfile(d.folder, d.name);
 end 
 

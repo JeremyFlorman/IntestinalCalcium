@@ -66,12 +66,23 @@ else
         plotSettings.peakthreshold = 3;
         plotSettings.axylimit = [0 45];
         plotSettings.trimExperimentLength =1;
-
+        plotSettings.analyzePartial = 0;
+        plotSettings.partStart = 1;
+        plotSettings.partEnd = 4500;
     end
 
     %% plot single trace
     plotSettings.singleSpike = 1;
     plotSettings.spikeWindow = 10;
 
+
+    %% multi genotype plotting 
+            plotSettings.plotOverlay = 1;
+            plotSettings.plotBulk = 1;
+            plotSettings.plotAxial = 1;
+            plotSettings.plotCV  = 1;
+            plotSettings.plotHist = 1;
+            plotSettings.plotProfile =1;
+            plotSettings.plotCorr = 1;
 end
 end

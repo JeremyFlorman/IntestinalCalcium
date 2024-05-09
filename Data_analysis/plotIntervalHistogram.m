@@ -71,15 +71,15 @@ if plotcontrol == 1
         catch
         end
     end
-    if ~isempty(mtint) && ~isempty(wtint)
-        [~, p] = ttest2(mtint,wtint);
-        if p< 0.00001
-            sigval = 'p <0.00001';
-        else
-            sigval = ['p=' num2str(round(p,5))];
-        end
-        text(0,ax1.YLim(2)*0.75,sigval,'FontSize', 10)
-    end
+    % if ~isempty(mtint) && ~isempty(wtint)
+    %     [~, p] = ttest2(mtint,wtint);
+    %     if p< 0.00001
+    %         sigval = 'p <0.00001';
+    %     else
+    %         sigval = ['p=' num2str(round(p,5))];
+    %     end
+    %     text(0,ax1.YLim(2)*0.75,sigval,'FontSize', 10)
+    % end
 elseif plotcontrol == 0
 
     histogram(mtint,binedges,'FaceColor', [0.7 0.7 0.7],'FaceAlpha',0.4,...
@@ -109,4 +109,6 @@ elseif plotcontrol == 0
 
 end
 box off
+ax = gca;
+ax.XLim = [binedges(1) binedges(end)];
 end

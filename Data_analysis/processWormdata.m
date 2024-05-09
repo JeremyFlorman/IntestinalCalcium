@@ -2,7 +2,6 @@ function [mtdata, wtdata, settings] = processWormdata(wormdata,settings)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 if nargin<2
-
     settings = returnPlotSettings();
 end
 
@@ -10,7 +9,7 @@ end
 
 normalize = settings.normalize;
 trimExperimentLength = settings.trimExperimentLength;
-
+analyzePartial = settings.analyzePartial;
 
 
 if ischar(wormdata) || isstring(wormdata)
@@ -43,8 +42,16 @@ mtdata = subtractBackground(mtdata, settings);
 
 
 
-% normalize bulk signal by dividing by the mean wildtype bulk signal.
-if normalize == 1
+if normalize == 2 % normalize by calculating z-score
+    for i = 1:length(mtdata)
+        mtdata(i).bulkSignal = zscore(mtdata(i).bulkSignal);
+    end
+
+    for i = 1:length(wtdata)
+        wtdata(i).bulkSignal = zscore(wtdata(i).bulkSignal);
+    end
+    
+elseif normalize == 3 % normalize bulk signal by dividing by the mean wildtype bulk signal.
     wtbulksig = cell2mat({wtdata(:).bulkSignal});
     wtmedian = median(wtbulksig,'all','omitnan');
     for i = 1:length(mtdata)
@@ -56,17 +63,22 @@ if normalize == 1
     end
 end
 
+if trimExperimentLength == 1 || analyzePartial == 1 
+    mtdata = trimExp(mtdata,settings);
+    wtdata = trimExp(wtdata, settings);
+end
 
 
 
 mtdata = processSpikes(mtdata,settings);
 wtdata = processSpikes(wtdata,settings);
 
-if trimExperimentLength == 1
-    mtdata = trimExp(mtdata);
-    wtdata = trimExp(wtdata);
-end
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+            %%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+                %%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 end
 %% background subtract bulk and axial Signal
@@ -440,6 +452,9 @@ for i = 1:length(inputData)
         num(i) = 0;
         AvAmp(i) = 0;
     end
+    
+    meanSignal(i) = mean(inputData(i).bulkSignal,"all", "omitmissing");
+
 end
 
 if sortType == 0                % dont sort
@@ -460,10 +475,18 @@ elseif sortType == 1            % sort by number of spikes
 
 elseif sortType == 2            % sort by spike amplitude
     if strcmpi(sortDir, 'shuffle')
-        disp('Shuffle only works with "dont sort", using descending order')
+        disp('Shuffle only works with "dont sort" - using descending order')
         sortDir = 'descend';
     end
     mtsorttype = AvAmp;
+    [~, sortOrder] = sort(mtsorttype,sortDir);
+
+elseif sortType == 3            % sort by spike amplitude
+    if strcmpi(sortDir, 'shuffle')
+        disp('Shuffle only works with "dont sort" - using descending order')
+        sortDir = 'descend';
+    end
+    mtsorttype = meanSignal;
     [~, sortOrder] = sort(mtsorttype,sortDir);
 end
 
@@ -491,29 +514,39 @@ end
 end
 
 %% trim experiments
-function [processedData] = trimExp(inputData)
+    function [processedData] = trimExp(inputData,settings)
 lens = nan(length(inputData),1);
 
 for i = 1:length(inputData)
     lens(i)=length(inputData(i).bulkSignal);
 end
 
-minlen = min(lens);
+if settings.trimExperimentLength
+    expStart = 1;
+    expEnd = min(lens);
+elseif settings.analyzePartial
+    expStart = settings.partStart;
+    expEnd = settings.partEnd;
+end
 
 for i = 1:length(inputData)
-    inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(1:minlen,:);
-    inputData(i).sumSignal = inputData(i).sumSignal(1:minlen);
-    inputData(i).bulkSignal = inputData(i).bulkSignal(1:minlen);
-    inputData(i).bulkAboveBkg = inputData(i).bulkAboveBkg(1:minlen);
-    inputData(i).backgroundSignal = inputData(i).backgroundSignal(1:minlen);
-    inputData(i).orientation = inputData(i).orientation(1:minlen);
-    inputData(i).area = inputData(i).area(1:minlen);
+    inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(expStart:expEnd,:);
+    inputData(i).sumSignal = inputData(i).sumSignal(expStart:expEnd);
+    inputData(i).bulkSignal = inputData(i).bulkSignal(expStart:expEnd);
+    if isfield(inputData,'bulkAboveBkg')
+        if ~isempty(inputData(i).bulkAboveBkg)
+            inputData(i).bulkAboveBkg = inputData(i).bulkAboveBkg(expStart:expEnd);
+        end
+    end
+    inputData(i).backgroundSignal = inputData(i).backgroundSignal(expStart:expEnd);
+    inputData(i).orientation = inputData(i).orientation(expStart:expEnd);
+    inputData(i).area = inputData(i).area(expStart:expEnd);
     if isfield(inputData,'velocity')
-        inputData(i).velocity = inputData(i).velocity(1:minlen);
+        inputData(i).velocity = inputData(i).velocity(expStart:expEnd);
     end
 
     if isfield(inputData,'stimTimes')
-        validtimes = inputData(i).stimTimes<minlen;
+        validtimes = inputData(i).stimTimes<expEnd;
         inputData(i).stimTimes = inputData(i).stimTimes(validtimes);
     end
     processedData = inputData;

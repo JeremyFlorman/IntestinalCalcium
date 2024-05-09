@@ -33,13 +33,13 @@ for i = 1:num2plot
 
     plot(time, shiftedSignal, 'k')
     baseLine = repmat(baseline, [length(time),1]);
-    line(time,baseLine, 'Color', [0.6 0.6 0.6])
+    % line(time,baseLine, 'Color', [0.6 0.6 0.6])
     hold on
     plot(templocs/fps/60,shiftedamp+0.05*tracediff,'v','color' ,[0.7 0.2 0.4], 'MarkerSize',3)
     if isfield(data, 'stimTimes')
         stimTimes = data(plotindex).stimTimes;
-        stimY = repmat(shift+tracediff*0.9,length(stimTimes),1);
-        plot(stimTimes/fps/60,stimY,'v','color' ,[0 0 0],'MarkerFaceColor',[.8 .3 .4], 'MarkerSize',8)
+        stimY = repmat(shift+tracediff*0.75,length(stimTimes),1);
+        plot(stimTimes/fps/60,stimY,'v','color' ,[0 0 0],'MarkerFaceColor',[.8 .3 .4], 'MarkerSize',5)
     end
 
 

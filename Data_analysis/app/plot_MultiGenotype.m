@@ -6,6 +6,14 @@ function plot_MultiGenotype(parentfolder, settings)
 prefix = settings.prefix;
 genotypes = settings.genotypes;
 controlname = settings.controlname;
+pltOvly = settings.plotOverlay;
+pltBulk = settings.plotBulk;
+pltAx = settings.plotAxial;
+pltCV = settings.plotCV;
+pltHist = settings.plotHist;
+pltProfile = settings.plotProfile;
+pltCorr = settings.plotCorr;
+
 
 if isfield(settings, 'graphPos')
     figpos = settings.graphPos;
@@ -34,28 +42,40 @@ h = ceil(length(genotypes)/w);
 
 
 
+if pltProfile
+    spikefig = figure('Position', figpos);
+    spiket = tiledlayout(h, w,'Parent', spikefig, 'TileSpacing','compact','Padding','compact');
+end
 
-spikefig = figure('Position', figpos);
-spiket = tiledlayout(h, w,'Parent', spikefig, 'TileSpacing','compact','Padding','compact');
+if pltHist
+    histfig = figure('Position', figpos);
+    histt = tiledlayout(h, w,'Parent', histfig, 'TileSpacing','compact','Padding','compact');
+end
 
-histfig = figure('Position', figpos);
-histt = tiledlayout(h, w,'Parent', histfig, 'TileSpacing','compact','Padding','compact');
+if pltCV
+    cvfig = figure('Position', figpos);
+    cvt = tiledlayout(h, w,'Parent', cvfig, 'TileSpacing','compact','Padding','compact');
+end
 
-cvfig = figure('Position', figpos);
-cvt = tiledlayout(h, w,'Parent', cvfig, 'TileSpacing','compact','Padding','compact');
+if pltCorr
+    correlationfig = figure('Position', figpos);
+    cort = tiledlayout(h, w,'Parent', correlationfig, 'TileSpacing','compact','Padding','compact');
+end
 
-correlationfig = figure('Position', figpos);
-cort = tiledlayout(h, w,'Parent', correlationfig, 'TileSpacing','compact','Padding','compact');
+if pltBulk
+    bulkfig = figure('Position', figpos2, 'Color', [1 1 1]);
+    bulkt = tiledlayout(h, w,'Parent', bulkfig, 'TileSpacing','compact','Padding','tight');
+end
 
-bulkfig = figure('Position', figpos2, 'Color', [1 1 1]);
-bulkt = tiledlayout(h, w,'Parent', bulkfig, 'TileSpacing','compact','Padding','tight');
+if pltAx
+    axialfig = figure('Position', figpos2, 'Color', [1 1 1]);
+    axt = tiledlayout(h, w,'Parent', axialfig, 'TileSpacing','compact','Padding','tight');
+end
 
-axialfig = figure('Position', figpos2, 'Color', [1 1 1]);
-axt = tiledlayout(h, w,'Parent', axialfig, 'TileSpacing','compact','Padding','tight');
-
-overlayfig = figure('Position', figpos2, 'Color', [1 1 1]);
-olt = tiledlayout(h, w,'Parent', overlayfig, 'TileSpacing','compact','Padding','tight');
-
+if pltOvly
+    overlayfig = figure('Position', figpos2, 'Color', [1 1 1]);
+    olt = tiledlayout(h, w,'Parent', overlayfig, 'TileSpacing','compact','Padding','tight');
+end
 
 
 
@@ -70,10 +90,10 @@ olt = tiledlayout(h, w,'Parent', overlayfig, 'TileSpacing','compact','Padding','
 for q = 1:length(genotypes)
 
 
-%     searchquerry = [parentfolder '\**\*' genotypes{q} '*_mergedData.mat']
+    %     searchquerry = [parentfolder '\**\*' genotypes{q} '*_mergedData.mat']
 
-    d = dir([parentfolder '\**\*' genotypes{q} '_mergedData.mat']);
-    
+    d = dir([parentfolder '\**\*' genotypes{q} '*_mergedData.mat']);
+
     if length(d)>1 % if there is more than one file (like in a double mutant) exclude partial matches
         matchIdx = nan(length(d),1);
         for n = 1:length(d)
@@ -81,7 +101,7 @@ for q = 1:length(genotypes)
         end
         d = d(logical(matchIdx));
     end
- 
+
 
     if length(d)>1    % if there is more than one file (like with control) use the biggest.
         [~,idx] = sort([d(:).bytes],'descend');
@@ -90,17 +110,19 @@ for q = 1:length(genotypes)
 
     [mtdata, wtdata, settings] = processWormdata(fullfile(d(1).folder,d(1).name), settings);
 
-    if strcmp(genotypes(q), controlname) ==1
-        wtdata = []; 
-    end
-  
     if ~isfield(mtdata,'genotype')
-    mtdata(1).genotype = genotypes{q};
+        mtdata(1).genotype = genotypes{q};
     end
 
     if ~isfield(wtdata, 'genotype')
-    wtdata(1).genotype = genotypes{q};
+        wtdata(1).genotype = genotypes{q};
     end
+
+    if strcmp(genotypes(q), controlname) ==1
+        wtdata = [];
+    end
+
+
 
     %% shut off interior axis labels
 
@@ -110,7 +132,7 @@ for q = 1:length(genotypes)
         labelYAxis = 0;
     end
 
-%     % for multi column figures.
+    %     % for multi column figures.
     if q > h*w-w
         labelXAxis = 1;
     else
@@ -119,67 +141,63 @@ for q = 1:length(genotypes)
 
     % for 1 colum figures
 
-%     if q<length(genotypes)
-%         labelXAxis = 0;
-%     else
-%         labelXAxis =1;
-%     end
+    %     if q<length(genotypes)
+    %         labelXAxis = 0;
+    %     else
+    %         labelXAxis =1;
+    %     end
 
     %% spike profiles
-    nexttile(spiket, q)
-    plotSpikeProfiles(mtdata,wtdata,settings, labelXAxis,labelYAxis)
-    title(['\it' mtdata(1).genotype])
-
+    if pltProfile
+        nexttile(spiket, q)
+        plotSpikeProfiles(mtdata,wtdata,settings, labelXAxis,labelYAxis)
+        title(['\it' mtdata(1).genotype])
+    end
 
 
 
     %% interval histogram
-    nexttile(histt, q)
-    plotIntervalHistogram(mtdata,wtdata,settings,0,labelXAxis,labelYAxis)
-    title(['\it' mtdata(1).genotype])
-
+    if pltHist
+        nexttile(histt, q)
+        plotIntervalHistogram(mtdata,wtdata,settings,0,labelXAxis,labelYAxis)
+        title(['\it' mtdata(1).genotype])
+    end
 
     %% coefficient of variation
-    nexttile(cvt,q)
-    plotCV(mtdata,wtdata,settings,labelYAxis);
-    title(['\it' mtdata(1).genotype])
+    if pltCV
+        nexttile(cvt,q)
+        plotCV(mtdata,wtdata,settings,labelYAxis);
+        title(['\it' mtdata(1).genotype])
+    end
 
     %% interval correlation
-    nexttile(cort,q)
-    plotEchos(mtdata,[],settings,labelXAxis,labelYAxis)
-    title(['\it' mtdata(1).genotype])
-
+    if pltCorr
+        nexttile(cort,q)
+        plotEchos(mtdata,[],settings,labelXAxis,labelYAxis)
+        title(['\it' mtdata(1).genotype])
+    end
 
 
     %% axial signal
-
-
-    nexttile(axt, q)
-    plotAxialSignal(mtdata,settings,labelXAxis)
-    title(['\it' mtdata(1).genotype],'FontSize', 8)
-
-%     ax2 = gca;
-%     ax2.YTick = [];
-%     ax2.XTick = [];
-%     ax2.XLabel = [];
+    if pltAx
+        nexttile(axt, q)
+        plotAxialSignal(mtdata,settings,labelXAxis)
+        title(['\it' mtdata(1).genotype],'FontSize', 8)
+    end
 
     %% bulk signal
+    if pltBulk
+        nexttile(bulkt, q)
+        plotBulkSignal(mtdata,settings,labelXAxis)
+        title(['\it' mtdata(1).genotype],'FontSize', 8)
+    end
 
-    nexttile(bulkt, q)
-    plotBulkSignal(mtdata,settings,labelXAxis)
-    title(['\it' mtdata(1).genotype],'FontSize', 8)
-%     ax = gca;
-%     ax.YTick = [];
-%     ax.XTick = [];
-%     ax.XLabel = [];
     %% Overlay Signal
-    nexttile(olt, q)
-    plotOverlay(mtdata,settings,labelXAxis)
-    title(['\it' mtdata(1).genotype],'FontSize', 8)
-%     ax0 = gca;
-%     ax0.YTick = [];
-%     ax0.XTick = [];
-%     ax0.XLabel = [];
+    if pltOvly
+        nexttile(olt, q)
+        plotOverlay(mtdata,settings,labelXAxis)
+        title(['\it' mtdata(1).genotype],'FontSize', 8)
+    end
 
 end
 
@@ -192,14 +210,32 @@ end
 % title(bulkt,'Bulk Ca^2^+ Signal');
 % title(axt,'Axial Ca^2^+ Signal');
 
+if pltProfile
+    exportgraphics(spikefig, [parentfolder prefix 'Spike_Profiles.png'], 'Resolution', 300);
+end
 
-exportgraphics(spikefig, [parentfolder prefix 'Spike_Profiles.png'], 'Resolution', 300);
-exportgraphics(histfig, [parentfolder prefix 'Interval_Histogram.png'], 'Resolution', 300);
-exportgraphics(cvfig, [parentfolder prefix 'Coefficent_of_Variance.png'], 'Resolution', 300);
-exportgraphics(correlationfig, [parentfolder prefix 'Interval_Correlation.png'], 'Resolution', 300);
-exportgraphics(bulkfig, [parentfolder prefix 'Bulk_Signal.png'], 'Resolution', 300);
-exportgraphics(axialfig, [parentfolder prefix 'axial_Signal.png'], 'Resolution', 300);
-exportgraphics(overlayfig, [parentfolder prefix 'Overlay_Signal.png'], 'Resolution', 300);
+if pltHist
+    exportgraphics(histfig, [parentfolder prefix 'Interval_Histogram.png'], 'Resolution', 300);
+end
 
+if pltCV
+    exportgraphics(cvfig, [parentfolder prefix 'Coefficent_of_Variance.png'], 'Resolution', 300);
+end
+
+if pltCorr
+    exportgraphics(correlationfig, [parentfolder prefix 'Interval_Correlation.png'], 'Resolution', 300);
+end
+
+if pltBulk
+    exportgraphics(bulkfig, [parentfolder prefix 'Bulk_Signal.png'], 'Resolution', 300);
+end
+
+if pltAx
+    exportgraphics(axialfig, [parentfolder prefix 'axial_Signal.png'], 'Resolution', 300);
+end
+
+if pltOvly
+    exportgraphics(overlayfig, [parentfolder prefix 'Overlay_Signal.png'], 'Resolution', 300);
+end
 
 end

@@ -14,7 +14,8 @@ else
 end
 
 
-buffer = NaN(1,length(data(1).autoAxialSignal))';
+% buffer = NaN(1,length(data(1).autoAxialSignal))';
+buffer = repmat(axylimit(1)-1, length(data(1).autoAxialSignal),1);
 stimY = NaN(num2plot,1);
 
 for i = 1:num2plot
@@ -26,7 +27,7 @@ axsig = data(i).autoAxialSignal;
     elseif i>1
         axialMatrix = horzcat(axialMatrix,buffer, axsig);
         stimY(i) = stimY(i-1)+size(axsig,2)+1;
-    end 
+    end  
 end
 
 
@@ -51,7 +52,7 @@ durationInMin = length(data(1).autoAxialSignal)/900;
 framesInMin = length(data(1).autoAxialSignal)/durationInMin;
 
 xt = [1 framesInMin*XTickInt:framesInMin*XTickInt:length(data(1).autoAxialSignal)];
-xtl = 0:2:durationInMin;
+xtl = 0:XTickInt:durationInMin;
 
 
 ax = gca;
