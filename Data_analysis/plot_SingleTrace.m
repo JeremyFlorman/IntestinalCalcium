@@ -56,7 +56,7 @@ tracecolor = [0.2 0.2 0.2];
 % 
 % 
 
-axsig = smoothdata(wormdata.autoAxialSignal,1, 'movmedian', 7);
+axsig = smoothdata(wormdata.autoAxialSignal,1, 'gaussian', 30);
 bulkSignal = wormdata.bulkSignal;
 loc = wormdata.peakLoc;
 pk = wormdata.peakAmplitude;
@@ -118,7 +118,7 @@ for idx = singlespike %:length(loc)
     
     % % % % % % Axial Signal single spike % % % % % 
     nexttile([2,2])
-    axsingle = axsig(pre:post,:);
+    axsingle = smoothdata(wormdata.autoAxialSignal(pre:post,:),1, 'gaussian', 15);
     
     colormap(axSigCMap);
     imagesc(axsingle',axylimits)
@@ -140,7 +140,7 @@ for idx = singlespike %:length(loc)
 
 % % % % %  % axial signal % % % % % % % 
     nexttile([1,5])
-    imagesc(smoothdata(axsig', 1,'movmean',7), axylimits)
+    imagesc(axsig', axylimits)
     set(gca, 'XTick', linspace(1, length(axsig),length(xtl)),'XTickLabels',xtl,...
         'YTick', [25 size(axsig,2)-25], 'YTickLabels', {'Head', 'Tail'});
     colormap(gca, axSigCMap);
