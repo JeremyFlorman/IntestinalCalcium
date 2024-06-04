@@ -2,30 +2,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
     % Properties that correspond to app components
     properties (Access = public)
-        setTracePos                    matlab.ui.control.Button
-        TracesEditField                matlab.ui.control.EditField
-        TracesEditFieldLabel           matlab.ui.control.Label
-        setGraphPos                    matlab.ui.control.Button
-        GraphsEditField                matlab.ui.control.EditField
-        GraphsEditFieldLabel           matlab.ui.control.Label
-        partEnd                        matlab.ui.control.NumericEditField
-        endEditFieldLabel              matlab.ui.control.Label
-        partStart                      matlab.ui.control.NumericEditField
-        startEditFieldLabel            matlab.ui.control.Label
-        AnalyzePartialRecordingCheckBox  matlab.ui.control.CheckBox
-        mtColor                        matlab.ui.control.EditField
-        miscsettingsTab                matlab.ui.container.Tab
-        SpikeKineticsPanel             matlab.ui.container.Panel
-        validateRiseFall               matlab.ui.control.CheckBox
-        validatePropagationRate        matlab.ui.control.CheckBox
-        showFitParams                  matlab.ui.control.CheckBox
-        validateRiseFallButton         matlab.ui.control.Button
-        ColorsPanel                    matlab.ui.container.Panel
-        wildtypeedgecolorEditFieldLabel  matlab.ui.control.Label
-        wtEdgeColor                    matlab.ui.control.EditField
-        wildtypecolorEditFieldLabel    matlab.ui.control.Label
-        wtColor                        matlab.ui.control.EditField
-        mutantcolorEditFieldLabel      matlab.ui.control.Label
         IntestinalCalciumAppUIFigure   matlab.ui.Figure
         FileMenu                       matlab.ui.container.Menu
         saveSettings                   matlab.ui.container.Menu
@@ -33,12 +9,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         loadSettings                   matlab.ui.container.Menu
         TabGroup                       matlab.ui.container.TabGroup
         TrackingTab                    matlab.ui.container.Tab
-        AnalyzeOASdataCheckBox         matlab.ui.control.CheckBox
         StartFrameSpinner              matlab.ui.control.Spinner
         StartFrameSpinnerLabel         matlab.ui.control.Label
         RunAnalysisButton              matlab.ui.control.Button
         StartFileSpinner               matlab.ui.control.Spinner
         StartFileSpinnerLabel          matlab.ui.control.Label
+        AnalyzeOASdataCheckBox         matlab.ui.control.CheckBox
         FlatfieldCorrectionEditFieldLabel  matlab.ui.control.Label
         FlatfieldCorrectionEditField   matlab.ui.control.NumericEditField
         InputFramerateEditFieldLabel   matlab.ui.control.Label
@@ -64,13 +40,24 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         tiffDir                        matlab.ui.control.EditField
         setTiffDirButton               matlab.ui.control.Button
         PlottingTab                    matlab.ui.container.Tab
+        Panel                          matlab.ui.container.Panel
+        windowsizeEditField            matlab.ui.control.NumericEditField
+        windowsizeLabel                matlab.ui.control.Label
+        spikeEditField                 matlab.ui.control.NumericEditField
+        spikeEditFieldLabel            matlab.ui.control.Label
+        PlotSingleTraceButton          matlab.ui.control.Button
+        PlotMatchedControlButton       matlab.ui.control.Button
+        controlnameEditField           matlab.ui.control.EditField
+        controlnameEditFieldLabel      matlab.ui.control.Label
+        MergeControlButton             matlab.ui.control.Button
         Panel_2                        matlab.ui.container.Panel
-        CorrelationCheckBox            matlab.ui.control.CheckBox
-        PeakProfileCheckBox            matlab.ui.control.CheckBox
+        PlotsPanel                     matlab.ui.container.Panel
         IntervalHistogramCheckBox      matlab.ui.control.CheckBox
-        CVCheckBox                     matlab.ui.control.CheckBox
-        AxialSignalCheckBox            matlab.ui.control.CheckBox
+        CorrelationCheckBox            matlab.ui.control.CheckBox
         BulkAxialCheckBox              matlab.ui.control.CheckBox
+        PeakProfileCheckBox            matlab.ui.control.CheckBox
+        AxialSignalCheckBox            matlab.ui.control.CheckBox
+        CVCheckBox                     matlab.ui.control.CheckBox
         BulkSignalCheckBox             matlab.ui.control.CheckBox
         PrefixEditField                matlab.ui.control.EditField
         PrefixEditFieldLabel           matlab.ui.control.Label
@@ -79,38 +66,42 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         genotypesEditField             matlab.ui.control.EditField
         genotypesEditFieldLabel        matlab.ui.control.Label
         PlotMultipleGenotypesButton    matlab.ui.control.Button
-        Panel                          matlab.ui.container.Panel
-        windowsizeEditField            matlab.ui.control.NumericEditField
-        windowsizeLabel                matlab.ui.control.Label
-        spikeEditField                 matlab.ui.control.NumericEditField
-        spikeEditFieldLabel            matlab.ui.control.Label
-        PlotSingleTraceButton          matlab.ui.control.Button
         CombinewormDataButton          matlab.ui.control.Button
-        MergeControlButton             matlab.ui.control.Button
-        PlotMatchedControlButton       matlab.ui.control.Button
-        controlnameEditField           matlab.ui.control.EditField
-        controlnameEditFieldLabel      matlab.ui.control.Label
-        setOutputDir                   matlab.ui.control.Button
         outputDir                      matlab.ui.control.EditField
+        setOutputDir                   matlab.ui.control.Button
         DataDir                        matlab.ui.control.EditField
         setDataDir                     matlab.ui.control.Button
         PlotSettingsTab                matlab.ui.container.Tab
+        CloseAllButton                 matlab.ui.control.Button
+        SingleSpikeButton              matlab.ui.control.Button
+        MultigenotypefigurepositionPanel  matlab.ui.container.Panel
+        setTracePos                    matlab.ui.control.Button
+        TracesEditField                matlab.ui.control.EditField
+        TracesEditFieldLabel           matlab.ui.control.Label
+        setGraphPos                    matlab.ui.control.Button
+        GraphsEditField                matlab.ui.control.EditField
+        GraphsEditFieldLabel           matlab.ui.control.Label
+        PlotMultipleGenotypesButton_2  matlab.ui.control.Button
+        FractiontoQuerrylengthLabel    matlab.ui.control.Label
+        toQuerry                       matlab.ui.control.NumericEditField
+        AxialSignalColormapDropDown    matlab.ui.control.DropDown
+        AutoFixAxialSignalCheckBox     matlab.ui.control.CheckBox
+        PlotMatchedControlButton_2     matlab.ui.control.Button
+        AxialSignalColorLabel          matlab.ui.control.Label
+        Panel_3                        matlab.ui.container.Panel
+        partEnd                        matlab.ui.control.NumericEditField
+        endEditFieldLabel              matlab.ui.control.Label
+        partStart                      matlab.ui.control.NumericEditField
+        startEditFieldLabel            matlab.ui.control.Label
+        AnalyzePartialRecordingCheckBox  matlab.ui.control.CheckBox
+        numPlotsEditField              matlab.ui.control.NumericEditField
+        PlotsEditFieldLabel            matlab.ui.control.Label
         EqualizeExpDurationCheckBox    matlab.ui.control.CheckBox
+        FrameRateEditField             matlab.ui.control.NumericEditField
+        FrameRateEditFieldLabel        matlab.ui.control.Label
+        AnalyzeOASdataCheckBox_2       matlab.ui.control.CheckBox
         NormalizationDropDown          matlab.ui.control.DropDown
         NormalizationDropDownLabel     matlab.ui.control.Label
-        Panel_3                        matlab.ui.container.Panel
-        AxialSignalColormapDropDown    matlab.ui.control.DropDown
-        AxialSignalColorLabel          matlab.ui.control.Label
-        AnalyzeOASdataCheckBox_2       matlab.ui.control.CheckBox
-        FrameRateEditField             matlab.ui.control.NumericEditField
-        PlotsEditFieldLabel            matlab.ui.control.Label
-        FrameRateEditFieldLabel        matlab.ui.control.Label
-        BulkSignalPlotsButtonGroup     matlab.ui.container.ButtonGroup
-        OverlayButton                  matlab.ui.control.RadioButton
-        SeparateButton                 matlab.ui.control.RadioButton
-        PlotMultipleGenotypesButton_2  matlab.ui.control.Button
-        PlotMatchedControlButton_2     matlab.ui.control.Button
-        numPlotsEditField              matlab.ui.control.NumericEditField
         PeakDetectionPanel             matlab.ui.container.Panel
         spikeProfileWindow             matlab.ui.control.NumericEditField
         PlotwindowsecLabel             matlab.ui.control.Label
@@ -118,22 +109,20 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         MinWidthframesEditFieldLabel   matlab.ui.control.Label
         peakdistance                   matlab.ui.control.NumericEditField
         MinDistanceframesEditFieldLabel  matlab.ui.control.Label
+        peakthreshold                  matlab.ui.control.NumericEditField
+        PeakProminenceAULabel          matlab.ui.control.Label
+        BulkSignalPlotsButtonGroup     matlab.ui.container.ButtonGroup
+        OverlayButton                  matlab.ui.control.RadioButton
+        SeparateButton                 matlab.ui.control.RadioButton
+        SortDirectionButtonGroup       matlab.ui.container.ButtonGroup
+        shuffleButton                  matlab.ui.control.RadioButton
+        ascendButton                   matlab.ui.control.RadioButton
+        descendButton                  matlab.ui.control.RadioButton
         XAxesPanel                     matlab.ui.container.Panel
         axialXTickInt                  matlab.ui.control.EditField
         BulkSignallimitsLabel_2        matlab.ui.control.Label
         bulkXLim                       matlab.ui.control.EditField
         BulkSignallimitsLabel          matlab.ui.control.Label
-        peakthreshold                  matlab.ui.control.NumericEditField
-        PeakProminenceAULabel          matlab.ui.control.Label
-        FractiontoQuerrylengthLabel    matlab.ui.control.Label
-        toQuerry                       matlab.ui.control.NumericEditField
-        AutoFixAxialSignalCheckBox     matlab.ui.control.CheckBox
-        CloseAllButton                 matlab.ui.control.Button
-        SortDirectionButtonGroup       matlab.ui.container.ButtonGroup
-        shuffleButton                  matlab.ui.control.RadioButton
-        ascendButton                   matlab.ui.control.RadioButton
-        descendButton                  matlab.ui.control.RadioButton
-        SingleSpikeButton              matlab.ui.control.Button
         HistogramBinsPanel             matlab.ui.container.Panel
         IncrementEditField             matlab.ui.control.NumericEditField
         IncrementEditFieldLabel        matlab.ui.control.Label
@@ -151,7 +140,19 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         BulkSignallimsLabel            matlab.ui.control.Label
         axialYLim                      matlab.ui.control.EditField
         AxialSignallimLabel            matlab.ui.control.Label
-        MultigenotypefigurepositionPanel  matlab.ui.container.Panel
+        miscsettingsTab                matlab.ui.container.Tab
+        validateRiseFallButton         matlab.ui.control.Button
+        ColorsPanel                    matlab.ui.container.Panel
+        wtColor                        matlab.ui.control.EditField
+        wildtypeedgecolorEditFieldLabel  matlab.ui.control.Label
+        wtEdgeColor                    matlab.ui.control.EditField
+        wildtypecolorEditFieldLabel    matlab.ui.control.Label
+        mtColor                        matlab.ui.control.EditField
+        mutantcolorEditFieldLabel      matlab.ui.control.Label
+        SpikeKineticsPanel             matlab.ui.container.Panel
+        validatePropagationRate        matlab.ui.control.CheckBox
+        validateRiseFall               matlab.ui.control.CheckBox
+        showFitParams                  matlab.ui.control.CheckBox
     end
 
     
@@ -322,7 +323,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.peakwidth.Value= plotSettings.peakwidth;
             app.spikeProfileWindow.Value= plotSettings.spikeProfileWindow;
 
-            app.NormalizationDropDown.Value = app.NormalizationDropDown.Items(plotSettings.normalize);
+            app.NormalizationDropDown.ValueIndex = plotSettings.normalize;
 
             app.AutoFixAxialSignalCheckBox.Value= plotSettings.autoFixAxialSignal;
             app.toQuerry.Value = plotSettings.axSigToQuerry;
@@ -536,7 +537,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             mergeControl(outputdir, app.controlnameEditField.Value)
         end
 
-        % Callback function: not associated with a component
+        % Callback function
         function NormalizeCheckBoxValueChanged(app, event)
             value = app.NormalizationDropDown.ValueIndex;
             if value == 1
