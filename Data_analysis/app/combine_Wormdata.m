@@ -28,6 +28,19 @@ genotypes = unique([names{:}]);
 for i = 1:length(genotypes)  
     d = dir([datadir '\**\*' genotypes{i} '_*_wormdata.mat']);
 
+    % %% Exclude/include experiments based on date specified in dateflag
+    % nms = {d.name};
+    % dates = nan(1,length(nms));
+    % for j = 1:length(nms)
+    %     r = regexp(nms{j}, '_zfis178_', 'split');
+    % 
+    %     dates(j)=str2double(r{1});
+    % end
+    % 
+    % [row,col] = find(dates == 231101); %set date range to include in merged dataset. format is yymmdd
+    % d = d(col,row);
+    % %%%
+
     disp(['Found ' num2str(length(d)) ' files with genotype ' genotypes{i}])
     
     mergedstructure = struct();
