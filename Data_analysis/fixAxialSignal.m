@@ -2,7 +2,7 @@ function [] = fixAxialSignal()
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 %
-[fn,fp] = uigetfile('Z:\Calcium Imaging\Intestinal_Calcium_FreelyMoving\*.mat');
+[fn,fp] = uigetfile('z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\itr-1\220316_zfis178_itr-1_5\220316_zfis178_itr-1_5_wormdata.mat');
 path = fullfile(fp,fn);
 tempdir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\tempdata';
 tempfullfile = fullfile(tempdir, fn);
@@ -18,21 +18,21 @@ data = m.wormdata;
 data.temppath = tempfullfile;
 data.serverpath = path;
 
-if ~isfield(data, 'fixedSignal')
-    data.workingSignal = data.rawAxialSignal;
-elseif isfield(data, 'fixedSignal')
-    data.workingSignal = data.fixedSignal;
-    disp('Using previously modified signal');
-end
-
+% if ~isfield(data, 'fixedSignal')
+%     data.workingSignal = data.rawAxialSignal;
+% elseif isfield(data, 'fixedSignal')
+%     data.workingSignal = data.fixedSignal;
+%     disp('Using previously modified signal');
+% end
+data.workingSignal = data.autoAxialSignal
 
 % data.outname = axsigname;
 fig = figure('Position', [506.6000 33 560.0000 749.6000]);
 uax = axes('Parent',fig,'Position', ...
     [0.1300 0.03100 0.50 0.950]);
-imagesc(data.workingSignal)
-ylim([0 9000])
-colormap(uax, jet)
+imagesc(smoothdata(data.workingSignal,'gaussian',60))
+
+colormap(uax, viridis)
 btn = uicontrol('Style', 'pushbutton',...
     'Position',[400, 700, 120, 22],'String', 'Mark Points',...
     'Callback', @btn_callback);
@@ -78,8 +78,10 @@ guidata(fig, data);
         yend = floor(ypts(2));
         
         data.workingSignal(ystart:yend,:) = fliplr(data.workingSignal(ystart:yend,:));
-        imagesc(data.workingSignal)
-        colormap(fig, jet)
+        imagesc(smoothdata(data.workingSignal,'gaussian',60)) 
+        
+        colormap(uax, viridis)
+        
         if ~isfield(data, 'ypts')
             data.ypts = [ystart yend];
         else
@@ -97,7 +99,9 @@ guidata(fig, data);
         ystart = floor(data.ypts(end,1));
         yend = floor(data.ypts(end,2));
         data.workingSignal(ystart:yend,:) = fliplr(data.workingSignal(ystart:yend,:));
-        imagesc(data.workingSignal)
+        imagesc(smoothdata(data.workingSignal,'gaussian',60)) 
+        
+        colormap(uax, viridis)
         guidata(fig, data);
     end
 
@@ -105,8 +109,10 @@ guidata(fig, data);
         data= guidata(fig);
         ypts = [1 length(data.workingSignal)];
         data.workingSignal(ypts(1):ypts(2),:) = fliplr(data.workingSignal(ypts(1):ypts(2),:));
-        imagesc(data.workingSignal)
-        colormap(gcf, jet)
+        imagesc(smoothdata(data.workingSignal,'gaussian',60)) 
+        
+        colormap(uax, viridis)
+        
         data.ypts = ypts;
         guidata(fig, data);
         drawnow
@@ -115,8 +121,10 @@ guidata(fig, data);
     function rvert_callback(fig, ~)
         data= guidata(fig);
         data.workingSignal = data.rawAxialSignal;
-        imagesc(data.workingSignal)
-        colormap(gcf, jet)
+        imagesc(smoothdata(data.workingSignal,'gaussian',60)) 
+        
+        colormap(uax, viridis)
+        
         guidata(fig, data);
     end
 
@@ -129,8 +137,10 @@ guidata(fig, data);
             disp('Sorry, no fixed signal found');
         end
         
-        imagesc(data.workingSignal)
-        colormap(gcf, jet)
+        imagesc(smoothdata(data.workingSignal,'gaussian',60)) 
+        
+        colormap(uax, viridis)
+        
         guidata(fig, data);
     end
 
@@ -138,14 +148,15 @@ guidata(fig, data);
     function autofix_callback(fig,~)
         data = guidata(fig);
         for i = 1:length(data.workingSignal)
-            left = mean(data.workingSignal(i,1:30),'omitnan');
-            right = mean(data.workingSignal(i,end-30:end),'omitnan');
+            left = mean(data.workingSignal(i,1:20),'omitnan');
+            right = mean(data.workingSignal(i,end-20:end),'omitnan');
             if left > right
                 data.workingSignal(i,:) = fliplr(data.workingSignal(i,:));
             end
         end
-        imagesc(data.workingSignal)
-        colormap(gcf, jet)
+        imagesc(smoothdata(data.workingSignal,'gaussian',60)) 
+        colormap(uax, viridis)
+        
         guidata(fig, data);
     end
 
