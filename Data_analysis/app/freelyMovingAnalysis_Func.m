@@ -137,7 +137,7 @@ for nf =startIndex:length(tdir)
 
 
     if loadtiff == 1
-        if exist('TIFFStack.m','file')
+        if exist('TIFFStack\','dir')
             img = TIFFStack(path);
             war = warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
             warning('off', 'MATLAB:imagesci:tifftagsread:expectedTagDataFormat');
@@ -190,8 +190,20 @@ for nf =startIndex:length(tdir)
         
         BW = ~bwareaopen(~BW, 500);
         BW = imdilate(BW,strel('disk',4));
+        BW = imfill(BW,'holes');
         BW = imerode(BW,strel('disk',4));
         tempb2 = BW;
+
+        if troubleshoot == 1
+            imshow(tempb,'Parent', ax2);
+            title(ax2,'Initial Threshold');
+
+            imshow(tempb2,'Parent', ax3);
+            title(ax3,'Processed Mask');
+        end
+
+
+
         
         
 
@@ -207,8 +219,8 @@ for nf =startIndex:length(tdir)
             x = xy(:,1);
             y = xy(:,2);
             distances = sqrt((imgWidth/2 - x) .^ 2 + (imgHeight/2 - y) .^ 2);
-            [centralSize, centralIdx] = min(distances); % most central object
-            [bigSize, bigIdx] = max([bwprops.Area]); % largest object
+            [~, centralIdx] = min(distances); % most central object
+            [~, bigIdx] = max([bwprops.Area]); % largest object
 
             % filtering block: wormIdx is the object that we suspect is the worm.
             % if the biggest object is also the most central object than we will
@@ -223,7 +235,7 @@ for nf =startIndex:length(tdir)
                 disp(['segmentation error at frame: ' num2str(i)]);
                 wormIdx = centralIdx;
             else
-                wormIdx = [];
+                wormIdx = bigIdx;
             end
 
             % create a copy of the label matrix Lw that contains only the worm.

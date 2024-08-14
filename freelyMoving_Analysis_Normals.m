@@ -1,5 +1,5 @@
-fld = 'C:\Users\Jeremy\Desktop\230316_zfis178_wildtype_1'; % Folder containing the data you want to analyze
-serverfolder = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\unc-43(e408)';  % upload everything to this location.
+fld = 'E:inx-16'; % Folder containing the data you want to analyze
+serverfolder = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\inx-16';  % upload everything to this location.
 
 %% settings
 startIndex = 1; % which video to start analysis.
@@ -122,7 +122,7 @@ for nf =startIndex:length(tdir)
 
 
     if loadtiff == 1
-        if exist('TIFFStack.m','file')
+        if exist('TIFFStack','dir')
             img = TIFFStack(path);
             war = warning('off', 'MATLAB:imagesci:tiffmexutils:libtiffWarning');
             warning('off', 'MATLAB:imagesci:tifftagsread:expectedTagDataFormat');
