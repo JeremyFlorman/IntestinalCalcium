@@ -4,7 +4,7 @@ function [] = fixAxialSignal()
 %
 [fn,fp] = uigetfile('z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\itr-1\220316_zfis178_itr-1_5\220316_zfis178_itr-1_5_wormdata.mat');
 path = fullfile(fp,fn);
-tempdir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\tempdata';
+tempdir = 'C:\tmp';
 tempfullfile = fullfile(tempdir, fn);
 
 
@@ -24,7 +24,7 @@ data.serverpath = path;
 %     data.workingSignal = data.fixedSignal;
 %     disp('Using previously modified signal');
 % end
-data.workingSignal = data.autoAxialSignal
+data.workingSignal = data.autoAxialSignal;
 
 % data.outname = axsigname;
 fig = figure('Position', [506.6000 33 560.0000 749.6000]);
