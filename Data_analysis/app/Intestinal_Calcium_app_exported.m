@@ -453,12 +453,14 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         % Button pushed function: RunAnalysisButton
         function RunAnalysisButtonPushed(app, event)
+            disp('Starting...')
             parsedInputs = parseInputs(app);
             if parsedInputs.isOAS == 0
             freelyMovingAnalysis_Func(parsedInputs)
             elseif parsedInputs.isOAS==1
                 OAS_Analysis_Func(parsedInputs)
             end
+            
 
 
         end
