@@ -184,13 +184,13 @@ for nf =startIndex:length(tdir)
 
 
         BW = imcomplement(BW);
-        BW = bwmorph(BW,'clean');
-        BW = bwmorph(BW,'fill');
+        % BW = bwmorph(BW,'clean');
+        % BW = bwmorph(BW,'fill');
         tempb = BW;
         
-        BW = ~bwareaopen(~BW, 500);
+        BW = ~bwareaopen(~BW, 50);
+        % BW = imfill(BW,'holes');
         BW = imdilate(BW,strel('disk',4));
-        BW = imfill(BW,'holes');
         BW = imerode(BW,strel('disk',4));
         tempb2 = BW;
 
