@@ -577,7 +577,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % Button pushed function: PlotMultipleGenotypesButton, 
         % ...and 1 other component
         function PlotMultipleGenotypesButtonPushed(app, event)
-            
+            disp('Plotting...')
             outputdir = app.outputDir.Value;
             if ~isfolder(outputdir)
                 if isfolder(app.DataDir.Value)
