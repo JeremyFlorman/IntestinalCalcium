@@ -30,16 +30,15 @@ loadtiff =inputs.loadTiff; % read entire tiff into memory? faster analysis but r
 minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
 axSigLen = 200; % how many pixels to use for registering axial signal.(i.e. pixels from head to tail)
-axSigHeight = 15; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
-
+axSigHeight = 7; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+useROI = 1;
 
 %%
 tdir = dir([fld '\**\*.tif']);
 
 for nf =startIndex:length(tdir)
     path = fullfile(tdir(nf).folder, tdir(nf).name)
-
-
+    
     if isremote == 1
 
         uploadresults = 1;
@@ -124,16 +123,44 @@ for nf =startIndex:length(tdir)
     end
 
 
-    %% Get comments if available
-    %     commentPath = [tdir(nf).folder '\comments.txt'];
-    %     if exist(commentPath, 'file')
-    %         s = readlines(commentPath);
-    %         comments = s(12,:);
-    %         tem = regexpi(comments, 'temp', 'split');
-    %
-    %
-    %
-    %     end
+    if useROI == 1
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        roiPath = dir([tdir(nf).folder '\*roi*']);
+        if ~isempty(roiPath)
+            load(fullfile(roiPath.folder,roiPath.name));
+            roiFrame = regexpi(roiPath.name, 'roi_(\d+).mat','tokens');
+            roiFrame = str2double(roiFrame{1});
+
+            x = roi.Position(:,1);
+            y = roi.Position(:,2);
+            numPoints = 200;
+            % Interpolate points along the polyline
+            xInterp = interp1(1:numel(x), x, linspace(1, numel(x), numPoints), 'linear');
+            yInterp = interp1(1:numel(y), y, linspace(1, numel(y), numPoints), 'linear');
+
+            % Round to the nearest pixel coordinates
+            xInterp = round(xInterp);
+            yInterp = round(yInterp);
+
+            imageSize = [251, 251];  % Replace with the size of your image
+            binaryMask = false(imageSize);
+
+            % Set the interpolated pixel coordinates in the binary mask to 1
+            for k = 1:length(xInterp)
+                if xInterp(k) >= 1 && xInterp(k) <= imageSize(2) && yInterp(k) >= 1 && yInterp(k) <= imageSize(1)
+                    binaryMask(yInterp(k), xInterp(k)) = true;
+                end
+            end
+
+            binaryMask = imdilate(binaryMask,strel('disk',2));
+            binaryMask = bwmorph(binaryMask, 'thin', inf);
+        else
+            useROI = 0;
+        end
+
+    end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 
     if loadtiff == 1
@@ -150,7 +177,6 @@ for nf =startIndex:length(tdir)
         disp('loading tif took:')
         toc
     end
-
 
     %% Tracking Block
     for i = startframe:length(info)/2
@@ -190,8 +216,8 @@ for nf =startIndex:length(tdir)
         
         BW = ~bwareaopen(~BW, 50);
         % BW = imfill(BW,'holes');
-        BW = imdilate(BW,strel('disk',4));
-        BW = imerode(BW,strel('disk',4));
+        BW = imdilate(BW,strel('disk',5));
+        BW = imerode(BW,strel('disk',5));
         tempb2 = BW;
 
         if troubleshoot == 1
@@ -201,13 +227,7 @@ for nf =startIndex:length(tdir)
             imshow(tempb2,'Parent', ax3);
             title(ax3,'Processed Mask');
         end
-
-
-
-        
-        
-
-
+    
         % identify connected objects
         CC = bwconncomp(BW);
         L = labelmatrix(CC);
@@ -246,27 +266,22 @@ for nf =startIndex:length(tdir)
 
                 orientation(i,1) = bwprops(wormIdx).Orientation;
 
-
                 % generate mask, outline and skeleton
                 mask = logical(Lw);
-                % 
-                % D = bwdist(~mask);
-                % ws = watershed(D,4);
-                % imshow(D, [0 20],Parent=ax2)    
-                % mask(ws==0)=0;
-                % imshow(mask,Parent=ax3)
 
                 outline = bwmorph(mask, 'remove',1);
-                skel = bwmorph(mask,'thin', inf);
 
-
-
+                if useROI == 1 && i>= roiFrame
+                    skel = binaryMask;
+                    roiActive = 1;
+                else
+                    skel = bwmorph(mask,'thin', inf);
+                    roiActive = 0;
+                end
 
                 outskel = logical(outline+skel);
                 [ep] = bwmorph(skel,'endpoints');
-
-
-
+                                   
                 % Extract Axial signal by sampling perpendicular lines from skeleton %
 
                 if nnz(ep) >0
@@ -350,15 +365,16 @@ for nf =startIndex:length(tdir)
 
 
                             % % % % real-time autoFixSignal % % %
-                            querryLength = length(tt)*0.1; % fraction of signal to querry
-                            leftMean = mean(tt(1:querryLength),'omitnan');
-                            rightMean = mean(tt(length(tt)-querryLength:length(tt)),'omitnan');
+                            if roiActive == 0
+                                querryLength = length(tt)*0.1; % fraction of signal to querry
+                                leftMean = mean(tt(1:querryLength),'omitnan');
+                                rightMean = mean(tt(length(tt)-querryLength:length(tt)),'omitnan');
 
-                            if leftMean>rightMean
-                                tt = fliplr(tt);
-                                abf = fliplr(abf);
+                                if leftMean>rightMean
+                                    tt = fliplr(tt);
+                                    abf = fliplr(abf);
+                                end
                             end
-
                             % % % % % % % % % % % % % % % % % % % %
 
                             axialBF(i,1:size(abf,2)) = abf;
@@ -503,8 +519,9 @@ for nf =startIndex:length(tdir)
         close(v)
     end
     %% %%%%%%%%%%%%%%%%%%%%% Auto Fix Axial Signal %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    fractionToQuerry = 0.1;
-    autoAxialSignal = autoFixSignal(axialSignal,fractionToQuerry);
+    % fractionToQuerry = 0.1;
+    % autoAxialSignal = autoFixSignal(axialSignal,fractionToQuerry);
+    autoAxialSignal = axialSignal;
 
     %     for ii = 1:length(axialSignal)
     %         left = mean(axialSignal(ii,1:10),'omitnan');
@@ -564,6 +581,10 @@ for nf =startIndex:length(tdir)
     wormdata.autoAxialSignal = autoAxialSignal;
     if saveAxialMatrix == 1
         wormdata.axialMatrix = axialMatrix;
+    end
+
+    if useROI
+        wormdata.noAutoFix = 1;
     end
     wormdata.sumSignal = sumSignal;
     wormdata.bulkSignal = bulkSignal;

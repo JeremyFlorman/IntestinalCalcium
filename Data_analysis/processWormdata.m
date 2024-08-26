@@ -90,7 +90,7 @@ for i = 1:length(inputData)
     backgroundMatrix = repmat(inputData(i).backgroundSignal,1,size(inputData(i).autoAxialSignal,2));
     axsig = inputData(i).autoAxialSignal-backgroundMatrix;
 
-    if settings.autoFixAxialSignal
+    if settings.autoFixAxialSignal && ~isfield(inputData(i), 'noAutoFix')
         toQuerry = settings.axSigToQuerry;
         inputData(i).autoAxialSignal = autoFixSignal(axsig,toQuerry);
     else
