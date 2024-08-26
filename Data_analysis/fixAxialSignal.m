@@ -2,7 +2,7 @@ function [] = fixAxialSignal()
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 %
-[fn,fp] = uigetfile('z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\itr-1\220316_zfis178_itr-1_5\220316_zfis178_itr-1_5_wormdata.mat');
+[fn,fp] = uigetfile("Z:\Calcium Imaging\Intestinal_Calcium\Exogenous_Tyramine\Receptor_Mutants\wildtype-30mM-TA\220217_zfis178_wildtype-30mM-TA_1");
 path = fullfile(fp,fn);
 tempdir = 'C:\tmp';
 tempfullfile = fullfile(tempdir, fn);
@@ -164,13 +164,15 @@ guidata(fig, data);
     function endbtn_callback(fig,~)
         data = guidata(fig);
         data.fixedSignal = data.workingSignal;
-        mm =  load(data.temppath);
-        wormdata = mm.wormdata;
-        wormdata.fixedSignal = data.workingSignal;
+        load(data.temppath)
+        wormdata.autoAxialSignal = data.workingSignal;
+        wormdata.noAutoFix = 1;
         
         if isfield(data, 'ypts')
             wormdata.axialTransform = data.ypts;
         end
+
+
         save(data.temppath, 'wormdata')
         guidata(fig, data);
         
