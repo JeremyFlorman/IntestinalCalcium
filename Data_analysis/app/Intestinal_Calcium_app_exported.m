@@ -9,6 +9,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         loadSettings                   matlab.ui.container.Menu
         TabGroup                       matlab.ui.container.TabGroup
         TrackingTab                    matlab.ui.container.Tab
+        fixAxialSignalButton           matlab.ui.control.Button
+        drawROIs                       matlab.ui.control.Button
         StartFrameSpinner              matlab.ui.control.Spinner
         StartFrameSpinnerLabel         matlab.ui.control.Label
         RunAnalysisButton              matlab.ui.control.Button
@@ -323,7 +325,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.peakwidth.Value= plotSettings.peakwidth;
             app.spikeProfileWindow.Value= plotSettings.spikeProfileWindow;
 
-            app.NormalizationDropDown.ValueIndex = plotSettings.normalize;
+            app.NormalizationDropDown.Value = app.NormalizationDropDown.Items(plotSettings.normalize);
 
             app.AutoFixAxialSignalCheckBox.Value= plotSettings.autoFixAxialSignal;
             app.toQuerry.Value = plotSettings.axSigToQuerry;
@@ -453,14 +455,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         % Button pushed function: RunAnalysisButton
         function RunAnalysisButtonPushed(app, event)
-            disp('Starting...')
             parsedInputs = parseInputs(app);
             if parsedInputs.isOAS == 0
             freelyMovingAnalysis_Func(parsedInputs)
             elseif parsedInputs.isOAS==1
                 OAS_Analysis_Func(parsedInputs)
             end
-            
 
 
         end
@@ -577,7 +577,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % Button pushed function: PlotMultipleGenotypesButton, 
         % ...and 1 other component
         function PlotMultipleGenotypesButtonPushed(app, event)
-            disp('Plotting...')
+            
             outputdir = app.outputDir.Value;
             if ~isfolder(outputdir)
                 if isfolder(app.DataDir.Value)
@@ -735,6 +735,16 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % Button pushed function: CloseAllButton
         function CloseAllButtonPushed(app, event)
             close all
+        end
+
+        % Button pushed function: drawROIs
+        function drawROIsButtonPushed(app, event)
+            tiffStackViewer(app.tiffDir.Value)
+        end
+
+        % Button pushed function: fixAxialSignalButton
+        function fixAxialSignalButtonButtonPushed(app, event)
+           fixAxialSignal(app.tiffDir.Value)
         end
     end
 
@@ -964,6 +974,18 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.StartFrameSpinner.Tooltip = {'which frame to start the analysis from.'};
             app.StartFrameSpinner.Position = [89 18 54 35];
             app.StartFrameSpinner.Value = 1;
+
+            % Create drawROIs
+            app.drawROIs = uibutton(app.TrackingTab, 'push');
+            app.drawROIs.ButtonPushedFcn = createCallbackFcn(app, @drawROIsButtonPushed, true);
+            app.drawROIs.Position = [310 159 118 29];
+            app.drawROIs.Text = 'Draw Midline ROIs';
+
+            % Create fixAxialSignalButton
+            app.fixAxialSignalButton = uibutton(app.TrackingTab, 'push');
+            app.fixAxialSignalButton.ButtonPushedFcn = createCallbackFcn(app, @fixAxialSignalButtonButtonPushed, true);
+            app.fixAxialSignalButton.Position = [310 193 118 27];
+            app.fixAxialSignalButton.Text = 'Fix Axial Signal';
 
             % Create PlottingTab
             app.PlottingTab = uitab(app.TabGroup);

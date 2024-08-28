@@ -15,7 +15,7 @@ plotstuff = inputs.plotResults; % display tracking
 videostuff =inputs.recordVideo; % record video
 framerate = inputs.videoFramerate; % display video/plots every Nth iteration of loop.
 fps = inputs.inputFramerate;      % frames per sec of input tiff.
-troubleshoot =inputs.troubleshoot; % show binary images instead of regular plots 
+troubleshoot =inputs.troubleshoot; % show binary images instead of regular plots
 showNormals = inputs.showNormals;
 showAxialSignal = inputs.showAxialSignal;
 saveAxialMatrix = 0;
@@ -25,20 +25,20 @@ useautothreshold = inputs.autoThreshold;% set to 1 to calculate a threshold for 
 useadaptivethreshold = inputs.adaptiveThreshold; % if useautothreshold is set to 0 adaptive thresholding can be used
 removevignette = inputs.flatField; % if not zero, size of kernel to use for flatfield correction.
 loadtiff =inputs.loadTiff; % read entire tiff into memory? faster analysis but requires more ram.
- 
+
 
 minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
 axSigLen = 200; % how many pixels to use for registering axial signal.(i.e. pixels from head to tail)
-axSigHeight = 7; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
-useROI = 1;
+axSigHeight = 4; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+
 
 %%
 tdir = dir([fld '\**\*.tif']);
 
 for nf =startIndex:length(tdir)
     path = fullfile(tdir(nf).folder, tdir(nf).name)
-    
+
     if isremote == 1
 
         uploadresults = 1;
@@ -48,7 +48,7 @@ for nf =startIndex:length(tdir)
             tic
             disp(['Copying file to: ' tempfolder ' for local processing'])
             copyfile(path, tempfolder)
-            disp(['Filed copied in ' num2str(toc)])
+            disp(['File copied in ' num2str(toc)])
         end
 
         remotepath = path;                         % save the original path for later uploading.
@@ -91,11 +91,6 @@ for nf =startIndex:length(tdir)
         end
     end
 
-    %     if showNormals ==1
-    %     normfig = figure();
-    %     normAx = axes(Parent=normfig);
-    %     end
-
     tic
     info = imfinfo(path);
     toc
@@ -123,42 +118,50 @@ for nf =startIndex:length(tdir)
     end
 
 
-    if useROI == 1
-        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-        roiPath = dir([tdir(nf).folder '\*roi*']);
-        if ~isempty(roiPath)
-            load(fullfile(roiPath.folder,roiPath.name));
-            roiFrame = regexpi(roiPath.name, 'roi_(\d+).mat','tokens');
-            roiFrame = str2double(roiFrame{1});
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    roiPath = dir([tdir(nf).folder '\*ROIs.mat']);
+    if ~isempty(roiPath)
+        useROI = 1;
+        load(fullfile(roiPath.folder,roiPath.name));
+        % roiFrame = regexpi(roiPath.name, 'roi_(\d+).mat','tokens');
+        % roiFrame = str2double(roiFrame{1});
+        roiFrames = ceil([roiStruct.frame]/2);
+        imageSize = [251, 251];  % Replace with the size of your image
+        binaryMask = false(imageSize(1), imageSize(2), length(roiFrames));
 
-            x = roi.Position(:,1);
-            y = roi.Position(:,2);
-            numPoints = 200;
-            % Interpolate points along the polyline
-            xInterp = interp1(1:numel(x), x, linspace(1, numel(x), numPoints), 'linear');
-            yInterp = interp1(1:numel(y), y, linspace(1, numel(y), numPoints), 'linear');
+        for i = 1:length(roiFrames)
+            if ~isempty(roiStruct(i).roi)
+                x = roiStruct(i).roi(:,1);
+                y = roiStruct(i).roi(:,2);
+                numPoints = 200;
+                % Interpolate points along the polyline
+                xInterp = interp1(1:numel(x), x, linspace(1, numel(x), numPoints), 'linear');
+                yInterp = interp1(1:numel(y), y, linspace(1, numel(y), numPoints), 'linear');
 
-            % Round to the nearest pixel coordinates
-            xInterp = round(xInterp);
-            yInterp = round(yInterp);
+                % Round to the nearest pixel coordinates
+                xInterp = round(xInterp);
+                yInterp = round(yInterp);
 
-            imageSize = [251, 251];  % Replace with the size of your image
-            binaryMask = false(imageSize);
 
-            % Set the interpolated pixel coordinates in the binary mask to 1
-            for k = 1:length(xInterp)
-                if xInterp(k) >= 1 && xInterp(k) <= imageSize(2) && yInterp(k) >= 1 && yInterp(k) <= imageSize(1)
-                    binaryMask(yInterp(k), xInterp(k)) = true;
+                bm = false(imageSize);
+
+                % Set the interpolated pixel coordinates in the binary mask to 1
+                for k = 1:length(xInterp)
+                    if xInterp(k) >= 1 && xInterp(k) <= imageSize(2) && yInterp(k) >= 1 && yInterp(k) <= imageSize(1)
+                        bm(yInterp(k), xInterp(k)) = true;
+                    end
                 end
-            end
 
-            binaryMask = imdilate(binaryMask,strel('disk',2));
-            binaryMask = bwmorph(binaryMask, 'thin', inf);
-        else
-            useROI = 0;
+                bm = imdilate(bm,strel('disk',2));
+                binaryMask(1:imageSize(1), 1:imageSize(2),i) = bwmorph(bm, 'thin', inf);
+            end
         end
 
+    else
+        useROI = 0;
     end
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
@@ -213,7 +216,7 @@ for nf =startIndex:length(tdir)
         % BW = bwmorph(BW,'clean');
         % BW = bwmorph(BW,'fill');
         tempb = BW;
-        
+
         BW = ~bwareaopen(~BW, 50);
         % BW = imfill(BW,'holes');
         BW = imdilate(BW,strel('disk',5));
@@ -227,7 +230,7 @@ for nf =startIndex:length(tdir)
             imshow(tempb2,'Parent', ax3);
             title(ax3,'Processed Mask');
         end
-    
+
         % identify connected objects
         CC = bwconncomp(BW);
         L = labelmatrix(CC);
@@ -268,11 +271,12 @@ for nf =startIndex:length(tdir)
 
                 % generate mask, outline and skeleton
                 mask = logical(Lw);
-
                 outline = bwmorph(mask, 'remove',1);
 
-                if useROI == 1 && i>= roiFrame
-                    skel = binaryMask;
+
+                roiIndex = find(roiFrames<= i,1,'last');
+                if useROI == 1 && i>= roiFrames(1) && nnz(binaryMask(:,:,roiIndex))>0
+                    skel = binaryMask(:,:,roiIndex);
                     roiActive = 1;
                 else
                     skel = bwmorph(mask,'thin', inf);
@@ -281,7 +285,8 @@ for nf =startIndex:length(tdir)
 
                 outskel = logical(outline+skel);
                 [ep] = bwmorph(skel,'endpoints');
-                                   
+
+
                 % Extract Axial signal by sampling perpendicular lines from skeleton %
 
                 if nnz(ep) >0
