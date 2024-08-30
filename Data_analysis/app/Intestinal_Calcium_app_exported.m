@@ -9,8 +9,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         loadSettings                   matlab.ui.container.Menu
         TabGroup                       matlab.ui.container.TabGroup
         TrackingTab                    matlab.ui.container.Tab
-        fixAxialSignalButton           matlab.ui.control.Button
-        drawROIs                       matlab.ui.control.Button
         StartFrameSpinner              matlab.ui.control.Spinner
         StartFrameSpinnerLabel         matlab.ui.control.Label
         RunAnalysisButton              matlab.ui.control.Button
@@ -19,8 +17,10 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         AnalyzeOASdataCheckBox         matlab.ui.control.CheckBox
         FlatfieldCorrectionEditFieldLabel  matlab.ui.control.Label
         FlatfieldCorrectionEditField   matlab.ui.control.NumericEditField
+        drawROIs                       matlab.ui.control.Button
         InputFramerateEditFieldLabel   matlab.ui.control.Label
         InputFramerateEditField        matlab.ui.control.NumericEditField
+        fixAxialSignalButton           matlab.ui.control.Button
         CropPixelsEditFieldLabel       matlab.ui.control.Label
         CropPixelsEditField            matlab.ui.control.NumericEditField
         ThresholdingButtonGroup        matlab.ui.container.ButtonGroup
@@ -53,6 +53,13 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         controlnameEditFieldLabel      matlab.ui.control.Label
         MergeControlButton             matlab.ui.control.Button
         Panel_2                        matlab.ui.container.Panel
+        PrefixEditField                matlab.ui.control.EditField
+        PrefixEditFieldLabel           matlab.ui.control.Label
+        numColumns                     matlab.ui.control.NumericEditField
+        ColumnsEditFieldLabel          matlab.ui.control.Label
+        genotypesEditField             matlab.ui.control.EditField
+        genotypesEditFieldLabel        matlab.ui.control.Label
+        PlotMultipleGenotypesButton    matlab.ui.control.Button
         PlotsPanel                     matlab.ui.container.Panel
         IntervalHistogramCheckBox      matlab.ui.control.CheckBox
         CorrelationCheckBox            matlab.ui.control.CheckBox
@@ -61,13 +68,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         AxialSignalCheckBox            matlab.ui.control.CheckBox
         CVCheckBox                     matlab.ui.control.CheckBox
         BulkSignalCheckBox             matlab.ui.control.CheckBox
-        PrefixEditField                matlab.ui.control.EditField
-        PrefixEditFieldLabel           matlab.ui.control.Label
-        numColumns                     matlab.ui.control.NumericEditField
-        ColumnsEditFieldLabel          matlab.ui.control.Label
-        genotypesEditField             matlab.ui.control.EditField
-        genotypesEditFieldLabel        matlab.ui.control.Label
-        PlotMultipleGenotypesButton    matlab.ui.control.Button
         CombinewormDataButton          matlab.ui.control.Button
         outputDir                      matlab.ui.control.EditField
         setOutputDir                   matlab.ui.control.Button
@@ -754,10 +754,14 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % Create UIFigure and components
         function createComponents(app)
 
+            % Get the file path for locating images
+            pathToMLAPP = fileparts(mfilename('fullpath'));
+
             % Create IntestinalCalciumAppUIFigure and hide until all components are created
             app.IntestinalCalciumAppUIFigure = uifigure('Visible', 'off');
             app.IntestinalCalciumAppUIFigure.Position = [100 100 473 475];
             app.IntestinalCalciumAppUIFigure.Name = 'Intestinal Calcium App';
+            app.IntestinalCalciumAppUIFigure.Icon = fullfile(pathToMLAPP, 'worm_Icon.png');
 
             % Create FileMenu
             app.FileMenu = uimenu(app.IntestinalCalciumAppUIFigure);
@@ -912,6 +916,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.CropPixelsEditFieldLabel.Position = [180 195 67 22];
             app.CropPixelsEditFieldLabel.Text = 'Crop Pixels';
 
+            % Create fixAxialSignalButton
+            app.fixAxialSignalButton = uibutton(app.TrackingTab, 'push');
+            app.fixAxialSignalButton.ButtonPushedFcn = createCallbackFcn(app, @fixAxialSignalButtonButtonPushed, true);
+            app.fixAxialSignalButton.Position = [310 193 118 27];
+            app.fixAxialSignalButton.Text = 'Fix Axial Signal';
+
             % Create InputFramerateEditField
             app.InputFramerateEditField = uieditfield(app.TrackingTab, 'numeric');
             app.InputFramerateEditField.Tooltip = {'Frame rate of the input tiff (frames per second)'};
@@ -923,6 +933,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.InputFramerateEditFieldLabel.HorizontalAlignment = 'right';
             app.InputFramerateEditFieldLabel.Position = [181 162 91 22];
             app.InputFramerateEditFieldLabel.Text = 'Input Framerate';
+
+            % Create drawROIs
+            app.drawROIs = uibutton(app.TrackingTab, 'push');
+            app.drawROIs.ButtonPushedFcn = createCallbackFcn(app, @drawROIsButtonPushed, true);
+            app.drawROIs.Position = [310 159 118 29];
+            app.drawROIs.Text = 'Draw Midline ROIs';
 
             % Create FlatfieldCorrectionEditField
             app.FlatfieldCorrectionEditField = uieditfield(app.TrackingTab, 'numeric');
@@ -975,18 +991,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.StartFrameSpinner.Position = [89 18 54 35];
             app.StartFrameSpinner.Value = 1;
 
-            % Create drawROIs
-            app.drawROIs = uibutton(app.TrackingTab, 'push');
-            app.drawROIs.ButtonPushedFcn = createCallbackFcn(app, @drawROIsButtonPushed, true);
-            app.drawROIs.Position = [310 159 118 29];
-            app.drawROIs.Text = 'Draw Midline ROIs';
-
-            % Create fixAxialSignalButton
-            app.fixAxialSignalButton = uibutton(app.TrackingTab, 'push');
-            app.fixAxialSignalButton.ButtonPushedFcn = createCallbackFcn(app, @fixAxialSignalButtonButtonPushed, true);
-            app.fixAxialSignalButton.Position = [310 193 118 27];
-            app.fixAxialSignalButton.Text = 'Fix Axial Signal';
-
             % Create PlottingTab
             app.PlottingTab = uitab(app.TabGroup);
             app.PlottingTab.Title = 'Plotting';
@@ -1028,46 +1032,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create Panel_2
             app.Panel_2 = uipanel(app.PlottingTab);
             app.Panel_2.Position = [238 11 222 316];
-
-            % Create PlotMultipleGenotypesButton
-            app.PlotMultipleGenotypesButton = uibutton(app.Panel_2, 'push');
-            app.PlotMultipleGenotypesButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMultipleGenotypesButtonPushed, true);
-            app.PlotMultipleGenotypesButton.FontWeight = 'bold';
-            app.PlotMultipleGenotypesButton.Position = [21 132 187 32];
-            app.PlotMultipleGenotypesButton.Text = 'Plot Multiple Genotypes';
-
-            % Create genotypesEditFieldLabel
-            app.genotypesEditFieldLabel = uilabel(app.Panel_2);
-            app.genotypesEditFieldLabel.HorizontalAlignment = 'right';
-            app.genotypesEditFieldLabel.Position = [85 95 60 22];
-            app.genotypesEditFieldLabel.Text = 'genotypes';
-
-            % Create genotypesEditField
-            app.genotypesEditField = uieditfield(app.Panel_2, 'text');
-            app.genotypesEditField.Tooltip = {'list genotypes to plot together. Must match the filenames of merged data files (eg wildtype would correspond to the file "wildtype_mergedData.mat")'};
-            app.genotypesEditField.Position = [23 67 183 28];
-
-            % Create ColumnsEditFieldLabel
-            app.ColumnsEditFieldLabel = uilabel(app.Panel_2);
-            app.ColumnsEditFieldLabel.HorizontalAlignment = 'right';
-            app.ColumnsEditFieldLabel.Position = [62 40 63 22];
-            app.ColumnsEditFieldLabel.Text = '# Columns';
-
-            % Create numColumns
-            app.numColumns = uieditfield(app.Panel_2, 'numeric');
-            app.numColumns.Tooltip = {'Hint - set to zero to have the same number of columns as genotypes. '};
-            app.numColumns.Position = [137 40 31 22];
-
-            % Create PrefixEditFieldLabel
-            app.PrefixEditFieldLabel = uilabel(app.Panel_2);
-            app.PrefixEditFieldLabel.HorizontalAlignment = 'right';
-            app.PrefixEditFieldLabel.Position = [49 11 39 22];
-            app.PrefixEditFieldLabel.Text = 'Prefix ';
-
-            % Create PrefixEditField
-            app.PrefixEditField = uieditfield(app.Panel_2, 'text');
-            app.PrefixEditField.Position = [103 8 83 28];
-            app.PrefixEditField.Value = 'Mutants';
 
             % Create PlotsPanel
             app.PlotsPanel = uipanel(app.Panel_2);
@@ -1114,6 +1078,46 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.IntervalHistogramCheckBox.Text = 'Interval Histogram';
             app.IntervalHistogramCheckBox.Position = [17 -2 119 22];
             app.IntervalHistogramCheckBox.Value = true;
+
+            % Create PlotMultipleGenotypesButton
+            app.PlotMultipleGenotypesButton = uibutton(app.Panel_2, 'push');
+            app.PlotMultipleGenotypesButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMultipleGenotypesButtonPushed, true);
+            app.PlotMultipleGenotypesButton.FontWeight = 'bold';
+            app.PlotMultipleGenotypesButton.Position = [21 132 187 32];
+            app.PlotMultipleGenotypesButton.Text = 'Plot Multiple Genotypes';
+
+            % Create genotypesEditFieldLabel
+            app.genotypesEditFieldLabel = uilabel(app.Panel_2);
+            app.genotypesEditFieldLabel.HorizontalAlignment = 'right';
+            app.genotypesEditFieldLabel.Position = [85 95 60 22];
+            app.genotypesEditFieldLabel.Text = 'genotypes';
+
+            % Create genotypesEditField
+            app.genotypesEditField = uieditfield(app.Panel_2, 'text');
+            app.genotypesEditField.Tooltip = {'list genotypes to plot together. Must match the filenames of merged data files (eg wildtype would correspond to the file "wildtype_mergedData.mat")'};
+            app.genotypesEditField.Position = [23 67 183 28];
+
+            % Create ColumnsEditFieldLabel
+            app.ColumnsEditFieldLabel = uilabel(app.Panel_2);
+            app.ColumnsEditFieldLabel.HorizontalAlignment = 'right';
+            app.ColumnsEditFieldLabel.Position = [62 40 63 22];
+            app.ColumnsEditFieldLabel.Text = '# Columns';
+
+            % Create numColumns
+            app.numColumns = uieditfield(app.Panel_2, 'numeric');
+            app.numColumns.Tooltip = {'Hint - set to zero to have the same number of columns as genotypes. '};
+            app.numColumns.Position = [137 40 31 22];
+
+            % Create PrefixEditFieldLabel
+            app.PrefixEditFieldLabel = uilabel(app.Panel_2);
+            app.PrefixEditFieldLabel.HorizontalAlignment = 'right';
+            app.PrefixEditFieldLabel.Position = [49 11 39 22];
+            app.PrefixEditFieldLabel.Text = 'Prefix ';
+
+            % Create PrefixEditField
+            app.PrefixEditField = uieditfield(app.Panel_2, 'text');
+            app.PrefixEditField.Position = [103 8 83 28];
+            app.PrefixEditField.Value = 'Mutants';
 
             % Create MergeControlButton
             app.MergeControlButton = uibutton(app.PlottingTab, 'push');

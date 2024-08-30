@@ -30,7 +30,7 @@ loadtiff =inputs.loadTiff; % read entire tiff into memory? faster analysis but r
 minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
 axSigLen = 200; % how many pixels to use for registering axial signal.(i.e. pixels from head to tail)
-axSigHeight = 4; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+axSigHeight = 7; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
 
 
 %%
@@ -102,9 +102,9 @@ for nf =startIndex:length(tdir)
     axialSignal = NaN(length(info)/2, axSigLen);
 
     axialBF = NaN(length(info)/2, axSigLen);
-    sumSignal = NaN(length(info)/2,1);
+    % sumSignal = NaN(length(info)/2,1);
     bulkSignal = NaN(length(info)/2,1);
-    bulkAboveBkg = NaN(length(info)/2,1);
+    % bulkAboveBkg = NaN(length(info)/2,1);
     backgroundSignal = NaN(length(info)/2,1);
     orientation = NaN(length(info)/2,1);
     area = NaN(length(info)/2,1);
@@ -295,7 +295,12 @@ for nf =startIndex:length(tdir)
                     sortSkel = sortSkel(1:ceil(length(sortSkel)/2),:);
 
                     stepSize = 3; % # of points along spine for each spine segment
-                    Clen = axSigHeight; % length of perpendicular line to sample
+                    
+                    if roiActive == 0 
+                        Clen = axSigHeight;  % length of perpendicular line to sample
+                    elseif roiActive == 1
+                        Clen = 4;  % shorter sample length if we're using ROI spines on coiled worms
+                    end
 
                     temptrace = cell(1,length(sortSkel)-1); %NaN(Clen,length(sortSkel)-1);
                     tempbf = cell(1,length(sortSkel)-1); %NaN(Clen,length(sortSkel)-1);
@@ -370,7 +375,7 @@ for nf =startIndex:length(tdir)
 
 
                             % % % % real-time autoFixSignal % % %
-                            if roiActive == 0
+                            % if roiActive == 0
                                 querryLength = length(tt)*0.1; % fraction of signal to querry
                                 leftMean = mean(tt(1:querryLength),'omitnan');
                                 rightMean = mean(tt(length(tt)-querryLength:length(tt)),'omitnan');
@@ -379,7 +384,7 @@ for nf =startIndex:length(tdir)
                                     tt = fliplr(tt);
                                     abf = fliplr(abf);
                                 end
-                            end
+                            % end
                             % % % % % % % % % % % % % % % % % % % %
 
                             axialBF(i,1:size(abf,2)) = abf;
@@ -395,12 +400,12 @@ for nf =startIndex:length(tdir)
 
                 % Bulk signal and background signal
                 blksig = GFP(mask);
-                sumSignal(i,1) = sum(blksig,"all",'omitnan');
+                % sumSignal(i,1) = sum(blksig,"all",'omitnan');
                 bulkSignal(i,1) = mean(blksig,"all",'omitnan');
                 backgroundSignal(i,1) = mean(GFP(~mask),'all','omitnan');
 
-                abovebkg = blksig>mean(GFP(~mask));
-                bulkAboveBkg(i,1) = mean(blksig(abovebkg)-mean(GFP(~mask)),"all",'omitnan');
+                % abovebkg = blksig>mean(GFP(~mask));
+                % bulkAboveBkg(i,1) = mean(blksig(abovebkg)-mean(GFP(~mask)),"all",'omitnan');
 
                 area(i,1) = bwprops(wormIdx).Area;
 
@@ -588,12 +593,12 @@ for nf =startIndex:length(tdir)
         wormdata.axialMatrix = axialMatrix;
     end
 
-    if useROI
-        wormdata.noAutoFix = 1;
-    end
-    wormdata.sumSignal = sumSignal;
+    % if useROI
+    %     wormdata.noAutoFix = 1;
+    % end
+    % wormdata.sumSignal = sumSignal;
     wormdata.bulkSignal = bulkSignal;
-    wormdata.bulkAboveBkg = bulkAboveBkg;
+    % wormdata.bulkAboveBkg = bulkAboveBkg;
     wormdata.backgroundSignal = backgroundSignal;
     wormdata.orientation = orientation;
     wormdata.area = area;

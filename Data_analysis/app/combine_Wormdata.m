@@ -25,9 +25,11 @@ end
 
 genotypes = unique([names{:}]);
 
-for i = 1:length(genotypes)  
-    d = dir([datadir '\**\*' genotypes{i} '_*_wormdata.mat']);
 
+
+for i = 1:length(genotypes)  
+    d = dir([datadir '\**\*_' genotypes{i} '_*_wormdata.mat']);
+[datadir '\**\*_' genotypes{i} '_*_wormdata.mat']
     % %% Exclude/include experiments based on date specified in dateflag
     % nms = {d.name};
     % dates = nan(1,length(nms));

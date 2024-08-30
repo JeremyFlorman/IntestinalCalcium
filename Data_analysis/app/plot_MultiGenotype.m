@@ -215,27 +215,27 @@ if pltProfile
 end
 
 if pltHist
-    exportgraphics(histfig, [parentfolder prefix 'Interval_Histogram.png'], 'Resolution', 300);
+    exportgraphics(histfig, [parentfolder '_' prefix '_Interval_Histogram.png'], 'Resolution', 300);
 end
 
 if pltCV
-    exportgraphics(cvfig, [parentfolder prefix 'Coefficent_of_Variance.png'], 'Resolution', 300);
+    exportgraphics(cvfig, [parentfolder '_' prefix '_Coefficent_of_Variance.png'], 'Resolution', 300);
 end
 
 if pltCorr
-    exportgraphics(correlationfig, [parentfolder prefix 'Interval_Correlation.png'], 'Resolution', 300);
+    exportgraphics(correlationfig, [parentfolder '_' prefix '_Interval_Correlation.png'], 'Resolution', 300);
 end
 
 if pltBulk
-    exportgraphics(bulkfig, [parentfolder prefix 'Bulk_Signal.png'], 'Resolution', 300);
+    exportgraphics(bulkfig, [parentfolder '_' prefix '_Bulk_Signal.png'], 'Resolution', 300);
 end
 
 if pltAx
-    exportgraphics(axialfig, [parentfolder prefix 'axial_Signal.png'], 'Resolution', 300);
+    exportgraphics(axialfig, [parentfolder '_' prefix '_axial_Signal.png'], 'Resolution', 300);
 end
 
 if pltOvly
-    exportgraphics(overlayfig, [parentfolder prefix 'Overlay_Signal.png'], 'Resolution', 300);
+    exportgraphics(overlayfig, [parentfolder '_' prefix '_Overlay_Signal.png'], 'Resolution', 300);
 end
 
 end

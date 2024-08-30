@@ -531,13 +531,13 @@ end
 
 for i = 1:length(inputData)
     inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(expStart:expEnd,:);
-    inputData(i).sumSignal = inputData(i).sumSignal(expStart:expEnd);
+    % inputData(i).sumSignal = inputData(i).sumSignal(expStart:expEnd);
     inputData(i).bulkSignal = inputData(i).bulkSignal(expStart:expEnd);
-    if isfield(inputData,'bulkAboveBkg')
-        if ~isempty(inputData(i).bulkAboveBkg)
-            inputData(i).bulkAboveBkg = inputData(i).bulkAboveBkg(expStart:expEnd);
-        end
-    end
+    % if isfield(inputData,'bulkAboveBkg')
+    %     if ~isempty(inputData(i).bulkAboveBkg)
+    %         inputData(i).bulkAboveBkg = inputData(i).bulkAboveBkg(expStart:expEnd);
+    %     end
+    % end
     inputData(i).backgroundSignal = inputData(i).backgroundSignal(expStart:expEnd);
     inputData(i).orientation = inputData(i).orientation(expStart:expEnd);
     inputData(i).area = inputData(i).area(expStart:expEnd);
