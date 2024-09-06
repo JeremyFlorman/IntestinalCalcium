@@ -273,8 +273,10 @@ for nf =startIndex:length(tdir)
                 mask = logical(Lw);
                 outline = bwmorph(mask, 'remove',1);
 
-
-                roiIndex = find(roiFrames<= i,1,'last');
+                if useROI == 1
+                    roiIndex = find(roiFrames<= i,1,'last');
+                end
+                
                 if useROI == 1 && i>= roiFrames(1) && nnz(binaryMask(:,:,roiIndex))>0
                     skel = binaryMask(:,:,roiIndex);
                     roiActive = 1;
