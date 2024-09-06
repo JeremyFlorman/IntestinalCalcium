@@ -12,7 +12,7 @@ s(3) ={scores(:,38)}; %quad
 s(4) ={scores(:,24)}; %tyra-3
 s(5) ={scores(:,3)}; %wt
 
-for k = 3%1:length(d)
+for k = 1:length(d)
     datapath = fullfile(d(k).folder,d(k).name);
     load(datapath)
     
@@ -28,30 +28,30 @@ end
 
 function sortedData=sortData(wormdata,score)
 l = score == 1;
-% m = score == 2; 
-h = score >1;
+m = score == 2; 
+h = score ==3;
  
 low = wormdata(l);
-% med = wormdata(m);
+med = wormdata(m);
 high = wormdata(h);
 
 %%
 clear('sortedData')
 
 sortedLow = sortByMean(low);
-% sortedMed = sortByMean(med);
+sortedMed = sortByMean(med);
 sortedHigh = sortByMean(high);
 
 for i = 1:length(sortedHigh)
     sortedData(i) = sortedHigh(i);
 end
 
-% buffer1 = length(sortedHigh);
-% for i = 1:length(sortedMed)
-%     sortedData(i+buffer1) = sortedMed(i);
-% end
+buffer1 = length(sortedHigh);
+for i = 1:length(sortedMed)
+    sortedData(i+buffer1) = sortedMed(i);
+end
 
-buffer2 = length(sortedHigh);%+length(sortedMed);
+buffer2 = length(sortedHigh)+length(sortedMed);
 for i = 1:length(sortedLow)
     sortedData(i+buffer2) = sortedLow(i);
 end
