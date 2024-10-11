@@ -8,8 +8,8 @@ startframe = inputs.startFrame; % when to begin analysis
 
 uploadresults = inputs.uploadResults; % upload data to remote location (serverfolder)?
 isremote = inputs.isRemote;     % is our tiff file on the server? If so, we'll copy to local
-% folder to run the analysis then move the results to the
-% server.
+                                % folder to run the analysis then move the results to the
+                                % server.
 
 plotstuff = inputs.plotResults; % display tracking
 videostuff =inputs.recordVideo; % record video
@@ -27,8 +27,8 @@ removevignette = inputs.flatField; % if not zero, size of kernel to use for flat
 loadtiff =inputs.loadTiff; % read entire tiff into memory? faster analysis but requires more ram.
 
 
-minwormarea = 10000; %lower limit to worm area
-maxwormarea = 20000; % upper limit to worm area
+minwormarea = 1000; %lower limit to worm area
+maxwormarea = 4000; % upper limit to worm area
 axSigLen = 200; % how many pixels to use for registering axial signal.(i.e. pixels from head to tail)
 axSigHeight = 7; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
 
@@ -44,7 +44,8 @@ for nf =startIndex:length(tdir)
         uploadresults = 1;
         tempfolder = 'C:\tmp'; %set temp directory for copying tiff files.
 
-        if ~exist(fullfile(tempfolder, tdir(nf).name), "file")
+
+        if ~exist(fullfile(tempfolder, tdir(nf).name), "file") % copy tiff if it isn't already in tempfolder;
             tic
             disp(['Copying file to: ' tempfolder ' for local processing'])
             copyfile(path, tempfolder)
@@ -217,10 +218,10 @@ for nf =startIndex:length(tdir)
         % BW = bwmorph(BW,'fill');
         tempb = BW;
 
-        BW = ~bwareaopen(~BW, 50);
+        BW = bwareaopen(BW, 100);
         % BW = imfill(BW,'holes');
-        BW = imdilate(BW,strel('disk',5));
-        BW = imerode(BW,strel('disk',5));
+        BW = imdilate(BW,strel('disk',6));
+        BW = imerode(BW,strel('disk',6));
         tempb2 = BW;
 
         if troubleshoot == 1
