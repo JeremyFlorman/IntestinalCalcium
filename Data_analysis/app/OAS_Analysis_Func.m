@@ -18,19 +18,19 @@ fps = inputs.inputFramerate;      % frames per sec of input tiff.
 troubleshoot =inputs.troubleshoot; % show binary images instead of regular plots
 showNormals = inputs.showNormals;
 showAxialSignal = inputs.showAxialSignal;
+saveAxialMatrix = 0;
 
 crop = inputs.crop; % num pixels to crop from image edge. set to 0 for no cropping.
 useautothreshold = inputs.autoThreshold;% set to 1 to calculate a threshold for each image.
 useadaptivethreshold = inputs.adaptiveThreshold; % if useautothreshold is set to 0 adaptive thresholding can be used
 removevignette = inputs.flatField; % if not zero, size of kernel to use for flatfield correction.
-loadtiff =inputs.loadTiff; % read entire tiff into memory? faster analysis but requires more ram.
+% loadtiff =inputs.loadTiff; % read entire tiff into memory? faster analysis but requires more ram.
 
 
 minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
 axSigLen = 200; % how many pixels to use for registering axial signal.
-axSigHeight = 20; % how many pixels to use sample perpindicular to the midline.
-saveAxialMatrix = 1;
+axSigHeight = 10; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
 
 %%
 %%
@@ -170,8 +170,8 @@ for nf =startIndex:length(imgDir)
             x = xy(:,1);
             y = xy(:,2);
             distances = sqrt((imgWidth/2 - x) .^ 2 + (imgHeight/2 - y) .^ 2);
-            [centralSize, centralIdx] = min(distances); % most central object
-            [bigSize, bigIdx] = max([bwprops.Area]); % largest object
+            [~, centralIdx] = min(distances); % most central object
+            [~, bigIdx] = max([bwprops.Area]); % largest object
 
             % filtering block: wormIdx is the object that we suspect is the worm.
             % if the biggest object is also the most central object than we will
@@ -186,7 +186,7 @@ for nf =startIndex:length(imgDir)
                 disp(['segmentation error at frame: ' num2str(i)]);
                 wormIdx = centralIdx;
             else
-                wormIdx = [];
+                wormIdx = bigIdx;
             end
 
             % create a copy of the label matrix Lw that contains only the worm.
@@ -305,12 +305,12 @@ for nf =startIndex:length(imgDir)
 
                 % Bulk signal and background signal
                 blksig = GFP(mask);
-                sumSignal(i,1) = sum(blksig,"all",'omitnan');
+                % sumSignal(i,1) = sum(blksig,"all",'omitnan');
                 bulkSignal(i,1) = mean(blksig,"all",'omitnan');
                 backgroundSignal(i,1) = mean(GFP(~mask),'all','omitnan');
 
-                abovebkg = blksig>mean(GFP(~mask));
-                bulkAboveBkg(i,1) = mean(blksig(abovebkg)-mean(GFP(~mask)),"all",'omitnan');
+                % abovebkg = blksig>mean(GFP(~mask));
+                % bulkAboveBkg(i,1) = mean(blksig(abovebkg)-mean(GFP(~mask)),"all",'omitnan');
 
                 area(i,1) = bwprops(wormIdx).Area;
 
@@ -481,8 +481,9 @@ for nf =startIndex:length(imgDir)
         close(v)
     end
     %% %%%%%%%%%%%%%%%%%%%%% Auto Fix Axial Signal %%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    fractionToQuerry = 0.1;
-    autoAxialSignal = autoFixSignal(axialSignal,fractionToQuerry);
+    % fractionToQuerry = 0.1;
+    % autoAxialSignal = autoFixSignal(axialSignal,fractionToQuerry);
+    autoAxialSignal = axialSignal;
 
     %     for ii = 1:length(axialSignal)
     %         left = mean(axialSignal(ii,1:10),'omitnan');
@@ -537,9 +538,9 @@ for nf =startIndex:length(imgDir)
 
     wormdata = struct();
     wormdata.autoAxialSignal = autoAxialSignal;
-    wormdata.sumSignal = sumSignal;
+    % wormdata.sumSignal = sumSignal;
     wormdata.bulkSignal = bulkSignal;
-    wormdata.bulkAboveBkg = bulkAboveBkg;
+    % wormdata.bulkAboveBkg = bulkAboveBkg;
     wormdata.backgroundSignal = backgroundSignal;
     wormdata.orientation = orientation;
     wormdata.area = area;
@@ -712,7 +713,7 @@ for nf =startIndex:length(imgDir)
     %% Copy to server
     if uploadresults == 1
         if isremote == 0  % if working with local files, upload to serverfolder (specified in settings)
-
+            [folder2Copy, ~]= fileparts(path);
             lastfolder = regexp(folder2Copy, '\', 'split');
             serverLocation = [serverfolder '\' expSuffix];
 
