@@ -83,6 +83,8 @@ wtdata = processSpikes(wtdata,settings);
 end
 %% background subtract bulk and axial Signal
 function [processedData] = subtractBackground(inputData, settings)
+normAx = 1; % nomralize axial signal?
+
 for i = 1:length(inputData)
 
     inputData(i).bulkSignal = fillmissing(inputData(i).bulkSignal-inputData(i).backgroundSignal, 'movmedian',100);
@@ -97,7 +99,10 @@ for i = 1:length(inputData)
         inputData(i).autoAxialSignal = axsig;
     end
 
-
+% if normAx
+%   axMean = mean(inputData(i).autoAxialSignal,1);
+%   inputData(i).autoAxialSignal = inputData(i).autoAxialSignal-axMean;
+% end
 
 end
 processedData = inputData;
