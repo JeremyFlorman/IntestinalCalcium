@@ -144,8 +144,16 @@ hSaveButton = uicontrol('Style', 'pushbutton', 'String', 'Save ROIs', ...
         % Add the new ROI and frame information to the structure
         newRoiData = struct('roi', userData.roi.Position, 'frame', userData.current_frame);
 
-        % Append the new ROI data to the roiStruct
-        userData.roiStruct(end+1) = newRoiData;
+        % check if frame already has an ROI
+        dup = ismember([userData.roiStruct.frame],userData.current_frame);
+        if  nnz(dup)
+            % if yes, overwrite the existing ROI
+            disp(['overwriting frame: ' num2str(userData.current_frame)])
+            userData.roiStruct(dup) = newRoiData;
+        else
+            % otherwise Append the new ROI data to the roiStruct
+            userData.roiStruct(end+1) = newRoiData;
+        end
 
         % Sort the roiStruct by frame to maintain order
         [~, sortIdx] = sort([userData.roiStruct.frame]);
