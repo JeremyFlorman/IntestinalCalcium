@@ -14,6 +14,11 @@ pltHist = settings.plotHist;
 pltProfile = settings.plotProfile;
 pltCorr = settings.plotCorr;
 
+if isempty(genotypes)
+mergedDataFiles = dir([parentfolder '\**\*mergedData.mat']);
+genotypes = strrep({mergedDataFiles.name},'_mergedData.mat','')';
+end
+
 
 if isfield(settings, 'graphPos')
     figpos = settings.graphPos;
@@ -34,6 +39,10 @@ else
 end
 
 w = settings.numColumns;
+if w == 0 
+    w = length(genotypes);
+end
+
 h = ceil(length(genotypes)/w);
 
 
@@ -87,10 +96,7 @@ end
 
 
 
-for q = 1:length(genotypes)
-
-
-    %     searchquerry = [parentfolder '\**\*' genotypes{q} '*_mergedData.mat']
+for q = 1:length(genotypes) 
 
     d = dir([parentfolder '\**\*' genotypes{q} '*_mergedData.mat']);
 
