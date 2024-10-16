@@ -42,6 +42,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         tiffDir                        matlab.ui.control.EditField
         setTiffDirButton               matlab.ui.control.Button
         PlottingTab                    matlab.ui.container.Tab
+        ExtractControlDataButton       matlab.ui.control.Button
         Panel                          matlab.ui.container.Panel
         windowsizeEditField            matlab.ui.control.NumericEditField
         windowsizeLabel                matlab.ui.control.Label
@@ -159,7 +160,9 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
     
     properties (Access = private)
-        defaultDataDir='Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants'; % Description
+        defaultTiffDir = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants'; 
+        defaultRemoteDir = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
+        defaultDataDir='Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
         defaultOutputDir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants';
     end
 
@@ -217,7 +220,16 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.peakwidth = app.peakwidth.Value;
             plotSettings.spikeProfileWindow = app.spikeProfileWindow.Value;
 
-            plotSettings.normalize = app.NormalizationDropDown.ValueIndex;
+            
+            normval = app.NormalizationDropDown.Value;
+            switch normval 
+                case 'None'
+                    plotSettings.normalize = 1;
+                case 'Z-Score'
+                    plotSettings.normalize = 2;
+                case 'Control'
+                    plotSettings.normalize = 3;
+            end
 
             plotSettings.autoFixAxialSignal = app.AutoFixAxialSignalCheckBox.Value;
             plotSettings.axSigToQuerry = app.toQuerry.Value;
@@ -422,7 +434,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if isfolder(prevDir)
                 searchStart = prevDir;
             else
-                searchStart = app.defaultDataDir;
+                searchStart = app.defaultTiffDir;
             end
 
             selectedDir = uigetdir(searchStart, 'Select tiff directory');
@@ -441,7 +453,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if isfolder(prevDir)
                 searchStart = prevDir;
             else
-                searchStart = 'Y:\';
+                searchStart = app.defaultRemoteDir;
             end
 
             selectedDir = uigetdir(searchStart, 'Select tiff directory');
@@ -455,7 +467,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         % Button pushed function: RunAnalysisButton
         function RunAnalysisButtonPushed(app, event)
-            disp('Starting...')
             parsedInputs = parseInputs(app);
             if parsedInputs.isOAS == 0
             freelyMovingAnalysis_Func(parsedInputs)
@@ -489,7 +500,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if isfolder(prevDir)
                 searchStart = prevDir;
             else
-                searchStart = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\';
+                searchStart = app.defaultOutputDir;
             end
 
             selectedDir = uigetdir(searchStart, 'Select mergedData directory');
@@ -540,22 +551,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             mergeControl(outputdir, app.controlnameEditField.Value)
         end
 
-        % Callback function
-        function NormalizeCheckBoxValueChanged(app, event)
-            value = app.NormalizationDropDown.ValueIndex;
-            if value == 1
-                app.bulkYLim.Value = '-500 5000';
-                app.peakthreshold.Value = 500;
-            elseif value == 2
-            elseif value == 3
-                app.bulkYLim.Value = '-0.2 1';
-                app.peakthreshold.Value = 0.1;
-            end
-
-
-
-        end
-
         % Button pushed function: PlotMatchedControlButton, 
         % ...and 1 other component
         function PlotMatchedControlButtonPushed(app, event)
@@ -600,7 +595,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % ...and 1 other component
         function AnalyzeOASdataCheckBox_2ValueChanged(app, event)
             OASvalue = app.AnalyzeOASdataCheckBox_2.Value;
-            normalizeValue = app.NormalizationDropDown.ValueIndex;
+            normalizeValue = app.NormalizationDropDown.UserData;
             if OASvalue == 1
                 if normalizeValue == 1
                 app.bulkYLim.Value = '0 15';
@@ -702,7 +697,18 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         % Value changed function: NormalizationDropDown
         function NormalizationDropDownValueChanged(app, event)
-            normalizeValue = app.NormalizationDropDown.ValueIndex;
+            normval = app.NormalizationDropDown.Value;
+            switch normval
+                case 'None'
+                    normalizeValue = 1;
+                case 'Z-Score'
+                    normalizeValue = 2;
+                case 'Control'
+                    normalizeValue = 3;
+            end
+            app.NormalizationDropDown.UserData = normalizeValue;
+
+
             OASvalue = app.AnalyzeOASdataCheckBox_2.Value;
             if OASvalue == 1
                 if normalizeValue == 1
@@ -746,6 +752,27 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % Button pushed function: fixAxialSignalButton
         function fixAxialSignalButtonButtonPushed(app, event)
            fixAxialSignal(app.tiffDir.Value)
+        end
+
+        % Button pushed function: ExtractControlDataButton
+        function ExtractControlDataButtonPushed(app, event)
+            mtdir = app.outputDir.Value;
+            controlname = app.controlnameEditField.Value;
+            getConsensusControl(mtdir,controlname);
+        end
+
+        % Drop down opening function: NormalizationDropDown
+        function NormalizationDropDownOpening(app, event)
+            normval = app.NormalizationDropDown.Value;
+            switch normval
+                case 'None'
+                    normalizeValue = 1;
+                case 'Z-Score'
+                    normalizeValue = 2;
+                case 'Control'
+                    normalizeValue = 3;
+            end
+            app.NormalizationDropDown.UserData = normalizeValue;
         end
     end
 
@@ -1026,13 +1053,13 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.CombinewormDataButton = uibutton(app.PlottingTab, 'push');
             app.CombinewormDataButton.ButtonPushedFcn = createCallbackFcn(app, @CombinewormDataButtonPushed, true);
             app.CombinewormDataButton.FontWeight = 'bold';
-            app.CombinewormDataButton.Tooltip = {'This will seach through folders '};
-            app.CombinewormDataButton.Position = [21 298 187 32];
+            app.CombinewormDataButton.Tooltip = {'This will seach through folders and combine matching wormdata.mat files into a mergedData.mat file'};
+            app.CombinewormDataButton.Position = [29 298 187 32];
             app.CombinewormDataButton.Text = 'Combine wormData';
 
             % Create Panel_2
             app.Panel_2 = uipanel(app.PlottingTab);
-            app.Panel_2.Position = [238 11 222 316];
+            app.Panel_2.Position = [238 14 222 316];
 
             % Create PlotsPanel
             app.PlotsPanel = uipanel(app.Panel_2);
@@ -1124,31 +1151,32 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.MergeControlButton = uibutton(app.PlottingTab, 'push');
             app.MergeControlButton.ButtonPushedFcn = createCallbackFcn(app, @MergeControlButtonPushed, true);
             app.MergeControlButton.FontWeight = 'bold';
-            app.MergeControlButton.Position = [21 252 187 32];
+            app.MergeControlButton.Tooltip = {'This will add any mergedData.mat file matching "control name" into the non-matching mutant merged data file. saving it in a field "ControlData"'};
+            app.MergeControlButton.Position = [29 253 187 32];
             app.MergeControlButton.Text = 'Merge Control';
 
             % Create controlnameEditFieldLabel
             app.controlnameEditFieldLabel = uilabel(app.PlottingTab);
             app.controlnameEditFieldLabel.HorizontalAlignment = 'right';
-            app.controlnameEditFieldLabel.Position = [39 220 75 22];
+            app.controlnameEditFieldLabel.Position = [45 170 75 22];
             app.controlnameEditFieldLabel.Text = 'control name';
 
             % Create controlnameEditField
             app.controlnameEditField = uieditfield(app.PlottingTab, 'text');
             app.controlnameEditField.Tooltip = {'Specify what wormdata files to combine with mutant data as matched controls. this will create a mergedData.mat file containing mutant and control datasets for plotting.'};
-            app.controlnameEditField.Position = [129 217 65 28];
+            app.controlnameEditField.Position = [135 167 65 28];
             app.controlnameEditField.Value = 'wildtype';
 
             % Create PlotMatchedControlButton
             app.PlotMatchedControlButton = uibutton(app.PlottingTab, 'push');
             app.PlotMatchedControlButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMatchedControlButtonPushed, true);
             app.PlotMatchedControlButton.FontWeight = 'bold';
-            app.PlotMatchedControlButton.Position = [27 144 187 32];
+            app.PlotMatchedControlButton.Position = [29 122 187 32];
             app.PlotMatchedControlButton.Text = 'Plot Matched Control';
 
             % Create Panel
             app.Panel = uipanel(app.PlottingTab);
-            app.Panel.Position = [16 11 212 102];
+            app.Panel.Position = [16 14 212 102];
 
             % Create PlotSingleTraceButton
             app.PlotSingleTraceButton = uibutton(app.Panel, 'push');
@@ -1178,6 +1206,14 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.windowsizeEditField = uieditfield(app.Panel, 'numeric');
             app.windowsizeEditField.Position = [166 14 27 22];
             app.windowsizeEditField.Value = 10;
+
+            % Create ExtractControlDataButton
+            app.ExtractControlDataButton = uibutton(app.PlottingTab, 'push');
+            app.ExtractControlDataButton.ButtonPushedFcn = createCallbackFcn(app, @ExtractControlDataButtonPushed, true);
+            app.ExtractControlDataButton.FontWeight = 'bold';
+            app.ExtractControlDataButton.Tooltip = {'Thihs will extract the controlData from all mergedData files in current OutputDir folder and save them as a sepatate mergedData.mat file'};
+            app.ExtractControlDataButton.Position = [29 208 187 32];
+            app.ExtractControlDataButton.Text = 'Extract Control Data';
 
             % Create PlotSettingsTab
             app.PlotSettingsTab = uitab(app.TabGroup);
@@ -1416,6 +1452,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create NormalizationDropDown
             app.NormalizationDropDown = uidropdown(app.PlotSettingsTab);
             app.NormalizationDropDown.Items = {'None', 'Z-Score', 'Control'};
+            app.NormalizationDropDown.DropDownOpeningFcn = createCallbackFcn(app, @NormalizationDropDownOpening, true);
             app.NormalizationDropDown.ValueChangedFcn = createCallbackFcn(app, @NormalizationDropDownValueChanged, true);
             app.NormalizationDropDown.Position = [285 214 80 22];
             app.NormalizationDropDown.Value = 'None';

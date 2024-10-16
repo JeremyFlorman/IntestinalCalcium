@@ -1,5 +1,6 @@
-mtdir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\OAS\5-HT\workingFigures\Fig3 - pumping mutants';
-controlname = 'wildtype+5HT';
+function getConsensusControl(mtdir, controlname)
+% mtdir = 'C:\Users\Jeremy\Dropbox\Intestinal Calcium Paper\Data\Figure 2';
+% controlname = 'wildtype';
 
 d = dir([mtdir '\**\*mergedData.mat']);
 n = {d.name};
@@ -29,6 +30,4 @@ for i = 1:length(d)
 end
 
 wormdata = mergedControl;
-savedir = [mtdir '\wildtype+5HT'];
-mkdir(savedir)
-save([savedir '\wildtype+5HT_mergedData.mat'], "wormdata");
+save([mtdir '\' controlname '_mergedData.mat'], "wormdata");
