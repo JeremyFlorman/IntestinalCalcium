@@ -63,6 +63,6 @@ for i = 1:length(flds)
 
     save(savename, "wormdata");
 end
-
+delete(fullfile(d(cont).folder, d(cont).name))
 disp('Complete!')
 end
