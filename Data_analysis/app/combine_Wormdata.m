@@ -76,6 +76,15 @@ for i = 1:length(genotypes)
         mergedstructure(j).filename = fileName;
         mergedstructure(j).genotype = genotypes{i};
     end
+
+
+    if isfield(mergedstructure,'bulkAboveBkg')
+        mergedstructure = rmfield(mergedstructure, 'bulkAboveBkg');
+    end
+
+    if isfield(mergedstructure,'sumSignal')
+        mergedstructure = rmfield(mergedstructure, 'sumSignal');
+    end
     
     wormdata = mergedstructure;
     structureSaveName = [outputdir '\' genotypes{i} '_mergedData.mat']
