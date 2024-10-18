@@ -115,6 +115,27 @@ for q = 1:length(genotypes)
     end
 
     [mtdata, wtdata, settings] = processWormdata(fullfile(d(1).folder,d(1).name), settings);
+    
+    %% Write data to text file---> Add to GUI
+    writeData = 1;
+    if writeData
+    sortedFileNames = stripPath(mtdata);
+    fn =  strrep(fullfile(d(1).folder,d(1).name), '_mergedData.mat', '_sortOrder.txt');
+    writecell(sortedFileNames, fn)
+    
+    fn =  strrep(fullfile(d(1).folder,d(1).name), '_mergedData.mat', '_intervals.txt');
+    intervals = {wtdata(1).intervalVector, mtdata(1).intervalVector};
+    writecell(intervals, fn)
+
+    fn =  strrep(fullfile(d(1).folder,d(1).name), '_mergedData.mat', '_peakTraces.xlsx');
+    if exist(fn,"file")
+        delete(fn)
+    end
+    writematrix([mtdata(:).peakTraces], fn, sheet=d(1).name)
+    writematrix([wtdata(:).peakTraces], fn, sheet="Control");
+    end
+    %%
+
 
     if ~isfield(mtdata,'genotype')
         mtdata(1).genotype = genotypes{q};
