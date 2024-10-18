@@ -118,7 +118,7 @@ for idx = singlespike %:length(loc)
     
     % % % % % % Axial Signal single spike % % % % % 
     nexttile([2,2])
-    axsingle = smoothdata(wormdata.autoAxialSignal(pre:post,:),1, 'gaussian', 30);
+    axsingle = smoothdata(wormdata.autoAxialSignal(pre:post,:),1, 'gaussian', 45);
     
     colormap(axSigCMap);
     imagesc(axsingle',axylimits)
