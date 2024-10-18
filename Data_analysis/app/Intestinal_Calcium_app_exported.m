@@ -467,6 +467,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         % Button pushed function: RunAnalysisButton
         function RunAnalysisButtonPushed(app, event)
+            disp('Running')
             parsedInputs = parseInputs(app);
             if parsedInputs.isOAS == 0
             freelyMovingAnalysis_Func(parsedInputs)
@@ -528,7 +529,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                 outputdir = [];
             end
 
-
+            disp('working...')
             combine_Wormdata(datadir,outputdir,app.controlnameEditField.Value);
 
             app.outputDir.Value = outputdir;
@@ -548,6 +549,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                     figure(app.IntestinalCalciumAppUIFigure)
                 end
             end
+
+            disp('Merging...')
             mergeControl(outputdir, app.controlnameEditField.Value)
         end
 
@@ -566,6 +569,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                 end
             end
             settings = parsePlotSettings(app);
+
+            disp('Plotting...')
             plot_MatchedControl(app.outputDir.Value,settings);
 
         end
@@ -586,6 +591,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                 end
             end
             settings = parsePlotSettings(app);
+            disp('Plotting...')
             plot_MultiGenotype(outputdir, settings)
 
 
@@ -790,6 +796,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.IntestinalCalciumAppUIFigure.Position = [100 100 473 475];
             app.IntestinalCalciumAppUIFigure.Name = 'Intestinal Calcium App';
             app.IntestinalCalciumAppUIFigure.Icon = fullfile(pathToMLAPP, 'worm_Icon.png');
+            app.IntestinalCalciumAppUIFigure.WindowStyle = 'alwaysontop';
 
             % Create FileMenu
             app.FileMenu = uimenu(app.IntestinalCalciumAppUIFigure);
@@ -1205,7 +1212,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create windowsizeEditField
             app.windowsizeEditField = uieditfield(app.Panel, 'numeric');
             app.windowsizeEditField.Position = [166 14 27 22];
-            app.windowsizeEditField.Value = 10;
+            app.windowsizeEditField.Value = 20;
 
             % Create ExtractControlDataButton
             app.ExtractControlDataButton = uibutton(app.PlottingTab, 'push');
