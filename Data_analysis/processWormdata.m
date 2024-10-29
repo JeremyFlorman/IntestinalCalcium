@@ -1,6 +1,62 @@
 function [mtdata, wtdata, settings] = processWormdata(wormdata,settings)
-%UNTITLED Summary of this function goes here
-%   Detailed explanation goes here
+%PROCESSWORMDATA Process worm data for analysis
+%   [MTDATA, WTDATA, SETTINGS] = PROCESSWORMDATA(WORMDATA, SETTINGS)
+%   processes the worm data provided in WORMDATA using the settings
+%   specified in SETTINGS. If SETTINGS is not provided, default settings
+%   are used. The function returns the processed mutant data (MTDATA),
+%   wild-type data (WTDATA), and the settings used (SETTINGS).
+%
+%   Inputs:
+%       wormdata - A file path (string or character array) to the data or a
+%                  structure containing the data.
+%       settings - A structure containing various settings for data
+%                  processing. If not provided, default settings are used.
+%
+%   Outputs:
+%       mtdata   - Processed mutant data.
+%       wtdata   - Processed wild-type data.
+%       settings - The settings used for processing.
+%
+%   Description:
+%       1. The function starts by checking if SETTINGS are provided. If not,
+%          it uses default settings from RETURNPLOTSETTINGS.
+%
+%       2. If WORMDATA is a file path (string or character array), it loads
+%          the data from the specified file. If WORMDATA is already a
+%          structure, it uses it directly.
+%
+%       3. It extracts control data (WTDATA) from the mutant data (MTDATA)
+%          if the CONTROLDATA field is present.
+%
+%       4. The function filters the data to include only the relevant entries
+%          based on the INCLUDE field.
+%
+%       5. The SUBTRACTBACKGROUND function is called to remove background
+%          signals from the bulk and axial signals in the data. This function
+%          handles normalization of axial signals if specified.
+%
+%       6. Depending on the NORMALIZE setting in SETTINGS, the function
+%          normalizes the data:
+%           - If NORMALIZE is 2, it normalizes the data using z-scores.
+%           - If NORMALIZE is 3, it normalizes the bulk signal by dividing by
+%             the mean wild-type bulk signal.
+%
+%       7. If specified in the settings (TRIMEXPERIMENTLENGTH or
+%          ANALYZEPARTIAL), the function trims the experiment length to focus
+%          on specific parts of the data.
+%
+%       8. The PROCESSSPIKES function is called to detect and process spikes
+%          in the bulk and axial signals. It calculates various parameters
+%          such as peak distance, peak threshold, and propagation rates. It
+%          also validates spike characteristics if specified in the settings.
+%
+%   Example:
+%       settings = returnPlotSettings();
+%       [mtdata, wtdata, settings] = processWormdata('path/to/data.mat', settings);
+%
+%   See also RETURNPLOTSETTINGS
+%   Copyright 2024 Jeremy Florman
+
 if nargin<2
     settings = returnPlotSettings();
 end
@@ -83,7 +139,7 @@ wtdata = processSpikes(wtdata,settings);
 end
 %% background subtract bulk and axial Signal
 function [processedData] = subtractBackground(inputData, settings)
-normAx = 1; % nomralize axial signal?
+normAx = 0; % nomralize axial signal?
 
 for i = 1:length(inputData)
 
@@ -99,10 +155,11 @@ for i = 1:length(inputData)
         inputData(i).autoAxialSignal = axsig;
     end
 
-% if normAx
-%   axMean = mean(inputData(i).autoAxialSignal,1);
-%   inputData(i).autoAxialSignal = inputData(i).autoAxialSignal-axMean;
-% end
+if normAx == 1
+    as = inputData(i).autoAxialSignal;
+    axMean = smoothdata(median(as,1,'omitnan'),"gaussian", 20);
+    inputData(i).autoAxialSignal = inputData(i).autoAxialSignal./axMean;
+end
 
 end
 processedData = inputData;
