@@ -17,6 +17,7 @@ else
     plotcontrol = 1;
 end
 
+noAlpha = 1;
 
 mtintervalMatrix = [];
 wtintervalMatrix = [];
@@ -102,14 +103,25 @@ if plotcontrol == 1
     %         line([pt2 pt2], [avmint-2 avmint+2],'LineStyle', '-','Color', errorcolor, 'LineWidth', 0.5)
     %%
     if ~isempty(wtintervalMatrix)
-        s1 = scatter(wtintervalMatrix(:,1), wtintervalMatrix(:,2), 7,wtcolor, 'filled','MarkerEdgeColor',[0.6 0.6 0.6],...
-            'MarkerFaceAlpha',.05,'MarkerEdgeAlpha',.6,'Parent',ax);
-%             'Parent',ax);
+        if noAlpha ==1
+            s1 = scatter(wtintervalMatrix(:,1), wtintervalMatrix(:,2), 7,wtcolor, ...
+                'filled','MarkerEdgeColor',[0.6 0.6 0.6],'Parent',ax);
+        else
+            s1 = scatter(wtintervalMatrix(:,1), wtintervalMatrix(:,2), 7,wtcolor, ...
+                'filled','MarkerEdgeColor',[0.6 0.6 0.6], 'MarkerFaceAlpha',.05,'MarkerEdgeAlpha',.6,'Parent',ax);
+        end
+
     end
 
     if ~isempty(mtintervalMatrix)
-        s2 = scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), 7, mtcolor, 'filled','MarkerEdgeColor',mtedgecolor,...
-            'MarkerFaceAlpha',.6,'MarkerEdgeAlpha',.9,'Parent',ax);
+        if noAlpha == 1
+        s2 = scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), 7, mtcolor,...
+            'filled','MarkerEdgeColor',mtedgecolor,'Parent',ax);
+        else
+        s2 = scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), 7, mtcolor, ...
+            'filled','MarkerEdgeColor',mtedgecolor,'MarkerFaceAlpha',.6,'MarkerEdgeAlpha',.9,'Parent',ax);
+        end
+
     end
     hold off
 
@@ -163,8 +175,12 @@ elseif plotcontrol == 0
     %%
 
     if ~isempty(mtintervalMatrix)
+        if noAlpha == 1
+        scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), 2,'filled','Parent',ax);
+        else
         scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), 2,'MarkerEdgeColor',[0.6 0.6 0.6],...
             'MarkerFaceAlpha',.6,'MarkerEdgeAlpha',.9,'Parent',ax);
+        end
 
         if regline == 1
             ls2 = lsline;
