@@ -117,16 +117,28 @@ for q = 1:length(genotypes)
     [mtdata, wtdata, settings] = processWormdata(fullfile(d(1).folder,d(1).name), settings);
     
     %% Write data to text file---> Add to GUI
-    writeData = 1;
-    if writeData
+    writeData = 0;
+    if writeData == 1
+    % File names
     sortedFileNames = stripPath(mtdata);
     fn =  strrep(fullfile(d(1).folder,d(1).name), '_mergedData.mat', '_sortOrder.txt');
     writecell(sortedFileNames, fn)
     
+    % intervals 
     fn =  strrep(fullfile(d(1).folder,d(1).name), '_mergedData.mat', '_intervals.txt');
-    intervals = {wtdata(1).intervalVector, mtdata(1).intervalVector};
-    writecell(intervals, fn)
+    wtInt = nan(length(wtdata),1);
+    mtInt = nan(length(mtdata),1);
+    for i = 1:length(wtdata)
+        wtInt(i) = mean(diff(wtdata(i).peakLoc)/settings.framerate,'omitnan');
+    end
 
+    for i = 1:length(mtdata)
+        mtInt(i) = mean(diff(mtdata(i).peakLoc)/settings.framerate,'omitnan');
+    end
+    intervals = {wtInt; mtInt};
+    writecell(intervals, fn)
+    
+    % peak traces
     fn =  strrep(fullfile(d(1).folder,d(1).name), '_mergedData.mat', '_peakTraces.xlsx');
     if exist(fn,"file")
         delete(fn)
@@ -201,7 +213,9 @@ for q = 1:length(genotypes)
     if pltCorr
         nexttile(cort,q)
         plotEchos(mtdata,[],settings,labelXAxis,labelYAxis)
+        
         title(['\it' mtdata(1).genotype])
+        daspect([1 1 1])
     end
 
 
