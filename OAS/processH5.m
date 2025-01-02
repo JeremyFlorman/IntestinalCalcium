@@ -3,12 +3,15 @@ function [h5Data] = processH5(foldername)
 %   Detailed explanation goes here
 % foldername = 'C:\src\OpenAutoScope-v2\data\zfis178';
 
-% foldername = 'C:\src\OpenAutoScope-v2\data\231121_zfex813_wildtype\2023_11_21_14_57_17_flircamera_behavior'
+% foldername = 'C:\src\OpenAutoScope-v2_20240205_1502\data\noFood_longDuration\250102_zfis178_unc-43(sa200)-noFoodLD\2025_01_02_12_34_55_flircamera_behavior'
 d = dir([foldername '\*.h5']);
 registerImage = 1;
-showRegistration = 0;
+showRegistration =0;
 videostuff = 0;
-translation = [7 -4 0];  %230926[-5 13 0];
+mmPerStep = 0.001253814; % calibration for gcamp + behavior tracker
+% mmPerStep = 0.001307092; % calibration for OAS behavior-only tracker
+
+translation = [1 -3 0];
 
 
 for i = 1:length(d)
@@ -94,6 +97,8 @@ acq = 0; % acquires log data within recording range when set to 1;
 stimTimes = [];
 xLoc = NaN(length(time),1);
 yLoc = NaN(length(time),1);
+xflip = 1;
+yflip = 1;
 
 for i = 1:length(logd)
     fid = fopen(fullfile(logd(i).folder, logd(i).name),"r");
@@ -130,10 +135,29 @@ for i = 1:length(logd)
             if contains(line, 'tracker_behavior received position')
                 locTime = alignEvent(line,time);
                 r = regexp(line,' ', 'split');
-                r = regexp(r{end}, '\d+', 'match');
+                r = regexp(r{end}, '(-?\d+)', 'match');
+                xl = str2double(r{1})*mmPerStep; % X coordinate in mm units
+                yl = str2double(r{2})*mmPerStep; % Y coordinate in mm units
 
-                xLoc(locTime,1) = str2double(r{1});
-                yLoc(locTime,1) = str2double(r{2});
+                % % check for crossing origin % % 
+                if abs(xl)<0.01
+                    if abs(xl)-abs(xLoc(locTime-1,1))>=0
+                        xflip = xflip*-1;
+                    end
+                end
+
+                if abs(yl)<0.01
+                    if abs(yl)-abs(yLoc(locTime-1,1))>=0
+                    yflip = yflip*-1;
+                    end
+                end
+                
+                % % convert orgin crossings to negative coordinates % % 
+                xLoc(locTime,1) = xl*xflip;
+                yLoc(locTime,1) = yl*yflip;
+
+
+
 
             end
         end
@@ -163,6 +187,8 @@ h5Data.time = time;
 h5Data.startime = starttime;
 h5Data.stimTimes =stimTimes;
 h5Data.velocity = velocity;
+h5Data.xLoc = xLoc;
+h5Data.yLoc = yLoc;
 
 end
 
@@ -172,3 +198,7 @@ et = regexp(event, ' ', 'split');
 eTime = str2double(et{1});
 idx = find(time>=eTime,1);
 end
+
+
+
+
