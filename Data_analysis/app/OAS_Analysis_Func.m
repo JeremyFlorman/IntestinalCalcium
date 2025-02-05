@@ -30,7 +30,7 @@ removevignette = inputs.flatField; % if not zero, size of kernel to use for flat
 minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
 axSigLen = 200; % how many pixels to use for registering axial signal.
-axSigHeight = 10; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+axSigHeight = 8; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
 
 %%
 %%
@@ -55,7 +55,7 @@ for nf =startIndex:length(imgDir)
     %%
     if plotstuff == 1
         if showAxialSignal == 0
-            figure('Position', [978 233 719 653],'Color',[1 1 1]);
+            figure('Position', [720.2000 106.6000 719.2000 652.8000],'Color',[1 1 1]);
             tiledlayout(4,3,'Padding','compact')
             ax1 = nexttile([2 1]);
             ax2 = nexttile([2 1]);
@@ -65,7 +65,7 @@ for nf =startIndex:length(imgDir)
             ax6 = nexttile([1 1]);
             ax7 = nexttile([1 3]);
         elseif showAxialSignal == 1
-            figure('Position',[978 233 719 653],'Color',[1 1 1]);
+            figure('Position',[701 108.2000 719.2000 652.8000],'Color',[1 1 1]);
             tiledlayout(9,3,'Padding','compact')
             ax1 = nexttile([3 1]);
             ax2 = nexttile([3 1]);
@@ -118,6 +118,7 @@ for nf =startIndex:length(imgDir)
     end
 
     %% Tracking Block
+    tic
     for i = startframe:nFrames
 
         mCh = bf(:,:,i);
@@ -348,8 +349,8 @@ for nf =startIndex:length(imgDir)
                                 gfpAdj = [0 0.3];
 
                                 mpad_Outskel = padarray(outskel, [size(mpadTrace,1),0], 'post');
-                                mmergedImage = vertcat(mCh, mpadTrace);
-                                mmergedOverlay = imoverlay(imadjust(mmergedImage, bfAdj), mpad_Outskel, [1 0 0]);
+                                mmergedImage = vertcat(mCh, mpadTrace)-50;
+                                mmergedOverlay = imoverlay(mmergedImage, mpad_Outskel, [1 0 0]);
                                 imshow(mmergedOverlay,'Parent', ax2)
                                 title(ax2,'Brightfield');
 
@@ -401,12 +402,12 @@ for nf =startIndex:length(imgDir)
                         elseif showAxialSignal == 1
                             axsig = smoothdata(axialSignal(1:i,:),1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
                             imagesc(axsig,'Parent',ax4)
-                            ax4.CLim = [0 100];
+                            ax4.CLim = [0 60];
                             ax4.XLim = [1, length(axialSignal)];
                             ax4.XAxis.Visible = 0;
                             ax4.YTickLabel = [];
                             ax4.YTick = [];
-                            ylabel(ax4, 'Axial Ca^2^+ Signal')
+                            ylabel(ax4, 'Longitudinal Kymograph')
                             box(ax4, 'off')
                             colormap turbo
 
@@ -424,7 +425,7 @@ for nf =startIndex:length(imgDir)
 
                         plot(time,bulkSignal,time',backgroundSignal, 'Parent', ax7)
                         ax7.XLim = [0 time(end)];
-                        ylabel(ax7, 'Bulk Ca^2^+ Signal');
+                        ylabel(ax7, 'Mean Fluorescence (a.u.)');
 
 
                         %
@@ -442,7 +443,7 @@ for nf =startIndex:length(imgDir)
 
 
                         % velocity
-                        plot(time(1:i),velocity(1:i), 'Parent', velAx)
+                        plot(time(1:i),smoothdata(area(1:i),'gaussian', 30), 'Parent', velAx)
                         if ~isempty(stimTimes)
                             for k =1:length(stimTimes)
                                 if i>= stimTimes(k)
@@ -454,7 +455,7 @@ for nf =startIndex:length(imgDir)
                         end
 
                         xlim([0 time(end)]);
-                        ylabel(velAx, 'Velocity');
+                        ylabel(velAx, 'Worm Area (pixels)');
                         xlabel(velAx,'Time (min)');
                         velAx.TickLength = [0.005 0.005];
                         box off
@@ -475,6 +476,7 @@ for nf =startIndex:length(imgDir)
     end
 
     disp('file processed in:')
+    toc
 
 
     if exist('v','var') == 1

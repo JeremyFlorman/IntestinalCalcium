@@ -30,7 +30,7 @@ loadtiff =inputs.loadTiff; % read entire tiff into memory? faster analysis but r
 minwormarea = 1000; %lower limit to worm area
 maxwormarea = 4000; % upper limit to worm area
 axSigLen = 200; % how many pixels to use for registering axial signal.(i.e. pixels from head to tail)
-axSigHeight = 7; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+axSigHeight = 10; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
 
 
 %%
@@ -218,8 +218,10 @@ for nf =startIndex:length(tdir)
         % BW = bwmorph(BW,'fill');
         tempb = BW;
 
+        
         BW = bwareaopen(BW, 100);
-        % BW = imfill(BW,'holes');
+        BW = imfill(BW,'holes');
+        
         BW = imdilate(BW,strel('disk',6));
         BW = imerode(BW,strel('disk',6));
         tempb2 = BW;
@@ -385,7 +387,9 @@ for nf =startIndex:length(tdir)
 
                                 if leftMean>rightMean
                                     tt = fliplr(tt);
+                                    temptrace = fliplr(temptrace);
                                     abf = fliplr(abf);
+                                    tempbf = fliplr(tempbf);
                                 end
                             % end
                             % % % % % % % % % % % % % % % % % % % %
@@ -418,10 +422,12 @@ for nf =startIndex:length(tdir)
                     if mod(i,framerate) == 0
 
                         imshow(label2rgb(L,'jet','k','shuffle'),'Parent', ax1)
-                        title(ax1,'Binary Mask');
+                        
                         if showNormals == 1
                             line(perpX,perpY,'Color', [0.9 0.9 0.9],'Parent', ax1)
                             title(ax1,'Binary Mask + Normal Vectors');
+                        else 
+                            title(ax1,'Binary Mask');
                         end
 
                         if troubleshoot == 1
@@ -498,8 +504,12 @@ for nf =startIndex:length(tdir)
                             ax4.CLim = [-500 30000];
                             ax4.XAxis.Visible = 0;
                             ax4.YAxis.Visible = 0;
-                            title(ax4,'Raw Axial Signal')
+                            title(ax4,'Longitudinal Kymograph')
                             colormap turbo
+                            cb = colorbar(ax4);
+                            cb.Location = 'manual';
+                            cb.Position = [0.0507 0.3054 0.0095 0.1676];
+                            cb.Label.String = 'Fluorescent Intensity (a.u.)';
 
                         end
 
@@ -507,9 +517,10 @@ for nf =startIndex:length(tdir)
                         if i>1
                             xlim(ax7,[0 time(end)]);
                         end
-                        title(ax7, 'Whole Body Ca^2^+ Signal')
-                        ylabel(ax7, 'Mean Fluorescent Intensity (a.u.)');
+                        title(ax7, 'Mean Bulk Signal')
+                        ylabel(ax7, 'Mean Fluorescence (a.u.)');
                         xlabel(ax7,'Time (min)');
+                        box off
                         drawnow
 
                         if videostuff == 1
