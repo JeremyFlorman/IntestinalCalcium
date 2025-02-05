@@ -601,34 +601,35 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % ...and 1 other component
         function AnalyzeOASdataCheckBox_2ValueChanged(app, event)
             OASvalue = app.AnalyzeOASdataCheckBox_2.Value;
-            normalizeValue = app.NormalizationDropDown.UserData;
+            normalizeValue = app.NormalizationDropDown.Value;
             if OASvalue == 1
-                if normalizeValue == 1
+                if strcmp(normalizeValue,'None') == 1
                 app.bulkYLim.Value = '0 15';
                 app.axialYLim.Value = '0 45';
                 app.peakthreshold.Value = 2;
                 app.EqualizeExpDurationCheckBox.Value = 1;
-                elseif normalizeValue == 2
+                elseif strcmp(normalizeValue,'Z-Score') == 1
                     app.bulkYLim.Value = '-1 8';
                     app.peakthreshold.Value= 1;
-                    
-                elseif normalizeValue == 3
+                    app.EqualizeExpDurationCheckBox.Value = 1;
+                elseif strcmp(normalizeValue,'Control') == 1
                     app.bulkYLim.Value = '-0.2 1';
                     app.peakthreshold.Value = 0.1;
+                    app.EqualizeExpDurationCheckBox.Value = 1;
                 end
             end
 
             if OASvalue == 0
                 app.EqualizeExpDurationCheckBox.Value = 0;
-                if normalizeValue == 1
+                if strcmp(normalizeValue,'None') == 1
                     app.bulkYLim.Value = '-500 5000';
                     app.axialYLim.Value = '-500 12000';
                     app.peakthreshold.Value = 500;
-                elseif normalizeValue == 2
+                elseif strcmp(normalizeValue,'Z-Score') == 1
                     app.bulkYLim.Value = '-1 8';
                     app.peakthreshold.Value= 1;
                     
-                elseif normalizeValue == 3
+                elseif strcmp(normalizeValue,'Control') == 1
                     app.bulkYLim.Value = '-0.2 1';
                     app.peakthreshold.Value = 0.1;
                 end
