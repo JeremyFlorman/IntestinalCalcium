@@ -115,7 +115,24 @@ for q = 1:length(genotypes)
     end
 
     [mtdata, wtdata, settings] = processWormdata(fullfile(d(1).folder,d(1).name), settings);
-    
+%%
+% datafolder = 'C:\Users\Jeremy\Dropbox\ins-3 intestinal calcium fig\data\forExport';
+%     switch q
+%         case 1
+%             wormdata = {mtdata(1:5).autoAxialSignal};
+%             save([datafolder '\wildtypeControlData.mat'], 'wormdata')
+%         case 2
+%             wormdata = {mtdata(1:5).autoAxialSignal};
+%             save([datafolder '\tdc-1ControlData.mat'], 'wormdata');
+%         case 3
+%             wormdata = {mtdata(1:5).autoAxialSignal};
+%             save([datafolder '\tyra-3ControlData.mat'], 'wormdata');
+%         % case 4
+%         %     wormdata = {mtdata(1:20).autoAxialSignal};
+%         %     save([datafolder '\quadData.mat'], 'wormdata');
+%     end
+
+  %%  
     %% Write data to text file---> Add to GUI
     writeData = 0;
     if writeData == 1
