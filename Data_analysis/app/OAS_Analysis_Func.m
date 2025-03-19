@@ -31,7 +31,8 @@ minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
 numSegments = 100; % number of segments to sample when measuring axial signal
 axSigLen = 200; % how many pixels to use for registering axial signal.
-axSigHeight = 20; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+axSigHeight = 35; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+SEsize = 20;
 
 %%
 %%
@@ -98,6 +99,20 @@ for nf =startIndex:length(imgDir)
 
     [imgWidth ,imgHeight, nFrames] = size(bf);
 
+    if imgHeight <500
+        axSigHeight = 7; 
+        SEsize = 5;
+        szFilter = 100;
+    elseif imgHeight <1000
+        axSigHeight = 20; 
+        SEsize = 5;
+        szFilter = 100;
+    elseif imgHeight >1000
+        axSigHeight = 35; 
+        SEsize = 20;
+        szFilter = 2000;
+    end
+
 
 
 
@@ -110,8 +125,7 @@ for nf =startIndex:length(imgDir)
     backgroundSignal = NaN(nFrames,1);
     orientation = NaN(nFrames,1);
     area = NaN(nFrames,1);
-
-
+   
     time = linspace(0,round((nFrames)/fps/60,1),ceil(nFrames)); %minutes per frame
     wormIdx = [];
 
@@ -153,11 +167,11 @@ for nf =startIndex:length(imgDir)
         BW = bwmorph(BW,'clean');
         % BW = bwmorph(BW,'fill');
         tempb = BW;
-        BW = bwareaopen(BW, 100);
+        BW = bwareaopen(BW, szFilter);
 
 
-        BW = imdilate(BW,strel('disk',5));
-        BW = imerode(BW,strel('disk',5));
+        BW = imdilate(BW,strel('disk',SEsize));
+        BW = imerode(BW,strel('disk',SEsize));
         BW = bwmorph(BW,"thicken",2);
 
 
@@ -239,6 +253,14 @@ for nf =startIndex:length(imgDir)
                     GFP = double(GFP);
                     mCh = double(mCh);
 
+                    % Precompute ndgrid
+                    [Xgrid, Ygrid] = ndgrid(1:size(GFP, 1), 1:size(GFP, 2));
+
+                    % Precompute interpolants once
+                    GFP_interp = griddedInterpolant(Xgrid, Ygrid, GFP, 'linear', 'nearest');
+                    mCh_interp = griddedInterpolant(Xgrid, Ygrid, mCh, 'linear', 'nearest');
+
+
                     % Define the desired number of evenly spaced samples
                     
                     totalPoints = length(sortSkel);
@@ -282,23 +304,20 @@ for nf =startIndex:length(imgDir)
                         % Ensure C and D are within bounds
                         C = max(min(C, [size(GFP,2), size(GFP,1)]), [1,1]);
                         D = max(min(D, [size(GFP,2), size(GFP,1)]), [1,1]);
-
-                        % Store only the two coordinate points
+                        
                         perpX(:, ii) = [C(1); D(1)];
                         perpY(:, ii) = [C(2); D(2)];
 
-                        % Generate linearly spaced points along the perpendicular line
-                        xq = linspace(C(1), D(1), nPoints);
-                        yq = linspace(C(2), D(2), nPoints);
 
-                        % Convert to double (if not already)
-                        xq = double(xq);
-                        yq = double(yq);
+
+                        % Generate linearly spaced points along the perpendicular line
+                        xq = linspace(C(1), D(1), axSigHeight);
+                        yq = linspace(C(2), D(2), axSigHeight);
 
                         try
-                          % Interpolate pixel values along the perpendicular line
-                          temptrace(:, ii) = interp2(GFP, xq, yq, 'linear');
-                          tempbf(:, ii) = interp2(mCh, xq, yq, 'linear');
+                            % Fix: Transpose xq and yq for NDGRID format
+                            temptrace(:, ii) = GFP_interp(yq', xq');
+                            tempbf(:, ii) = mCh_interp(yq', xq');
                         catch
                         end
                     end
@@ -555,7 +574,7 @@ for nf =startIndex:length(imgDir)
 
 
     % peak analysis
-    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',5,'MinPeakDistance',150);
+    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',3,'MinPeakDistance',150);
     peakpad = fps*15; % framerate*time in seconds;
     pktime = linspace(-15,15, peakpad*2)';
     if isempty(loc)
@@ -620,7 +639,7 @@ for nf =startIndex:length(imgDir)
         time = linspace(0,round((nFrames)/fps/60,1),nFrames); %minutes per frame
     end
     if ~exist('pk','var')
-        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',5, 'MinPeakDistance',150);
+        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',3, 'MinPeakDistance',150);
         peakpad = fps*15;
         pktime = linspace(-15,15, peakpad*2)';
         pkmean = mean(pktraces,2,'omitnan');
@@ -814,7 +833,8 @@ for nf =startIndex:length(imgDir)
     clearvars -except inputs nf fld serverfolder startIndex startframe uploadresults...
         isremote plotstuff videostuff framerate fps troubleshoot showNormals ...
         showAxialSignal saveAxialMatrix crop useautothreshold useadaptivethreshold ...
-        removevignette minwormarea minwormarea maxwormarea numSegments axSigLen axSigHeight imgDir
+        removevignette minwormarea minwormarea maxwormarea numSegments axSigLen axSigHeight imgDir ...
+        SEsize szFilter
 
 
     % if exist('wormdata', 'var')
