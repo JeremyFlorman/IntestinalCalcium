@@ -12,7 +12,7 @@ s(3) ={scores(:,38)}; %quad
 s(4) ={scores(:,24)}; %tyra-3
 s(5) ={scores(:,3)}; %wt
 
-for k = 1:length(d)
+for k = [5] %1:length(d)
     datapath = fullfile(d(k).folder,d(k).name);
     load(datapath)
     
