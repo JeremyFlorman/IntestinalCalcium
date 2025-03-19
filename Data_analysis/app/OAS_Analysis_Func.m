@@ -294,7 +294,9 @@ for nf =startIndex:length(imgDir)
 
                         if leftMean>rightMean
                             tt = fliplr(tt);
+                            temptrace = fliplr(temptrace);
                             abf = fliplr(abf);
+                            tempbf = fliplr(tempbf);
                         end
 
                         % % % % % % % % % % % % % % % % % % % %
@@ -321,10 +323,12 @@ for nf =startIndex:length(imgDir)
                     if mod(i,framerate) == 0
 
                         imshow(label2rgb(L,'jet','k','shuffle'),'Parent', ax1)
-                        title(ax1,'Binary Mask');
+
                         if showNormals == 1
                             line(perpX,perpY,'Color', [0.9 0.9 0.9],'Parent', ax1)
                             title(ax1,'Binary Mask + Normal Vectors');
+                        else
+                            title(ax1,'Binary Mask');
                         end
 
                         if troubleshoot == 1
@@ -407,9 +411,13 @@ for nf =startIndex:length(imgDir)
                             ax4.XAxis.Visible = 0;
                             ax4.YTickLabel = [];
                             ax4.YTick = [];
-                            ylabel(ax4, 'Longitudinal Kymograph')
+                            % ylabel(ax4, 'Longitudinal Kymograph')
                             box(ax4, 'off')
                             colormap turbo
+                            cb = colorbar(ax4);
+                            cb.Location = 'manual';
+                            cb.Position = [0.0567 0.4828 0.0064 0.1594];
+                            cb.Label.String = 'Fluorescent Intensity (a.u.)';
 
                             if ~isempty(stimTimes)
                                 for k =1:length(stimTimes)
@@ -455,7 +463,7 @@ for nf =startIndex:length(imgDir)
                         end
 
                         xlim([0 time(end)]);
-                        ylabel(velAx, 'Worm Area (pixels)');
+                        ylabel(velAx, 'Area (pixels)');
                         xlabel(velAx,'Time (min)');
                         velAx.TickLength = [0.005 0.005];
                         box off
