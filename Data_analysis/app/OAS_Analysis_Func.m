@@ -1,4 +1,4 @@
-function [] = freelyMovingAnalysis_Func(inputs)
+function [] = OAS_Analysis_Func(inputs)
 fld = inputs.tiffDir; %'C:\Users\Jeremy\Desktop\220316_zfis178_wildtype_1'; % Folder containing the data you want to analyze
 serverfolder = inputs.remoteDir; %'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\itr-1\;'  % upload everything to this location.
 
@@ -29,8 +29,10 @@ removevignette = inputs.flatField; % if not zero, size of kernel to use for flat
 
 minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
+numSegments = 100; % number of segments to sample when measuring axial signal
 axSigLen = 200; % how many pixels to use for registering axial signal.
-axSigHeight = 8; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+axSigHeight = 35; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+SEsize = 20;
 
 %%
 %%
@@ -39,13 +41,14 @@ imgDir = unique({imgDir.folder});
 
 
 for nf =startIndex:length(imgDir)
+
     path = imgDir{nf}
     h5Data = processH5(path);
     gfp = h5Data.gfp;
     bf = h5Data.bf;
     stimTimes = h5Data.stimTimes;
     velocity = h5Data.velocity;
-    vel = smoothdata(velocity, 'gaussian', 15);
+    % vel = smoothdata(velocity, 'gaussian', 15);
 
     [fold, nm, ~] = fileparts(path);
     protopath = regexp(fold,'\', 'split');
@@ -55,7 +58,7 @@ for nf =startIndex:length(imgDir)
     %%
     if plotstuff == 1
         if showAxialSignal == 0
-            figure('Position', [720.2000 106.6000 719.2000 652.8000],'Color',[1 1 1]);
+            figure('Position', [978 233 719 653],'Color',[1 1 1]);
             tiledlayout(4,3,'Padding','compact')
             ax1 = nexttile([2 1]);
             ax2 = nexttile([2 1]);
@@ -65,7 +68,7 @@ for nf =startIndex:length(imgDir)
             ax6 = nexttile([1 1]);
             ax7 = nexttile([1 3]);
         elseif showAxialSignal == 1
-            figure('Position',[701 108.2000 719.2000 652.8000],'Color',[1 1 1]);
+            figure('Position',[978 233 719 653],'Color',[1 1 1]);
             tiledlayout(9,3,'Padding','compact')
             ax1 = nexttile([3 1]);
             ax2 = nexttile([3 1]);
@@ -96,6 +99,20 @@ for nf =startIndex:length(imgDir)
 
     [imgWidth ,imgHeight, nFrames] = size(bf);
 
+    if imgHeight <500
+        axSigHeight = 7; 
+        SEsize = 5;
+        szFilter = 100;
+    elseif imgHeight <1000
+        axSigHeight = 20; 
+        SEsize = 5;
+        szFilter = 100;
+    elseif imgHeight >1000
+        axSigHeight = 35; 
+        SEsize = 20;
+        szFilter = 2000;
+    end
+
 
 
 
@@ -108,8 +125,7 @@ for nf =startIndex:length(imgDir)
     backgroundSignal = NaN(nFrames,1);
     orientation = NaN(nFrames,1);
     area = NaN(nFrames,1);
-
-
+   
     time = linspace(0,round((nFrames)/fps/60,1),ceil(nFrames)); %minutes per frame
     wormIdx = [];
 
@@ -120,6 +136,8 @@ for nf =startIndex:length(imgDir)
     %% Tracking Block
     tic
     for i = startframe:nFrames
+
+
 
         mCh = bf(:,:,i);
         GFP = gfp(:,:,i);
@@ -147,18 +165,29 @@ for nf =startIndex:length(imgDir)
 
         BW = imcomplement(BW);
         BW = bwmorph(BW,'clean');
-        BW = bwmorph(BW,'fill');
-
-
+        % BW = bwmorph(BW,'fill');
         tempb = BW;
-        BW = imdilate(BW,strel('disk',7));
-        BW = imerode(BW,strel('disk',7));
+        BW = bwareaopen(BW, szFilter);
 
-        %         BW = imerode(BW,strel('disk',7));
-        %         B =bwmorph(B,'open',1);
+
+        BW = imdilate(BW,strel('disk',SEsize));
+        BW = imerode(BW,strel('disk',SEsize));
+        BW = bwmorph(BW,"thicken",2);
+
 
 
         tempb2 = BW;
+
+
+
+        if troubleshoot == 1
+            imshow(tempb,'Parent', ax2);
+            title(ax2,'Initial Threshold');
+
+            imshow(tempb2,'Parent', ax3);
+            title(ax3,'Processed Mask');
+        end
+
 
         % identify connected objects
         CC = bwconncomp(BW);
@@ -219,65 +248,90 @@ for nf =startIndex:length(imgDir)
                     sortSkel = sortSkel(1:ceil(length(sortSkel)/2),:);
 
                     stepSize = 3; % # of points along spine for each spine segment
-                    Clen = axSigHeight; % length of perpendicular line to sample
 
-                    temptrace = cell(1,length(sortSkel)-1); %NaN(Clen,length(sortSkel)-1);
-                    tempbf = cell(1,length(sortSkel)-1); %NaN(Clen,length(sortSkel)-1);
-                    perpX = cell(1,length(sortSkel)-1);
-                    perpY = cell(1,length(sortSkel)-1);
+                    % Convert images to double before interpolation
+                    GFP = double(GFP);
+                    mCh = double(mCh);
+
+                    % Precompute ndgrid
+                    [Xgrid, Ygrid] = ndgrid(1:size(GFP, 1), 1:size(GFP, 2));
+
+                    % Precompute interpolants once
+                    GFP_interp = griddedInterpolant(Xgrid, Ygrid, GFP, 'linear', 'nearest');
+                    mCh_interp = griddedInterpolant(Xgrid, Ygrid, mCh, 'linear', 'nearest');
 
 
+                    % Define the desired number of evenly spaced samples
+                    
+                    totalPoints = length(sortSkel);
 
-                    parfor ii = 1:length(sortSkel)-1
-                        if ii+stepSize<length(sortSkel)
-                            seg = sortSkel(ii:ii+stepSize,:);
+                    % Ensure we don't exceed available points
+                    numSegments = min(numSegments, totalPoints - 1);
+
+                    % Evenly select indices along sortSkel
+                    selectedIndices = round(linspace(1, totalPoints - 1, numSegments));
+
+                    % Number of points along the perpendicular line
+                    nPoints = axSigHeight;
+
+                    % Initialize matrices for performance
+                    temptrace = nan(nPoints, numSegments);
+                    tempbf = nan(nPoints, numSegments);
+                    perpX = nan(2, numSegments); % Store only two points per segment
+                    perpY = nan(2, numSegments);
+
+                    for ii = 1:numSegments
+                        idx = selectedIndices(ii);
+
+                        if idx + stepSize < totalPoints
+                            seg = sortSkel(idx:idx + stepSize, :);
                         else
-                            seg = sortSkel(ii:end,:);
+                            seg = sortSkel(idx:end, :);
                         end
-
-
 
                         A = [seg(1,2) seg(1,1)]; % [x y] coords of point 1
                         B = [seg(end,2) seg(end,1)]; % [x y] coords of point 2
 
-                        AB = B - A;     % Call AB the vector that points in the direction from A to B
+                        AB = B - A;
+                        AB = AB / norm(AB);  % Normalize
 
-                        % Normalize AB to have unit length
-                        AB = AB/norm(AB);
+                        ABperp = AB * [0 -1; 1 0]; % Perpendicular unit vector
+                        ABmid = (A + B) / 2; % Midpoint
 
-                        % compute the perpendicular vector to the line
-                        % because AB had unit norm, so will ABperp
-                        ABperp = AB*[0 -1;1 0];
+                        C = ABmid + axSigHeight * ABperp;
+                        D = ABmid - axSigHeight * ABperp;
 
-                        % midpoint between A and B
-                        ABmid = (A + B)/2;
-                        % Compute new points C and D, each at a ditance
-                        % Clen off the line. Note that since ABperp is
-                        % a vector with unit Euclidean norm, if I
-                        % multiply it by Clen, then it has length Clen.
-                        C = ABmid + Clen*ABperp;
-                        D = ABmid - Clen*ABperp;
+                        % Ensure C and D are within bounds
+                        C = max(min(C, [size(GFP,2), size(GFP,1)]), [1,1]);
+                        D = max(min(D, [size(GFP,2), size(GFP,1)]), [1,1]);
+                        
+                        perpX(:, ii) = [C(1); D(1)];
+                        perpY(:, ii) = [C(2); D(2)];
+
+
+
+                        % Generate linearly spaced points along the perpendicular line
+                        xq = linspace(C(1), D(1), axSigHeight);
+                        yq = linspace(C(2), D(2), axSigHeight);
 
                         try
-                            temptrace(ii) = {improfile(GFP,[C(1);D(1)],[C(2);D(2)],Clen)};
-                            tempbf(ii) = {improfile(mCh,[C(1);D(1)],[C(2);D(2)],Clen)};
-                            perpX(ii) = {[C(1); D(1)]}
-                            perpY(ii) = {[C(2); D(2)]}
+                            % Fix: Transpose xq and yq for NDGRID format
+                            temptrace(:, ii) = GFP_interp(yq', xq');
+                            tempbf(:, ii) = mCh_interp(yq', xq');
                         catch
                         end
                     end
 
                     hold off
 
+                
+                    % Convert images back to uint8 (if needed for display later)
+                    GFP = uint8(GFP);
+                    mCh = uint8(mCh);
+                    hold off
 
 
-                    temptrace = cell2mat(temptrace);
-                    tempbf = cell2mat(tempbf);
-                    perpX = cell2mat(perpX);
-                    perpY = cell2mat(perpY);
 
-                    
-                    
 
 
 
@@ -317,18 +371,26 @@ for nf =startIndex:length(imgDir)
 
                 area(i,1) = bwprops(wormIdx).Area;
 
+                % Upsample temptrace and tempbf to match original sortSkel size
+                originalIndices = 1:totalPoints - 1;
+                upsampledIndices = linspace(1, totalPoints - 1, numSegments);
 
+                try
+                    temptrace = interp1(upsampledIndices, temptrace', originalIndices, 'linear', 'extrap')';
+                    tempbf = interp1(upsampledIndices, tempbf', originalIndices, 'linear', 'extrap')';
+                catch
+                end
+
+                % Plot Stuff
 
                 if plotstuff == 1
                     if mod(i,framerate) == 0
 
                         imshow(label2rgb(L,'jet','k','shuffle'),'Parent', ax1)
-
+                        title(ax1,'Binary Mask');
                         if showNormals == 1
                             line(perpX,perpY,'Color', [0.9 0.9 0.9],'Parent', ax1)
                             title(ax1,'Binary Mask + Normal Vectors');
-                        else
-                            title(ax1,'Binary Mask');
                         end
 
                         if troubleshoot == 1
@@ -433,7 +495,7 @@ for nf =startIndex:length(imgDir)
 
                         plot(time,bulkSignal,time',backgroundSignal, 'Parent', ax7)
                         ax7.XLim = [0 time(end)];
-                        ylabel(ax7, 'Mean Fluorescence (a.u.)');
+                        ylabel(ax7, 'Bulk Ca^2^+ Signal');
 
 
                         %
@@ -463,7 +525,7 @@ for nf =startIndex:length(imgDir)
                         end
 
                         xlim([0 time(end)]);
-                        ylabel(velAx, 'Area (pixels)');
+                        ylabel(velAx, 'Worm Area (pixels)');
                         xlabel(velAx,'Time (min)');
                         velAx.TickLength = [0.005 0.005];
                         box off
@@ -480,12 +542,13 @@ for nf =startIndex:length(imgDir)
         end
         if mod(i,90) == 0
             disp(['Working... ' num2str((i/nFrames)*100) '% complete, just chill...'])
+            % m = memory;
+            % disp(['Memory Usage: ' num2str(m.MemUsedMATLAB/1073741824) ' Gb'])
         end
     end
 
     disp('file processed in:')
     toc
-
 
     if exist('v','var') == 1
         close(v)
@@ -517,7 +580,7 @@ for nf =startIndex:length(imgDir)
 
 
     % peak analysis
-    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',5,'MinPeakDistance',150);
+    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',3,'MinPeakDistance',150);
     peakpad = fps*15; % framerate*time in seconds;
     pktime = linspace(-15,15, peakpad*2)';
     if isempty(loc)
@@ -582,7 +645,7 @@ for nf =startIndex:length(imgDir)
         time = linspace(0,round((nFrames)/fps/60,1),nFrames); %minutes per frame
     end
     if ~exist('pk','var')
-        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',5, 'MinPeakDistance',150);
+        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',3, 'MinPeakDistance',150);
         peakpad = fps*15;
         pktime = linspace(-15,15, peakpad*2)';
         pkmean = mean(pktraces,2,'omitnan');
@@ -590,7 +653,7 @@ for nf =startIndex:length(imgDir)
 
 
 
-    figure('Position', [135.4000 142.6000 902.6000 586.4000],Color=[1 1 1])
+    figure('Position', [936 72 903 586],Color=[1 1 1])
     t = tiledlayout(4,4,'TileSpacing','compact','Padding','tight');
 
     % % % Bulk Signal % % %
@@ -773,13 +836,24 @@ for nf =startIndex:length(imgDir)
         end
     end
 
+    clearvars -except inputs nf fld serverfolder startIndex startframe uploadresults...
+        isremote plotstuff videostuff framerate fps troubleshoot showNormals ...
+        showAxialSignal saveAxialMatrix crop useautothreshold useadaptivethreshold ...
+        removevignette minwormarea minwormarea maxwormarea numSegments axSigLen axSigHeight imgDir ...
+        SEsize szFilter
 
-    if exist('wormdata', 'var')
-        clear('wormdata');
-    end
 
-    if exist('img', 'var')
-        clear('img')
-    end
+    % if exist('wormdata', 'var')
+    %     clear('wormdata');
+    % end
+    %
+    % clear('h5Data')
+    % clear('gfp')
+    % clear('bf')
+    %
+    %
+    % if exist('img', 'var')
+    %     clear('img')
+    % end
 
 end
