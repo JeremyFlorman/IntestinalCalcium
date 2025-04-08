@@ -29,8 +29,10 @@ loadtiff =inputs.loadTiff; % read entire tiff into memory? faster analysis but r
 
 minwormarea = 1000; %lower limit to worm area
 maxwormarea = 4000; % upper limit to worm area
+numSegments = 100; % number of segments to sample when measuring axial signal
 axSigLen = 200; % how many pixels to use for registering axial signal.(i.e. pixels from head to tail)
 axSigHeight = 10; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+SEsize = 20;
 
 
 %%

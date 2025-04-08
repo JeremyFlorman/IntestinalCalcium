@@ -163,7 +163,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         defaultTiffDir = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants'; 
         defaultRemoteDir = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
         defaultDataDir='Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
-        defaultOutputDir = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants';
+        defaultOutputDir = 'C:\Users\Jeremy\Dropbox\combinedData\OAS';
     end
 
     methods (Access = public)

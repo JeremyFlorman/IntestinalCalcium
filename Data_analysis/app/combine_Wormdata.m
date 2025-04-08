@@ -18,7 +18,7 @@ end
 % use this to combine genotypes that may be named slightly differently but
 % should be combined. Enclose keywords in asterisks 
 combineByKeyword =0;
-keywords = {'*M9*', '*SNT*'};
+keywords = {'*DA+Lactate*', '*DA-Lactate*', 'PhaC+Lactate', 'PhaC-Lactate'};
 
 
 
