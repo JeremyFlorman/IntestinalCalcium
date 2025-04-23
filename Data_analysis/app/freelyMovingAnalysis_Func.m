@@ -294,7 +294,7 @@ for nf =startIndex:length(tdir)
                 [ep] = bwmorph(skel,'endpoints');
 
 
-                % Extract Axial signal by sampling perpendicular lines from skeleton %
+               % Extract Axial signal by sampling perpendicular lines from skeleton %
 
                 if nnz(ep) >0
                     [ey,ex] = find(ep,1);
@@ -302,71 +302,99 @@ for nf =startIndex:length(tdir)
                     sortSkel = sortSkel(1:ceil(length(sortSkel)/2),:);
 
                     stepSize = 3; % # of points along spine for each spine segment
+
+                    % Convert images to double before interpolation
+                    GFP = double(GFP);
+                    mCh = double(mCh);
+
+                    % Precompute ndgrid
+                    [Xgrid, Ygrid] = ndgrid(1:size(GFP, 1), 1:size(GFP, 2));
+
+                    % Precompute interpolants once
+                    GFP_interp = griddedInterpolant(Xgrid, Ygrid, GFP, 'linear', 'nearest');
+                    mCh_interp = griddedInterpolant(Xgrid, Ygrid, mCh, 'linear', 'nearest');
+
+
+                    % Define the desired number of evenly spaced samples
                     
-                    if roiActive == 0 
-                        Clen = axSigHeight;  % length of perpendicular line to sample
+                    totalPoints = length(sortSkel);
+
+                    % Ensure we don't exceed available points
+                    numSegments = min(numSegments, totalPoints - 1);
+
+                    % Evenly select indices along sortSkel
+                    selectedIndices = round(linspace(1, totalPoints - 1, numSegments));
+
+                    % Number of points along the perpendicular line
+                    if roiActive == 0
+                        nPoints = axSigHeight;
                     elseif roiActive == 1
-                        Clen = 4;  % shorter sample length if we're using ROI spines on coiled worms
+                        nPoints = 4;
                     end
 
-                    temptrace = cell(1,length(sortSkel)-1); %NaN(Clen,length(sortSkel)-1);
-                    tempbf = cell(1,length(sortSkel)-1); %NaN(Clen,length(sortSkel)-1);
-                    perpX = cell(1,length(sortSkel)-1);
-                    perpY = cell(1,length(sortSkel)-1);
+                    % Initialize matrices for performance
+                    temptrace = nan(nPoints, numSegments);
+                    tempbf = nan(nPoints, numSegments);
+                    perpX = nan(2, numSegments); % Store only two points per segment
+                    perpY = nan(2, numSegments);
 
+                    for ii = 1:numSegments
+                        idx = selectedIndices(ii);
 
-
-                    parfor ii = 1:length(sortSkel)-1
-                        if ii+stepSize<length(sortSkel)
-                            seg = sortSkel(ii:ii+stepSize,:);
+                        if idx + stepSize < totalPoints
+                            seg = sortSkel(idx:idx + stepSize, :);
                         else
-                            seg = sortSkel(ii:end,:);
+                            seg = sortSkel(idx:end, :);
                         end
-
-
 
                         A = [seg(1,2) seg(1,1)]; % [x y] coords of point 1
                         B = [seg(end,2) seg(end,1)]; % [x y] coords of point 2
 
-                        AB = B - A;     % Call AB the vector that points in the direction from A to B
+                        AB = B - A;
+                        AB = AB / norm(AB);  % Normalize
 
-                        % Normalize AB to have unit length
-                        AB = AB/norm(AB);
+                        ABperp = AB * [0 -1; 1 0]; % Perpendicular unit vector
+                        ABmid = (A + B) / 2; % Midpoint
 
-                        % compute the perpendicular vector to the line
-                        % because AB had unit norm, so will ABperp
-                        ABperp = AB*[0 -1;1 0];
+                        C = ABmid + axSigHeight * ABperp;
+                        D = ABmid - axSigHeight * ABperp;
 
-                        % midpoint between A and B
-                        ABmid = (A + B)/2;
-                        % Compute new points C and D, each at a ditance
-                        % Clen off the line. Note that since ABperp is
-                        % a vector with unit eEuclidean norm, if I
-                        % multiply it by Clen, then it has length Clen.
-                        C = ABmid + Clen*ABperp;
-                        D = ABmid - Clen*ABperp;
+                        % Ensure C and D are within bounds
+                        C = max(min(C, [size(GFP,2), size(GFP,1)]), [1,1]);
+                        D = max(min(D, [size(GFP,2), size(GFP,1)]), [1,1]);
+                        
+                        perpX(:, ii) = [C(1); D(1)];
+                        perpY(:, ii) = [C(2); D(2)];
+
+
+
+                        % Generate linearly spaced points along the perpendicular line
+                        xq = linspace(C(1), D(1), axSigHeight);
+                        yq = linspace(C(2), D(2), axSigHeight);
 
                         try
-                            temptrace(ii) = {improfile(GFP,[C(1);D(1)],[C(2);D(2)],Clen)};
-                            tempbf(ii) = {improfile(mCh,[C(1);D(1)],[C(2);D(2)],Clen)};
-                            perpX(ii) = {[C(1); D(1)]}
-                            perpY(ii) = {[C(2); D(2)]}
+                            % Fix: Transpose xq and yq for NDGRID format
+                            temptrace(:, ii) = GFP_interp(yq', xq');
+                            tempbf(:, ii) = mCh_interp(yq', xq');
                         catch
                         end
                     end
 
                     hold off
 
+                
+                    % Convert images back to uint8 (if needed for display later)
+                    GFP = uint16(GFP);
+                    mCh = uint16(mCh);
+                    hold off
 
 
-                    temptrace = cell2mat(temptrace);
-                    tempbf = cell2mat(tempbf);
-                    perpX = cell2mat(perpX);
-                    perpY = cell2mat(perpY);
-
-                    %                 h1 = plot(perpX,perpY);
 
 
+                    % temptrace = cell2mat(temptrace);
+                    % tempbf = cell2mat(tempbf);
+                    % perpX = cell2mat(perpX);
+                    % perpY = cell2mat(perpY);
 
 
                     if ~isempty(temptrace)
