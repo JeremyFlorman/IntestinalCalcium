@@ -506,6 +506,7 @@ for i = 1:length(inputData)
     inputData(i).fallTime = fTime(~fallNan);
     inputData(i).AUC = AUC(~aucNan);
     inputData(i).peakIntervals = tempint;
+    inputData(i).meanInterval = mean(tempint, 'omitmissing');
     inputData(i).peakAmplitude = tempamp;
     inputData(i).peakLoc = templocs;
     inputData(i).propagationRate = propagationRate;
@@ -567,6 +568,7 @@ processedData(1).riseVector = vertcat(inputData(:).riseTime);
 processedData(1).fallVector = vertcat(inputData(:).fallTime);
 processedData(1).AUCVector = vertcat(inputData(:).AUC);
 processedData(1).intervalVector = vertcat(inputData(:).peakIntervals);
+processedData(1).meanIntervalVector = vertcat(inputData(:).meanInterval);
 processedData(1).propagationVector = vertcat(inputData(:).propagationRate);
 
 if validateRiseFall == 1 && keepValidating == 1
