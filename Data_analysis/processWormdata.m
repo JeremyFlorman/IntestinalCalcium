@@ -57,8 +57,9 @@ function [mtdata, wtdata, settings] = processWormdata(wormdata,settings)
 %   See also RETURNPLOTSETTINGS
 %   Copyright 2024 Jeremy Florman
 
-if nargin<2
+if nargin<1
     settings = returnPlotSettings();
+    wormdata = evalin("caller",'wormdata');
 end
 
 % wormdata = "C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\dec-9\dec-9_mergedData.mat";
@@ -129,6 +130,8 @@ end
 mtdata = processSpikes(mtdata,settings);
 wtdata = processSpikes(wtdata,settings);
 
+assignin("base", [mtdata(1).genotype 'Data'], mtdata)
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%%%%%%%%
@@ -178,7 +181,7 @@ secondsPrePost = settings.spikeProfileWindow;
 framerate = settings.framerate;
 validatePropagationRate = settings.validatePropagationRate;
 validateRiseFall = settings.validateRiseFall;
-propMethod =1;
+propMethod =3;
 
 
 timePreSpike = framerate*secondsPrePost;
