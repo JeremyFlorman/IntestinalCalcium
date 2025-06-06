@@ -3,31 +3,20 @@ function [h5Data] = processH5(foldername)
 %   Detailed explanation goes here
 % foldername = 'C:\src\OpenAutoScope-v2\data\zfis178';
 
-% foldername = 'C:\Users\Jeremy\Desktop\231108_zfis178_wildtype+Food_2\2023_11_08_13_31_05_flircamera_behavior'
+foldername = 'C:\Users\Jeremy\Dropbox\PHB Paper\Supplemental Movies\250314_zfis178_DA-Lactate_3\2025_03_14_15_21_58_flircamera_behavior'
 d = dir([foldername '\*.h5']);
 registerImage = 1;
-showRegistration =0;
+showRegistration =1;
 videostuff = 0;
 mmPerStep = 0.001253814; % calibration for gcamp + behavior tracker
 % mmPerStep = 0.001307092; % calibration for OAS behavior-only tracker
 
-translation = [3 0 0];
+translation = [0 0 0];
 
 
 for i = 1:length(d)
     bPath = fullfile(d(i).folder,d(i).name);
     gPath =strrep(bPath,'behavior', 'gcamp');
-
-    bTimes = h5read(bPath, '/times');
-    gTimes = h5read(gPath, '/times');
-
-    bData = h5read(bPath, '/data');
-    gData = h5read(gPath, '/data');
-    bFrames = size(bData,3);
-    gFrames = size(gData,3);
-
-
-    idx = NaN(gFrames,1);
 
     if videostuff == 1
         if exist('v','var') == 1
@@ -39,37 +28,63 @@ for i = 1:length(d)
         open(v)
     end
 
-
-
-    for j=1:bFrames
-        ii = find(gTimes >=bTimes(j), 1);
-        if ~isempty(ii)
-            idx(j) = ii;
-        end
-    end
-
-    idx = idx(~isnan(idx));
-    tempbf = bData(:,:,1:length(idx));
-    tempgfp = gData(:,:,idx);
-    temptime = bTimes(1:length(idx));
+    % concatanate data if there are multiple h5 files
     if i == 1
-        starttime = temptime(1);
-    end
+        bTimes = h5read(bPath, '/times');
+        gTimes = h5read(gPath, '/times');
 
-
-    if i == 1
-        bf = tempbf;
-        gfp = tempgfp;
-        time = temptime;
+        bData = h5read(bPath, '/data');
+        gData = h5read(gPath, '/data');
     elseif i>1
-        bf = cat(3,bf,tempbf);
-        gfp = cat(3,gfp, tempgfp);
-        time = cat(1,time, temptime);
-    end
+        bTimes = cat(1,bTimes,h5read(bPath, '/times'));
+        gTimes = cat(1,gTimes,h5read(gPath, '/times'));
 
+        bData = cat(3, bData, h5read(bPath, '/data'));
+        gData = cat(3, gData, h5read(gPath, '/data'));
+    end
 end
 
 
+% find the dataset with the fewest values and set this as the reference,
+% as we can't register missing frames to a reference. 
+if length(bTimes) < length(gTimes)
+    referenceTimes = bTimes;
+    times2Register = gTimes;
+    register2bf = 1;
+else
+    referenceTimes = gTimes;
+    times2Register = bTimes;
+    register2bf = 0;
+end
+
+time = referenceTimes;
+starttime = time(1);
+imgDims = size(gData);
+numFrames = length(referenceTimes);
+
+% preallocate image datasets, assign channel and clear duplicate data
+if register2bf == 1
+    bf = bData;
+    gfp = nan(imgDims(1), imgDims(2), numFrames);
+    clear("bData");
+elseif register2bf == 0
+    bf = nan(imgDims(1), imgDims(2), numFrames);
+    gfp = gData;
+    clear("gData");
+end
+
+% register images based on closest timestamp
+for frame2Register=1:length(referenceTimes)
+    diffs = abs(times2Register - referenceTimes(frame2Register));
+    [~, matchIdx] = min(diffs);
+
+    if register2bf == 1
+        gfp(:,:,frame2Register) = gData(:,:,matchIdx);
+    elseif register2bf == 0 
+        bf(:,:,frame2Register) = bData(:,:,matchIdx);
+    end
+end
+%%
 
 if registerImage == 1
     gfp = imtranslate(gfp(:,:,:),translation);
@@ -139,7 +154,7 @@ for i = 1:length(logd)
                 xl = str2double(r{1})*mmPerStep; % X coordinate in mm units
                 yl = str2double(r{2})*mmPerStep; % Y coordinate in mm units
 
-                % % check for crossing origin % % 
+                % % check for crossing origin % %
                 if abs(xl)<0.01
                     if abs(xl)-abs(xLoc(locTime-1,1))>=0
                         xflip = xflip*-1;
@@ -148,11 +163,11 @@ for i = 1:length(logd)
 
                 if abs(yl)<0.01
                     if abs(yl)-abs(yLoc(locTime-1,1))>=0
-                    yflip = yflip*-1;
+                        yflip = yflip*-1;
                     end
                 end
-                
-                % % convert orgin crossings to negative coordinates % % 
+
+                % % convert orgin crossings to negative coordinates % %
                 xLoc(locTime,1) = xl*xflip;
                 yLoc(locTime,1) = yl*yflip;
 
