@@ -30,7 +30,7 @@ wtcolor = settings.wtcolor;
 mtcolor = settings.mtcolor;
 mtedgecolor = settings.mtedgecolor;
 regline = 0; % add regression line? 1=yes, 0=no;
-
+markersize = 15;
 
 for i = 1:length(mtdata)
 mtint = mtdata(i).peakIntervals;
@@ -104,21 +104,21 @@ if plotcontrol == 1
     %%
     if ~isempty(wtintervalMatrix)
         if noAlpha ==1
-            s1 = scatter(wtintervalMatrix(:,1), wtintervalMatrix(:,2), 7,wtcolor, ...
-                'filled','MarkerEdgeColor',[0.6 0.6 0.6],'Parent',ax);
+            s1 = scatter(wtintervalMatrix(:,1), wtintervalMatrix(:,2), markersize+5,wtcolor, ...
+                'filled','Marker', 'square','Parent',ax);
         else
-            s1 = scatter(wtintervalMatrix(:,1), wtintervalMatrix(:,2), 7,wtcolor, ...
-                'filled','MarkerEdgeColor',[0.6 0.6 0.6], 'MarkerFaceAlpha',.05,'MarkerEdgeAlpha',.6,'Parent',ax);
+            s1 = scatter(wtintervalMatrix(:,1), wtintervalMatrix(:,2), markersize+5,wtcolor, ...
+                'filled','Marker', 'square', 'MarkerEdgeColor',[0.6 0.6 0.6], 'MarkerFaceAlpha',.05,'MarkerEdgeAlpha',.6,'Parent',ax);
         end
 
     end
 
     if ~isempty(mtintervalMatrix)
         if noAlpha == 1
-        s2 = scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), 7, mtcolor,...
+        s2 = scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), markersize, mtcolor,...
             'filled','MarkerEdgeColor',mtedgecolor,'Parent',ax);
         else
-        s2 = scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), 7, mtcolor, ...
+        s2 = scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), markersize, mtcolor, ...
             'filled','MarkerEdgeColor',mtedgecolor,'MarkerFaceAlpha',.6,'MarkerEdgeAlpha',.9,'Parent',ax);
         end
 
@@ -176,9 +176,9 @@ elseif plotcontrol == 0
 
     if ~isempty(mtintervalMatrix)
         if noAlpha == 1
-        scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), 2,'filled','Parent',ax);
+        scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), markersize,'filled','Parent',ax);
         else
-        scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), 2,'MarkerEdgeColor',[0.6 0.6 0.6],...
+        scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), markersize,'MarkerEdgeColor',[0.6 0.6 0.6],...
             'MarkerFaceAlpha',.6,'MarkerEdgeAlpha',.9,'Parent',ax);
         end
 
