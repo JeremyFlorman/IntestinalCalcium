@@ -32,7 +32,7 @@ axylimits= settings.axylimit;
 singlespike =settings.singleSpike;
 windowInSeconds = settings.spikeWindow;
 axSigCMap = settings.axSigCMap;
-expLengthInMin = ceil((length(wormdata.bulkSignal)/settings.framerate)/60);
+expLengthInMin = round((length(wormdata.bulkSignal)/settings.framerate)/60);
 % traceylimits = [0 8000];
 % axylimits=[0 20000];
  
@@ -56,7 +56,7 @@ tracecolor = [0.2 0.2 0.2];
 % 
 % 
 
-axsig = smoothdata(wormdata.autoAxialSignal,1, 'gaussian', 45);
+axsig = smoothdata(wormdata.autoAxialSignal,1, 'gaussian', 65);
 bulkSignal = wormdata.bulkSignal;
 loc = wormdata.peakLoc;
 pk = wormdata.peakAmplitude;
@@ -91,8 +91,8 @@ for idx = singlespike %:length(loc)
     pre = loc(singlespike)-window;
     post = loc(singlespike)+window;
     else
-        pre = 900-window;
-        post = 900+window;
+        pre = 3150-window;
+        post = 3150+window;
     end
     
 %     nexttile([2,2])
@@ -155,4 +155,5 @@ for idx = singlespike %:length(loc)
     outpath = [filepath '\' name 'spike_' num2str(singlespike) '_SingleTrace.png'];
     exportgraphics(gcf, outpath)
 end
+diff(loc)/15
 end
