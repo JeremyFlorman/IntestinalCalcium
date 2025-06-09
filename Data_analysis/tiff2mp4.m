@@ -1,5 +1,5 @@
 
- filename = 'C:\Users\Jeremy\Desktop\230330_zfex813_wt_2_MMStack_Default.ome.tif';
+ filename = 'C:\Users\Jeremy\Desktop\250408_zfis178_UNC-31AID;zfex1268(pha-4-TIR)+4mMAuxPlates_3\250408_zfis178_UNC-31AID;zfex1268(pha-4-TIR)+4mMAuxPlates_3.tif';
 
 [fp, name, ext] = fileparts(filename);
 info = imfinfo(filename);
@@ -8,7 +8,7 @@ fr = 15;    % frame rate of original video
 playrate = 2; % multiplier for playback framerate
 
 startidx = 1 %460;
-endidx =4500 % 3638 %startidx+(30*fr);
+endidx =450 % 3638 %startidx+(30*fr);
 
 
 
