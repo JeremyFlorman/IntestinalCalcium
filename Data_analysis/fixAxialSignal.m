@@ -36,10 +36,10 @@ data.workingSignal = data.autoAxialSignal;
 % data.outname = axsigname;
 fig = figure('Position', [506.6000 33 560.0000 749.6000]);
 uax = axes('Parent',fig,'Position', ...
-    [0.1300 0.03100 0.50 0.950]);
+    [0.1300 0.0350 0.50 0.950]);
 imagesc(smoothdata(data.workingSignal,'gaussian',60))
 
-colormap(uax, viridis)
+colormap(uax, turbo)
 btn = uicontrol('Style', 'pushbutton',...
     'Position',[400, 700, 120, 22],'String', 'Mark Points',...
     'Callback', @btn_callback);
@@ -85,9 +85,9 @@ guidata(fig, data);
         yend = floor(ypts(2));
         
         data.workingSignal(ystart:yend,:) = fliplr(data.workingSignal(ystart:yend,:));
-        imagesc(smoothdata(data.workingSignal,'gaussian',60)) 
+        imagesc(smoothdata(data.workingSignal,'gaussian',60), [5 60]) 
         
-        colormap(uax, viridis)
+        colormap(uax, turbo)
         
         if ~isfield(data, 'ypts')
             data.ypts = [ystart yend];
@@ -106,9 +106,9 @@ guidata(fig, data);
         ystart = floor(data.ypts(end,1));
         yend = floor(data.ypts(end,2));
         data.workingSignal(ystart:yend,:) = fliplr(data.workingSignal(ystart:yend,:));
-        imagesc(smoothdata(data.workingSignal,'gaussian',60)) 
+        imagesc(smoothdata(data.workingSignal,'gaussian',60), [5 60]) 
         
-        colormap(uax, viridis)
+        colormap(uax, turbo)
         guidata(fig, data);
     end
 
@@ -116,9 +116,9 @@ guidata(fig, data);
         data= guidata(fig);
         ypts = [1 length(data.workingSignal)];
         data.workingSignal(ypts(1):ypts(2),:) = fliplr(data.workingSignal(ypts(1):ypts(2),:));
-        imagesc(smoothdata(data.workingSignal,'gaussian',60)) 
+        imagesc(smoothdata(data.workingSignal,'gaussian',60), [5 60]) 
         
-        colormap(uax, viridis)
+        colormap(uax, turbo)
         
         data.ypts = ypts;
         guidata(fig, data);
@@ -127,10 +127,10 @@ guidata(fig, data);
 
     function rvert_callback(fig, ~)
         data= guidata(fig);
-        data.workingSignal = data.rawAxialSignal;
-        imagesc(smoothdata(data.workingSignal,'gaussian',60)) 
+        data.workingSignal = data.autoAxialSignal;
+        imagesc(smoothdata(data.workingSignal,'gaussian',60), [5 60]) 
         
-        colormap(uax, viridis)
+        colormap(uax, turbo)
         
         guidata(fig, data);
     end
@@ -144,9 +144,9 @@ guidata(fig, data);
             disp('Sorry, no fixed signal found');
         end
         
-        imagesc(smoothdata(data.workingSignal,'gaussian',60)) 
+        imagesc(smoothdata(data.workingSignal,'gaussian',60), [5 60]) 
         
-        colormap(uax, viridis)
+        colormap(uax, turbo)
         
         guidata(fig, data);
     end
@@ -161,8 +161,8 @@ guidata(fig, data);
                 data.workingSignal(i,:) = fliplr(data.workingSignal(i,:));
             end
         end
-        imagesc(smoothdata(data.workingSignal,'gaussian',60)) 
-        colormap(uax, viridis)
+        imagesc(smoothdata(data.workingSignal,'gaussian',60), [5 60]) 
+        colormap(uax, turbo)
         
         guidata(fig, data);
     end
