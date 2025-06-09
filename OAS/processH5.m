@@ -3,10 +3,10 @@ function [h5Data] = processH5(foldername)
 %   Detailed explanation goes here
 % foldername = 'C:\src\OpenAutoScope-v2\data\zfis178';
 
-foldername = 'C:\Users\Jeremy\Dropbox\PHB Paper\Supplemental Movies\250314_zfis178_DA-Lactate_3\2025_03_14_15_21_58_flircamera_behavior'
+% foldername = 'C:\Users\Jeremy\Dropbox\PHB Paper\Supplemental Movies\250314_zfis178_DA-Lactate_3\2025_03_14_15_21_58_flircamera_behavior'
 d = dir([foldername '\*.h5']);
 registerImage = 1;
-showRegistration =1;
+showRegistration =0;
 videostuff = 0;
 mmPerStep = 0.001253814; % calibration for gcamp + behavior tracker
 % mmPerStep = 0.001307092; % calibration for OAS behavior-only tracker
@@ -46,7 +46,7 @@ end
 
 
 % find the dataset with the fewest values and set this as the reference,
-% as we can't register missing frames to a reference. 
+% as we can't register missing frames to a reference.
 if length(bTimes) < length(gTimes)
     referenceTimes = bTimes;
     times2Register = gTimes;
@@ -67,22 +67,32 @@ if register2bf == 1
     bf = bData;
     gfp = nan(imgDims(1), imgDims(2), numFrames);
     clear("bData");
-elseif register2bf == 0
+else
     bf = nan(imgDims(1), imgDims(2), numFrames);
     gfp = gData;
     clear("gData");
 end
 
+error = nan(length(numFrames),1);
+
 % register images based on closest timestamp
-for frame2Register=1:length(referenceTimes)
+for frame2Register=1:numFrames
     diffs = abs(times2Register - referenceTimes(frame2Register));
-    [~, matchIdx] = min(diffs);
+    [t_off, matchIdx] = min(diffs);
+    error(frame2Register) = t_off;
 
     if register2bf == 1
         gfp(:,:,frame2Register) = gData(:,:,matchIdx);
-    elseif register2bf == 0 
+    else
         bf(:,:,frame2Register) = bData(:,:,matchIdx);
     end
+end
+
+% clear the other duplicate dataset now that we've registered it
+if register2bf == 1
+    clear("gData")
+else
+    clear("bData")
 end
 %%
 
