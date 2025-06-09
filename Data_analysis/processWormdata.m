@@ -130,8 +130,13 @@ end
 mtdata = processSpikes(mtdata,settings);
 wtdata = processSpikes(wtdata,settings);
 
-assignin("base", [mtdata(1).genotype 'Data'], mtdata)
+if isfield(mtdata, 'genotype')
+dataName = strrep(mtdata(1).genotype,'-','Minus');
+dataName = strrep(dataName, '+', 'Plus');
+dataName = strrep(dataName, ' ', '');
 
+assignin("base", [dataName 'Data'], mtdata)
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%%%%%%%%
@@ -181,7 +186,7 @@ secondsPrePost = settings.spikeProfileWindow;
 framerate = settings.framerate;
 validatePropagationRate = settings.validatePropagationRate;
 validateRiseFall = settings.validateRiseFall;
-propMethod =3;
+propMethod =1;
 
 
 timePreSpike = framerate*secondsPrePost;
