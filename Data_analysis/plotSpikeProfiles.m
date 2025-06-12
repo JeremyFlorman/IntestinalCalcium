@@ -14,6 +14,8 @@ else
 end
 
 
+averageProfiles = 1;
+
 traceylimits = settings.traceylimit;
 secondsPrePost = settings.spikeProfileWindow;
 fps = settings.framerate;
@@ -22,14 +24,21 @@ noalpha = 1;
 timePreSpike = fps*secondsPrePost;
 timePostSpike = fps*secondsPrePost;
 
-
+% get profiles and averages per recording
 if plotcontrol ==1
     wtprofiles = [wtdata(:).peakTraces];
+    mtAverages = nan(timePreSpike+timePostSpike+1, length(wtdata));
+    for i = 1:length(wtdata)
+        wtAverages(:,i) = mean(wtdata(i).peakTraces, 2, "omitmissing");
+    end
+
 end
 
 mtprofiles = [mtdata(:).peakTraces];
- 
- 
+mtAverages = nan(timePreSpike+timePostSpike+1, length(mtdata));
+for i = 1:length(mtdata)
+    mtAverages(:,i) = mean(mtdata(i).peakTraces, 2, "omitmissing");
+end
 
 %% plotting
 singlewidth = 0.5;
@@ -57,9 +66,9 @@ end
 
 
 
-mtpktime = linspace(-timePreSpike/15,timePostSpike/15,size(mtprofiles,1))';
-mtpktimemat = repmat(mtpktime, [1,size(mtprofiles,2)]);
-mtpk = max(mean(mtprofiles,2,'omitnan'));
+mtpktime = linspace(-timePreSpike/fps,timePostSpike/fps,size(mtprofiles,1))';
+mtpktimemat = repmat(mtpktime, [1,size(mtAverages,2)]);
+
 
 
 
@@ -67,22 +76,17 @@ mtpk = max(mean(mtprofiles,2,'omitnan'));
 hold on
 if plotcontrol ==1
 
-    wtpktime = linspace(-timePreSpike/15,timePostSpike/15,size(wtprofiles,1))';
-    wtpktimemat = repmat(wtpktime, [1,size(wtprofiles,2)]);
+    wtpktime = linspace(-timePreSpike/fps,timePostSpike/fps,size(wtprofiles,1))';
+    wtpktimemat = repmat(wtpktime, [1,size(wtAverages,2)]);
     wtpk = max(mean(wtprofiles,2,'omitnan'));
-    
+
     if ~isempty(wtpktimemat)
-        plot(wtpktimemat, wtprofiles, 'Color',wttracecol , 'LineWidth', singlewidth) % plot wild type individual traces
-        % line([-timePreSpike/15; timePostSpike/15], [wtpk; wtpk], 'Color', wtcolor, 'LineStyle', ':',...    %line at wild type mean
-            % 'LineWidth', tracelinewidth)
+        plot(wtpktimemat, wtAverages, 'Color',wttracecol , 'LineWidth', singlewidth) % plot wild type individual traces
     end
 end
 
 if ~isempty(mtpktimemat)
-    plot(mtpktimemat, mtprofiles, 'Color',mttracecol ,'LineWidth', singlewidth); % plot mutant individual traces
-    % line([-timePreSpike/15; timePostSpike/15], [mtpk; mtpk], 'Color', mtcolor, 'LineStyle', '--',... % line at mutant mean
-        % 'LineWidth', tracelinewidth)
-
+    plot(mtpktimemat, mtAverages, 'Color',mttracecol ,'LineWidth', singlewidth); % plot mutant individual traces
     plot(mtpktime, mean(mtprofiles,2,'omitnan'), 'Color', mtcolor, 'LineWidth', tracewidth); % plot mutant trace mean
 end
 
