@@ -266,21 +266,21 @@ for nf =startIndex:length(imgDir)
                     totalPoints = length(sortSkel);
 
                     % Ensure we don't exceed available points
-                    numSegments = min(numSegments, totalPoints - 1);
+                    segments2Sample = min(numSegments, totalPoints - 1);
 
                     % Evenly select indices along sortSkel
-                    selectedIndices = round(linspace(1, totalPoints - 1, numSegments));
+                    selectedIndices = round(linspace(1, totalPoints - 1, segments2Sample));
 
                     % Number of points along the perpendicular line
                     nPoints = axSigHeight;
 
                     % Initialize matrices for performance
-                    temptrace = nan(nPoints, numSegments);
-                    tempbf = nan(nPoints, numSegments);
-                    perpX = nan(2, numSegments); % Store only two points per segment
-                    perpY = nan(2, numSegments);
+                    temptrace = nan(nPoints, segments2Sample);
+                    tempbf = nan(nPoints, segments2Sample);
+                    perpX = nan(2, segments2Sample); % Store only two points per segment
+                    perpY = nan(2, segments2Sample);
 
-                    for ii = 1:numSegments
+                    for ii = 1:segments2Sample
                         idx = selectedIndices(ii);
 
                         if idx + stepSize < totalPoints
@@ -373,7 +373,7 @@ for nf =startIndex:length(imgDir)
 
                 % Upsample temptrace and tempbf to match original sortSkel size
                 originalIndices = 1:totalPoints - 1;
-                upsampledIndices = linspace(1, totalPoints - 1, numSegments);
+                upsampledIndices = linspace(1, totalPoints - 1, segments2Sample);
 
                 try
                     temptrace = interp1(upsampledIndices, temptrace', originalIndices, 'linear', 'extrap')';

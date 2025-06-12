@@ -111,6 +111,7 @@ for nf =startIndex:length(tdir)
     backgroundSignal = NaN(length(info)/2,1);
     orientation = NaN(length(info)/2,1);
     area = NaN(length(info)/2,1);
+    wormLength = NaN(length(info)/2,1);
 
 
     time = linspace(0,round((length(info)/2)/fps/60,1),ceil(length(info)/2)); %minutes per frame
@@ -318,12 +319,13 @@ for nf =startIndex:length(tdir)
                     % Define the desired number of evenly spaced samples
                     
                     totalPoints = length(sortSkel);
+                    wormLength(i) = totalPoints;
 
                     % Ensure we don't exceed available points
-                    numSegments = min(numSegments, totalPoints - 1);
+                    segments2Sample = min(numSegments, totalPoints - 1);
 
                     % Evenly select indices along sortSkel
-                    selectedIndices = round(linspace(1, totalPoints - 1, numSegments));
+                    selectedIndices = round(linspace(1, totalPoints - 1, segments2Sample));
 
                     % Number of points along the perpendicular line
                     if roiActive == 0
@@ -333,12 +335,12 @@ for nf =startIndex:length(tdir)
                     end
 
                     % Initialize matrices for performance
-                    temptrace = nan(nPoints, numSegments);
-                    tempbf = nan(nPoints, numSegments);
-                    perpX = nan(2, numSegments); % Store only two points per segment
-                    perpY = nan(2, numSegments);
+                    temptrace = nan(nPoints, segments2Sample);
+                    tempbf = nan(nPoints, segments2Sample);
+                    perpX = nan(2, segments2Sample); % Store only two points per segment
+                    perpY = nan(2, segments2Sample);
 
-                    for ii = 1:numSegments
+                    for ii = 1:segments2Sample
                         idx = selectedIndices(ii);
 
                         if idx + stepSize < totalPoints
@@ -490,7 +492,7 @@ for nf =startIndex:length(tdir)
                                     gpadTrace = padarray(temptrace,[0, ceil(gdiff/2)],0,'both');
                                     gpadTrace = gpadTrace(:,1:size(GFP, 2));
                                 elseif gdiff<0
-                                    gpaTrace = temptrace(:,abs(gdiff):size(GFP, 2));
+                                    gpadTrace = temptrace(:,abs(gdiff):size(GFP, 2));
                                 end
 
                                 gpad_Outskel = padarray(outskel, [size(gpadTrace,1),0], 'post');
@@ -599,7 +601,7 @@ for nf =startIndex:length(tdir)
 
 
     % peak analysis
-    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',500,'MinPeakDistance',150);
+    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',750,'MinPeakDistance',150);
     peakpad = fps*15; % framerate*time in seconds;
     pktime = linspace(-15,15, peakpad*2)';
     if isempty(loc)
@@ -646,6 +648,7 @@ for nf =startIndex:length(tdir)
     wormdata.backgroundSignal = backgroundSignal;
     wormdata.orientation = orientation;
     wormdata.area = area;
+    wormdata.wormLength = wormLength;
     wormdata.peakTraces = pktraces;
     wormdata.peakLoc = loc;
     wormdata.include = 1;
