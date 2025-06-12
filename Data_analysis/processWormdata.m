@@ -130,13 +130,13 @@ end
 mtdata = processSpikes(mtdata,settings);
 wtdata = processSpikes(wtdata,settings);
 
-if isfield(mtdata, 'genotype')
-dataName = strrep(mtdata(1).genotype,'-','Minus');
-dataName = strrep(dataName, '+', 'Plus');
-dataName = strrep(dataName, ' ', '');
-
-assignin("base", [dataName 'Data'], mtdata)
-end
+% if isfield(mtdata, 'genotype')
+% dataName = strrep(mtdata(1).genotype,'-','Minus');
+% dataName = strrep(dataName, '+', 'Plus');
+% dataName = strrep(dataName, ' ', '');
+% 
+% assignin("base", [dataName 'Data'], mtdata)
+% end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%%%%%%%%
@@ -225,6 +225,7 @@ for i = 1:length(inputData)
     chunksize = floor(0.2*size(axialSignal,2));
 
     [tempamp, templocs] = findpeaks(bulkSignal, 'MinPeakProminence', peakthreshold, 'MinPeakDistance',peakdistance,'MinPeakWidth',peakwidth);
+
 
     if length(templocs)>1
         tempint = diff(templocs)/framerate;
