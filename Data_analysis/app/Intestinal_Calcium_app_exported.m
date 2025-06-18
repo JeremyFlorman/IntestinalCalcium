@@ -9,6 +9,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         loadSettings                   matlab.ui.container.Menu
         TabGroup                       matlab.ui.container.TabGroup
         TrackingTab                    matlab.ui.container.Tab
+        ReprocessmergedDataButton      matlab.ui.control.Button
         StartFrameSpinner              matlab.ui.control.Spinner
         StartFrameSpinnerLabel         matlab.ui.control.Label
         RunAnalysisButton              matlab.ui.control.Button
@@ -163,7 +164,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         defaultTiffDir = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants'; 
         defaultRemoteDir = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
         defaultDataDir='Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
-        defaultOutputDir = 'C:\Users\Jeremy\Dropbox\combinedData\OAS';
+        defaultOutputDir = 'C:\Users\Jeremy\Dropbox\combinedData';
     end
 
     methods (Access = public)
@@ -601,35 +602,34 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % ...and 1 other component
         function AnalyzeOASdataCheckBox_2ValueChanged(app, event)
             OASvalue = app.AnalyzeOASdataCheckBox_2.Value;
-            normalizeValue = app.NormalizationDropDown.Value;
+            normalizeValue = app.NormalizationDropDown.UserData;
             if OASvalue == 1
-                if strcmp(normalizeValue,'None') == 1
+                if normalizeValue == 1
                 app.bulkYLim.Value = '0 15';
                 app.axialYLim.Value = '0 45';
                 app.peakthreshold.Value = 2;
                 app.EqualizeExpDurationCheckBox.Value = 1;
-                elseif strcmp(normalizeValue,'Z-Score') == 1
+                elseif normalizeValue == 2
                     app.bulkYLim.Value = '-1 8';
                     app.peakthreshold.Value= 1;
-                    app.EqualizeExpDurationCheckBox.Value = 1;
-                elseif strcmp(normalizeValue,'Control') == 1
+                    
+                elseif normalizeValue == 3
                     app.bulkYLim.Value = '-0.2 1';
                     app.peakthreshold.Value = 0.1;
-                    app.EqualizeExpDurationCheckBox.Value = 1;
                 end
             end
 
             if OASvalue == 0
                 app.EqualizeExpDurationCheckBox.Value = 0;
-                if strcmp(normalizeValue,'None') == 1
+                if normalizeValue == 1
                     app.bulkYLim.Value = '-500 5000';
                     app.axialYLim.Value = '-500 12000';
                     app.peakthreshold.Value = 500;
-                elseif strcmp(normalizeValue,'Z-Score') == 1
+                elseif normalizeValue == 2
                     app.bulkYLim.Value = '-1 8';
                     app.peakthreshold.Value= 1;
                     
-                elseif strcmp(normalizeValue,'Control') == 1
+                elseif normalizeValue == 3
                     app.bulkYLim.Value = '-0.2 1';
                     app.peakthreshold.Value = 0.1;
                 end
@@ -780,6 +780,57 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                     normalizeValue = 3;
             end
             app.NormalizationDropDown.UserData = normalizeValue;
+        end
+
+        % Button pushed function: ReprocessmergedDataButton
+        function ReprocessmergedDataButtonPushed(app, event)
+            prevDir = app.outputDir.Value;
+            if isfolder(prevDir)
+                searchStart = prevDir;
+            else
+                searchStart = app.defaultOutputDir;
+            end
+
+
+            [mergedDataFile, mergedDataPath] = uigetfile([searchStart '\*.mat']);
+            app.outputDir.Value = mergedDataPath;
+
+
+
+            load(fullfile(mergedDataPath, mergedDataFile));
+            settings = parseInputs(app);
+
+
+            files2process = cell(length(wormdata),1);
+            filepath = cell(length(wormdata),1);
+            for i = 1:length(wormdata)
+                tempfile = wormdata(i).filename;
+                if isfile(tempfile)
+                    files2process(i) = {tempfile};
+                    [fp, ~, ~] = fileparts(tempfile);
+                    filepath(i) = {fp};
+                elseif isfile(strrep(tempfile,'Y:\', 'Z:\'))
+                    tempfile = strrep(tempfile,'Y:\', 'Z:\');
+                    files2process(i) = {tempfile};
+                    [fp, ~, ~] = fileparts(tempfile);
+                    filepath(i) = fp;
+                else
+                    files2process = [];
+                end
+            end
+
+            settings.isRemote = 1;
+
+
+
+            for i = 1:length(files2process)
+                disp(['Processing file ' num2str(i) ' of ' num2str(length(files2process)) ': ' files2process{i}])
+                settings.tiffDir = filepath{i};
+                freelyMovingAnalysis_Func(settings)
+            end
+
+            genotype = strrep(mergedDataFile, '_mergedData.mat', '');
+            reCombine_Wormdata(files2process, mergedDataPath, genotype);
         end
     end
 
@@ -1026,6 +1077,13 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.StartFrameSpinner.Tooltip = {'which frame to start the analysis from.'};
             app.StartFrameSpinner.Position = [89 18 54 35];
             app.StartFrameSpinner.Value = 1;
+
+            % Create ReprocessmergedDataButton
+            app.ReprocessmergedDataButton = uibutton(app.TrackingTab, 'push');
+            app.ReprocessmergedDataButton.ButtonPushedFcn = createCallbackFcn(app, @ReprocessmergedDataButtonPushed, true);
+            app.ReprocessmergedDataButton.WordWrap = 'on';
+            app.ReprocessmergedDataButton.Position = [312 242 115 34];
+            app.ReprocessmergedDataButton.Text = 'Reprocess mergedData';
 
             % Create PlottingTab
             app.PlottingTab = uitab(app.TabGroup);
