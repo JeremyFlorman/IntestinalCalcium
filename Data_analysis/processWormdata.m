@@ -87,6 +87,9 @@ if isfield(mtdata, 'controlData')
         wtdata = wtdata(logical([wtdata.include]));
     end
 else
+    if isfield(mtdata, 'include')
+        mtdata = mtdata(logical([mtdata.include]));
+    end
     wtdata = mtdata;
 end
 
@@ -130,13 +133,15 @@ end
 mtdata = processSpikes(mtdata,settings);
 wtdata = processSpikes(wtdata,settings);
 
-% if isfield(mtdata, 'genotype')
-% dataName = strrep(mtdata(1).genotype,'-','Minus');
-% dataName = strrep(dataName, '+', 'Plus');
-% dataName = strrep(dataName, ' ', '');
-% 
-% assignin("base", [dataName 'Data'], mtdata)
-% end
+if isfield(mtdata, 'genotype')
+dataName = strrep(mtdata(1).genotype,'-','Minus');
+dataName = strrep(dataName, '+', 'Plus');
+dataName = strrep(dataName, ' ', '');
+
+assignin("base", [dataName 'Data'], mtdata)
+assignin("base", [dataName '_ControlData'], wtdata)
+end
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
             %%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%%%%%%%%
@@ -529,6 +534,8 @@ for i = 1:length(inputData)
 
 end
 
+
+%% sorting 
 if sortType == 0                % dont sort
     sortOrder = 1:length(inputData);
     if strcmpi(sortDir, 'ascend')
