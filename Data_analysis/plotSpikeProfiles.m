@@ -27,9 +27,11 @@ timePostSpike = fps*secondsPrePost;
 % get profiles and averages per recording
 if plotcontrol ==1
     wtprofiles = [wtdata(:).peakTraces];
-    mtAverages = nan(timePreSpike+timePostSpike+1, length(wtdata));
+    wtAverages = nan(timePreSpike+timePostSpike+1, length(wtdata));
     for i = 1:length(wtdata)
+        if ~isempty(wtdata(i).peakTraces)
         wtAverages(:,i) = mean(wtdata(i).peakTraces, 2, "omitmissing");
+        end
     end
 
 end
@@ -37,7 +39,10 @@ end
 mtprofiles = [mtdata(:).peakTraces];
 mtAverages = nan(timePreSpike+timePostSpike+1, length(mtdata));
 for i = 1:length(mtdata)
-    mtAverages(:,i) = mean(mtdata(i).peakTraces, 2, "omitmissing");
+    if ~isempty(mtdata(i).peakTraces)
+    avg = mean(mtdata(i).peakTraces, 2, "omitmissing");
+    mtAverages(1:length(avg),i) = avg;
+    end
 end
 
 %% plotting
@@ -65,7 +70,7 @@ end
 
 
 
-
+if averageProfiles == 1
 mtpktime = linspace(-timePreSpike/fps,timePostSpike/fps,size(mtprofiles,1))';
 mtpktimemat = repmat(mtpktime, [1,size(mtAverages,2)]);
 
