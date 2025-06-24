@@ -146,6 +146,19 @@ for idx = singlespike %:length(loc)
     colormap(gca, axSigCMap);
     xlabel('Time (min)')
 
+    if isfield(wormdata, 'pBoc')
+        for i =1:length(wormdata.pBoc)
+            text(wormdata.pBoc(i), size(axsig, 2)*.05, 'P', 'Color',[1 1 1])
+        end
+    end
+
+    if isfield(wormdata, 'exp')
+        for i =1:length(wormdata.exp)
+            text(wormdata.exp(i), size(axsig, 2)*.05, 'x', 'Color',[1 1 1])
+        end
+    end
+
+
 %     title('Axial Signal'); 
 
 
