@@ -591,47 +591,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         end
 
-        % Value changed function: AnalyzeOASdataCheckBox, 
-        % ...and 1 other component
-        function AnalyzeOASdataCheckBox_2ValueChanged(app, event)
-            normval = app.NormalizationDropDown.Value;
-            OASvalue = app.AnalyzeOASdataCheckBox_2.Value;
-            if OASvalue == 1
-                app.EqualizeExpDurationCheckBox.Value = 1;
-                if strcmp(normval, 'None') == 1
-                    app.bulkYLim.Value = '0 15';
-                    app.axialYLim.Value = '0 45';
-                    app.peakthreshold.Value = 2;
-                elseif strcmp(normval, 'Delta F/F0') == 1
-                    app.bulkYLim.Value = '-0.4 1';
-                    app.peakthreshold.Value= 0.1;
-
-                elseif strcmp(normval, 'Z-Score') == 1
-                    app.bulkYLim.Value = '-1 8';
-                    app.peakthreshold.Value= 1;
-
-                elseif strcmp(normval, 'Control') == 1
-                    app.bulkYLim.Value = '-0.2 1';
-                    app.peakthreshold.Value = 0.1;
-                end
-            elseif OASvalue == 0
-                if strcmp(normval, 'None') == 1
-                    app.bulkYLim.Value = '-500 5000';
-                    app.axialYLim.Value = '-500 12000';
-                    app.peakthreshold.Value = 500;
-                elseif strcmp(normval, 'Delta F/F0') == 1
-                    app.bulkYLim.Value = '-0.4 1';
-                    app.peakthreshold.Value= 0.1;
-                elseif strcmp(normval, 'Z-Score') == 1
-                    app.bulkYLim.Value = '-1 8';
-                    app.peakthreshold.Value= 1;
-                elseif strcmp(normval, 'Control') == 1
-                    app.bulkYLim.Value = '-0.2 1';
-                    app.peakthreshold.Value = 0.1;
-                end
-            end
-        end
-
         % Button pushed function: validateRiseFallButton
         function validateRiseFallButtonPushed(app, event)
             app.validateRiseFall.Value = 1;
@@ -697,8 +656,13 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         end
 
-        % Value changed function: NormalizationDropDown
+        % Callback function: AnalyzeOASdataCheckBox, 
+        % ...and 3 other components
         function NormalizationDropDownValueChanged(app, event)
+          %% This function handles callbacks for OAS checkboxes and 
+          % normalization. It updates bulk signal limits and peak
+          % prominence values to fit with the data output
+            
             normval = app.NormalizationDropDown.Value;
             OASvalue = app.AnalyzeOASdataCheckBox_2.Value;
             if OASvalue == 1
@@ -708,8 +672,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                     app.axialYLim.Value = '0 45';
                     app.peakthreshold.Value = 2;
                 elseif strcmp(normval, 'Delta F/F0') == 1
-                    app.bulkYLim.Value = '-0.4 1';
-                    app.peakthreshold.Value= 0.1;
+                    app.bulkYLim.Value = '-1 10';
+                    app.peakthreshold.Value= 2;
 
                 elseif strcmp(normval, 'Z-Score') == 1
                     app.bulkYLim.Value = '-1 8';
@@ -725,8 +689,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                     app.axialYLim.Value = '-500 12000';
                     app.peakthreshold.Value = 500;
                 elseif strcmp(normval, 'Delta F/F0') == 1
-                    app.bulkYLim.Value = '-0.4 1';
-                    app.peakthreshold.Value= 0.1;
+                    app.bulkYLim.Value = '-1 10';
+                    app.peakthreshold.Value= 2;
                 elseif strcmp(normval, 'Z-Score') == 1
                     app.bulkYLim.Value = '-1 8';
                     app.peakthreshold.Value= 1;
@@ -757,22 +721,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             mtdir = app.outputDir.Value;
             controlname = app.controlnameEditField.Value;
             getConsensusControl(mtdir,controlname);
-        end
-
-        % Drop down opening function: NormalizationDropDown
-        function NormalizationDropDownOpening(app, event)
-            normval = app.NormalizationDropDown.Value;
-            switch normval
-                case 'None'
-                    normalizeValue = 1;
-                case 'Delta F/F0'
-                    normalizeValue = 2;
-                case 'Z-Score'
-                    normalizeValue = 3;
-                case 'Control'
-                    normalizeValue = 4;
-            end
-            app.NormalizationDropDown.UserData = normalizeValue;
         end
 
         % Button pushed function: ReprocessmergedDataButton
@@ -1034,7 +982,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             % Create AnalyzeOASdataCheckBox
             app.AnalyzeOASdataCheckBox = uicheckbox(app.TrackingTab);
-            app.AnalyzeOASdataCheckBox.ValueChangedFcn = createCallbackFcn(app, @AnalyzeOASdataCheckBox_2ValueChanged, true);
+            app.AnalyzeOASdataCheckBox.ValueChangedFcn = createCallbackFcn(app, @NormalizationDropDownValueChanged, true);
             app.AnalyzeOASdataCheckBox.Tooltip = {'Check this box if you are analyzing OAS data to run the proper tracking function'};
             app.AnalyzeOASdataCheckBox.Text = 'Analyze OAS data?';
             app.AnalyzeOASdataCheckBox.WordWrap = 'on';
@@ -1511,14 +1459,14 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create NormalizationDropDown
             app.NormalizationDropDown = uidropdown(app.PlotSettingsTab);
             app.NormalizationDropDown.Items = {'None', 'Delta F/F0', 'Z-Score', 'Control'};
-            app.NormalizationDropDown.DropDownOpeningFcn = createCallbackFcn(app, @NormalizationDropDownOpening, true);
+            app.NormalizationDropDown.DropDownOpeningFcn = createCallbackFcn(app, @NormalizationDropDownValueChanged, true);
             app.NormalizationDropDown.ValueChangedFcn = createCallbackFcn(app, @NormalizationDropDownValueChanged, true);
             app.NormalizationDropDown.Position = [285 214 80 22];
             app.NormalizationDropDown.Value = 'Delta F/F0';
 
             % Create AnalyzeOASdataCheckBox_2
             app.AnalyzeOASdataCheckBox_2 = uicheckbox(app.PlotSettingsTab);
-            app.AnalyzeOASdataCheckBox_2.ValueChangedFcn = createCallbackFcn(app, @AnalyzeOASdataCheckBox_2ValueChanged, true);
+            app.AnalyzeOASdataCheckBox_2.ValueChangedFcn = createCallbackFcn(app, @NormalizationDropDownValueChanged, true);
             app.AnalyzeOASdataCheckBox_2.Tooltip = {'Check if working with OpenAutoScope data. This will toggle several required settings'};
             app.AnalyzeOASdataCheckBox_2.Text = 'Analyze OAS data?';
             app.AnalyzeOASdataCheckBox_2.WordWrap = 'on';
