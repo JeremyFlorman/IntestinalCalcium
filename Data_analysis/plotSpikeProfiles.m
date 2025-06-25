@@ -105,13 +105,21 @@ hold off
 
 
 normalization = settings.normalize;
-titles = {'Mean Fluorescence (a.u.)', 'Z-Score (s.d.)', 'Normalized Fluorescence (a.u.)'};
+titles = {'Mean Fluorescence (a.u.)','\delta F/F (a.u)', 'Z-Score (s.d.)', 'Normalized Fluorescence (a.u.)'};
 
 xlim([-timePreSpike/fps; timePostSpike/fps])
 ylim(traceylimits)
 title('Ca^2^+ Spike Profiles');
 if labelYAxis == 1
-    ylabel(titles(normalization))
+    if strcmp(normalization, 'None') == 1
+        ylabel(titles(1))
+    elseif strcmp(normalization, 'Delta F/F0') == 1
+        ylabel(titles(2))
+    elseif strcmp(normalization, 'Z-Score') == 1
+        ylabel(titles(3))
+    elseif strcmp(normalization, 'Control') == 1
+        ylabel(titles(4))
+    end
 end
 
 if labelXAxis ==1

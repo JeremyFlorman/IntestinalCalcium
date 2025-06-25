@@ -101,8 +101,10 @@ wtdata = subtractBackground(wtdata, settings);
 mtdata = subtractBackground(mtdata, settings);
 
 
-
-if normalize == 2 % normalize by calculating z-score
+if strcmp(normalize, 'Delta F/F0') == 1 % normalize by deltaF/F0
+    mtdata = deltaF(mtdata,settings);
+    wtdata = deltaF(wtdata,settings);
+elseif strcmp(normalize, 'Z-Score') == 1 % normalize by calculating z-score
     for i = 1:length(mtdata)
         mtdata(i).bulkSignal = zscore(mtdata(i).bulkSignal);
     end
@@ -110,8 +112,8 @@ if normalize == 2 % normalize by calculating z-score
     for i = 1:length(wtdata)
         wtdata(i).bulkSignal = zscore(wtdata(i).bulkSignal);
     end
-    
-elseif normalize == 3 % normalize bulk signal by dividing by the mean wildtype bulk signal.
+
+elseif strcmp(normalize, 'Control') == 1 % normalize bulk signal by dividing by the mean wildtype bulk signal.
     wtbulksig = cell2mat({wtdata(:).bulkSignal});
     wtmedian = median(wtbulksig,'all','omitnan');
     for i = 1:length(mtdata)
@@ -123,7 +125,7 @@ elseif normalize == 3 % normalize bulk signal by dividing by the mean wildtype b
     end
 end
 
-if trimExperimentLength == 1 || analyzePartial == 1 
+if trimExperimentLength == 1 || analyzePartial == 1
     mtdata = trimExp(mtdata,settings);
     wtdata = trimExp(wtdata, settings);
 end
@@ -134,19 +136,21 @@ mtdata = processSpikes(mtdata,settings);
 wtdata = processSpikes(wtdata,settings);
 
 if isfield(mtdata, 'genotype')
-dataName = strrep(mtdata(1).genotype,'-','Minus');
-dataName = strrep(dataName, '+', 'Plus');
-dataName = strrep(dataName, ' ', '');
+    dataName = strrep(mtdata(1).genotype,'-','Minus');
+    dataName = strrep(dataName, '+', 'Plus');
+    dataName = strrep(dataName, ' ', '');
+    dataName = strrep(dataName, '(', '');
+    dataName = strrep(dataName, ')', '');
 
-assignin("base", [dataName 'Data'], mtdata)
-assignin("base", [dataName '_ControlData'], wtdata)
+    assignin("base", [dataName 'Data'], mtdata)
+    assignin("base", [dataName '_ControlData'], wtdata)
 end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-            %%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                %%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 end
@@ -168,11 +172,11 @@ for i = 1:length(inputData)
         inputData(i).autoAxialSignal = axsig;
     end
 
-if normAx == 1
-    as = inputData(i).autoAxialSignal;
-    axMean = smoothdata(median(as,1,'omitnan'),"gaussian", 20);
-    inputData(i).autoAxialSignal = inputData(i).autoAxialSignal./axMean;
-end
+    if normAx == 1
+        as = inputData(i).autoAxialSignal;
+        axMean = smoothdata(median(as,1,'omitnan'),"gaussian", 20);
+        inputData(i).autoAxialSignal = inputData(i).autoAxialSignal./axMean;
+    end
 
 end
 processedData = inputData;
@@ -529,13 +533,13 @@ for i = 1:length(inputData)
         num(i) = 0;
         AvAmp(i) = 0;
     end
-    
+
     meanSignal(i) = mean(inputData(i).bulkSignal,"all", "omitmissing");
 
 end
 
 
-%% sorting 
+%% sorting
 if sortType == 0                % dont sort
     sortOrder = 1:length(inputData);
     if strcmpi(sortDir, 'ascend')
@@ -594,7 +598,7 @@ end
 end
 
 %% trim experiments
-    function [processedData] = trimExp(inputData,settings)
+function [processedData] = trimExp(inputData,settings)
 lens = nan(length(inputData),1);
 
 for i = 1:length(inputData)
@@ -636,5 +640,23 @@ end
 
 end
 
+function [processedData] = deltaF(inputData, settings)
+fps = settings.framerate;
+    for i = 1:length(inputData)
+        
+        % define F0 as the median of the first 1 second
+        bulkf0 = median(inputData(i).bulkSignal(1:fps)); 
+
+        % %% define F0 as the median of the lowest 10% of values
+        % sortedSignal = sort(inputData(i).bulkSignal,"ascend");
+        % bulkf0 = mean(sortedSignal(1:round(length(sortedSignal)*0.01)),"omitmissing");
+
+        
+        for k = 1:length(inputData(i).bulkSignal)
+            inputData(i).bulkSignal(k) = (inputData(i).bulkSignal(k)-bulkf0)/bulkf0;
+        end
+    end
+    processedData = inputData;
+end
 
 

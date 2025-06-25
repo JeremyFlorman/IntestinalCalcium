@@ -223,14 +223,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             
             normval = app.NormalizationDropDown.Value;
-            switch normval 
-                case 'None'
-                    plotSettings.normalize = 1;
-                case 'Z-Score'
-                    plotSettings.normalize = 2;
-                case 'Control'
-                    plotSettings.normalize = 3;
-            end
+            plotSettings.normalize = normval;
 
             plotSettings.autoFixAxialSignal = app.AutoFixAxialSignalCheckBox.Value;
             plotSettings.axSigToQuerry = app.toQuerry.Value;
@@ -338,7 +331,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.peakwidth.Value= plotSettings.peakwidth;
             app.spikeProfileWindow.Value= plotSettings.spikeProfileWindow;
 
-            app.NormalizationDropDown.Value = app.NormalizationDropDown.Items(plotSettings.normalize);
+            app.NormalizationDropDown.Value = plotSettings.normalize;
 
             app.AutoFixAxialSignalCheckBox.Value= plotSettings.autoFixAxialSignal;
             app.toQuerry.Value = plotSettings.axSigToQuerry;
@@ -601,43 +594,42 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % Value changed function: AnalyzeOASdataCheckBox, 
         % ...and 1 other component
         function AnalyzeOASdataCheckBox_2ValueChanged(app, event)
+            normval = app.NormalizationDropDown.Value;
             OASvalue = app.AnalyzeOASdataCheckBox_2.Value;
-            normalizeValue = app.NormalizationDropDown.Value;
             if OASvalue == 1
-                if strcmp(normalizeValue,'None') == 1
-                app.bulkYLim.Value = '0 15';
-                app.axialYLim.Value = '0 45';
-                app.peakthreshold.Value = 2;
                 app.EqualizeExpDurationCheckBox.Value = 1;
-                elseif strcmp(normalizeValue,'Z-Score') == 1
+                if strcmp(normval, 'None') == 1
+                    app.bulkYLim.Value = '0 15';
+                    app.axialYLim.Value = '0 45';
+                    app.peakthreshold.Value = 2;
+                elseif strcmp(normval, 'Delta F/F0') == 1
+                    app.bulkYLim.Value = '-0.4 1';
+                    app.peakthreshold.Value= 0.1;
+
+                elseif strcmp(normval, 'Z-Score') == 1
                     app.bulkYLim.Value = '-1 8';
                     app.peakthreshold.Value= 1;
-                    app.EqualizeExpDurationCheckBox.Value = 1;
 
-
-                elseif strcmp(normalizeValue,'Control') == 1
+                elseif strcmp(normval, 'Control') == 1
                     app.bulkYLim.Value = '-0.2 1';
                     app.peakthreshold.Value = 0.1;
-                    app.EqualizeExpDurationCheckBox.Value = 1;
                 end
-            end
-
-            if OASvalue == 0
-                app.EqualizeExpDurationCheckBox.Value = 0;
-                if strcmp(normalizeValue,'None') == 1
+            elseif OASvalue == 0
+                if strcmp(normval, 'None') == 1
                     app.bulkYLim.Value = '-500 5000';
                     app.axialYLim.Value = '-500 12000';
                     app.peakthreshold.Value = 500;
-                elseif strcmp(normalizeValue,'Z-Score') == 1
+                elseif strcmp(normval, 'Delta F/F0') == 1
+                    app.bulkYLim.Value = '-0.4 1';
+                    app.peakthreshold.Value= 0.1;
+                elseif strcmp(normval, 'Z-Score') == 1
                     app.bulkYLim.Value = '-1 8';
                     app.peakthreshold.Value= 1;
-                    
-                elseif strcmp(normalizeValue,'Control') == 1
+                elseif strcmp(normval, 'Control') == 1
                     app.bulkYLim.Value = '-0.2 1';
                     app.peakthreshold.Value = 0.1;
                 end
             end
-            
         end
 
         % Button pushed function: validateRiseFallButton
@@ -708,41 +700,37 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % Value changed function: NormalizationDropDown
         function NormalizationDropDownValueChanged(app, event)
             normval = app.NormalizationDropDown.Value;
-            switch normval
-                case 'None'
-                    normalizeValue = 1;
-                case 'Z-Score'
-                    normalizeValue = 2;
-                case 'Control'
-                    normalizeValue = 3;
-            end
-            app.NormalizationDropDown.UserData = normalizeValue;
-
-
             OASvalue = app.AnalyzeOASdataCheckBox_2.Value;
             if OASvalue == 1
-                if normalizeValue == 1
-                app.bulkYLim.Value = '0 15';
-                app.axialYLim.Value = '0 45';
-                app.peakthreshold.Value = 2;
                 app.EqualizeExpDurationCheckBox.Value = 1;
-                elseif normalizeValue == 2
+                if strcmp(normval, 'None') == 1
+                    app.bulkYLim.Value = '0 15';
+                    app.axialYLim.Value = '0 45';
+                    app.peakthreshold.Value = 2;
+                elseif strcmp(normval, 'Delta F/F0') == 1
+                    app.bulkYLim.Value = '-0.4 1';
+                    app.peakthreshold.Value= 0.1;
+
+                elseif strcmp(normval, 'Z-Score') == 1
                     app.bulkYLim.Value = '-1 8';
                     app.peakthreshold.Value= 1;
-                    
-                elseif normalizeValue == 3
+
+                elseif strcmp(normval, 'Control') == 1
                     app.bulkYLim.Value = '-0.2 1';
                     app.peakthreshold.Value = 0.1;
                 end
             elseif OASvalue == 0
-                if normalizeValue == 1
+                if strcmp(normval, 'None') == 1
                     app.bulkYLim.Value = '-500 5000';
                     app.axialYLim.Value = '-500 12000';
                     app.peakthreshold.Value = 500;
-                elseif normalizeValue == 2
+                elseif strcmp(normval, 'Delta F/F0') == 1
+                    app.bulkYLim.Value = '-0.4 1';
+                    app.peakthreshold.Value= 0.1;
+                elseif strcmp(normval, 'Z-Score') == 1
                     app.bulkYLim.Value = '-1 8';
                     app.peakthreshold.Value= 1;
-                 elseif normalizeValue == 3
+                elseif strcmp(normval, 'Control') == 1
                     app.bulkYLim.Value = '-0.2 1';
                     app.peakthreshold.Value = 0.1;
                 end
@@ -777,10 +765,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             switch normval
                 case 'None'
                     normalizeValue = 1;
-                case 'Z-Score'
+                case 'Delta F/F0'
                     normalizeValue = 2;
-                case 'Control'
+                case 'Z-Score'
                     normalizeValue = 3;
+                case 'Control'
+                    normalizeValue = 4;
             end
             app.NormalizationDropDown.UserData = normalizeValue;
         end
@@ -1520,11 +1510,11 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             % Create NormalizationDropDown
             app.NormalizationDropDown = uidropdown(app.PlotSettingsTab);
-            app.NormalizationDropDown.Items = {'None', 'Z-Score', 'Control'};
+            app.NormalizationDropDown.Items = {'None', 'Delta F/F0', 'Z-Score', 'Control'};
             app.NormalizationDropDown.DropDownOpeningFcn = createCallbackFcn(app, @NormalizationDropDownOpening, true);
             app.NormalizationDropDown.ValueChangedFcn = createCallbackFcn(app, @NormalizationDropDownValueChanged, true);
             app.NormalizationDropDown.Position = [285 214 80 22];
-            app.NormalizationDropDown.Value = 'None';
+            app.NormalizationDropDown.Value = 'Delta F/F0';
 
             % Create AnalyzeOASdataCheckBox_2
             app.AnalyzeOASdataCheckBox_2 = uicheckbox(app.PlotSettingsTab);
