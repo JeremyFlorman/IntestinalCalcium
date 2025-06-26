@@ -38,6 +38,21 @@ loc = wormdata.peakLoc;
 pk = wormdata.peakAmplitude;
 locinmin = loc/15/60;
 
+
+if ~isempty(loc)
+    if loc(singlespike)-window >= 1
+        pre = loc(singlespike)-window;
+        post = loc(singlespike)+window;
+    elseif loc(singlespike)-window < 1
+        singlespike = singlespike+1;
+        pre = loc(singlespike)-window;
+        post = loc(singlespike)+window;
+    else
+        pre = 3150-window;
+        post = 3150+window;
+    end
+end
+
 for idx = singlespike %:length(loc)
     singlespike = idx;
     figure('Position', [49.8000 222.6000 1060 407.2000], 'Color', [1 1 1])
@@ -61,7 +76,7 @@ for idx = singlespike %:length(loc)
 
 
     normalization = settings.normalize;
-    titles = {'Mean Fluorescence (a.u.)','\delta F/F (a.u)', 'Z-Score (s.d.)', 'Normalized Fluorescence (a.u.)'};
+    titles = {'Mean Fluorescence (a.u.)','\Delta F/F (a.u)', 'Z-Score (s.d.)', 'Normalized Fluorescence (a.u.)'};
     if strcmp(normalization, 'None') == 1
         ylabel(titles(1))
     elseif strcmp(normalization, 'Delta F/F0') == 1
@@ -75,18 +90,6 @@ for idx = singlespike %:length(loc)
 
     % % % % % Bulk Signal Single spike % % % %
 
-    if ~isempty(loc)
-        if loc(singlespike)-window >= 1
-            pre = loc(singlespike)-window;
-            post = loc(singlespike)+window;
-        elseif loc(singlespike)-window < 1
-            pre = loc(singlespike+1)-window;
-            post = loc(singlespike+1)+window;
-        else
-            pre = 3150-window;
-            post = 3150+window;
-        end
-    end
 
     % % % % % % Axial Signal single spike % % % % %
     nexttile([2,2])
