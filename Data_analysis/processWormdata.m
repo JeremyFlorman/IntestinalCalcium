@@ -144,7 +144,12 @@ if isfield(mtdata, 'genotype')
 
     assignin("base", [dataName 'Data'], mtdata)
     assignin("base", [dataName '_ControlData'], wtdata)
+else
+    assignin("base", 'SingleSpikeData', mtdata);
 end
+
+
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -159,9 +164,16 @@ function [processedData] = subtractBackground(inputData, settings)
 normAx = 0; % nomralize axial signal?
 
 for i = 1:length(inputData)
-
+    % Subtract Background and fill missing datapoints in bulk signal
+    if ~strcmp(settings.normalize, 'Delta F/F0')
     inputData(i).bulkSignal = fillmissing(inputData(i).bulkSignal-inputData(i).backgroundSignal, 'movmedian',100);
+    end
 
+    % fill outliers more than 3 standard deviations outside moving mean
+    % with previous non-outlier value
+    % inputData(i).bulkSignal = filloutliers(inputData(i).bulkSignal,"spline","movmean",25,ThresholdFactor=3);
+
+    % Subtract Background  in axial signal
     backgroundMatrix = repmat(inputData(i).backgroundSignal,1,size(inputData(i).autoAxialSignal,2));
     axsig = inputData(i).autoAxialSignal-backgroundMatrix;
 
@@ -195,7 +207,7 @@ secondsPrePost = settings.spikeProfileWindow;
 framerate = settings.framerate;
 validatePropagationRate = settings.validatePropagationRate;
 validateRiseFall = settings.validateRiseFall;
-propMethod =1;
+propMethod =3;
 
 
 timePreSpike = framerate*secondsPrePost;
@@ -246,6 +258,7 @@ for i = 1:length(inputData)
         splitpoints(end) = length(bulkSignal);
         AUC = nan(length(templocs),1);
         propagationRate = nan(length(templocs),1);
+        
 
 
 
@@ -422,6 +435,7 @@ for i = 1:length(inputData)
         fallY = cell(length(templocs),1);
         rTime = nan(length(templocs),1);
         fTime = nan(length(templocs),1);
+        tau = nan(length(templocs),1);
 
         for j = 1:length(templocs) % split signal into rise and fall segments
 
@@ -449,15 +463,53 @@ for i = 1:length(inputData)
                 rTime(j) = length(riseX{j})/settings.framerate;
             end
 
-
-
             fstart = find(fY<fall90,1);
             fend = find(fY<fall10, 1);
             fallX(j) = {fX(fstart:fend)};
             fallY(j) = {fY(fstart:fend)};
 
-
             fTime(j) = length(fallX{j})/settings.framerate;
+            
+            %% Decay Constant 
+            isTau = 0;
+            if ~isempty(fstart) && ~isempty(fend) && fend > fstart + 5
+                isTau = 1;
+                fallStart = fX(fstart);
+                fallEnd   = fX(fend);
+
+                t_fit = (0:(fallEnd - fallStart))' / settings.framerate; % time vector for decay curve
+                y_fit = bulkSignal(fallStart:fallEnd); % signal values for decay curve
+
+                % Fit exponential: A * exp(-t/tau) + C
+                A0 = y_fit(1) - y_fit(end);
+                tau0 = 2;  % seconds
+                C0 = y_fit(end);
+                b0 = [A0, tau0, C0];
+
+                expModel = @(b, t) b(1) * exp(-t / b(2)) + b(3);
+
+
+                opts = optimset('Display', 'off');
+                bFit = fminsearch(@(b) sum((expModel(b, t_fit) - y_fit).^2), b0, opts);
+                tau(j) = bFit(2);
+
+                if tau(j)>1000
+                    % figure();
+                    % tau(j)
+                    % plot(bulkSignal)
+                    % hold on
+                    % plot(fallStart:fallEnd, expModel(bFit, t_fit), 'm-', 'LineWidth', 1.2);
+                    % hold off
+                    % drawnow();
+                    tau(j) = [];
+                end
+
+
+                if settings.showFitParams == 1
+                    plot(fallStart:fallEnd, expModel(bFit, t_fit), 'm-', 'LineWidth', 1.2);
+                end
+            end
+
 
             if settings.showFitParams == 1
                 line(riseX{j},riseY{j}, 'Color', 'g', 'LineStyle', ':','Marker','^', 'MarkerSize', 2)
@@ -482,6 +534,13 @@ for i = 1:length(inputData)
                     end
 
                     line(fallX{j},fallY{j}, 'Color', 'r', 'LineStyle', ':','Marker', 'v','MarkerSize', 2)
+                    
+                    if isTau == 1                    
+                        hold on
+                        plot(fallStart:fallEnd, expModel(bFit, t_fit), 'm-', 'LineWidth', 1.2);
+                        hold off
+                    end
+
                     if ~isempty(fallX{j})
                         ftxt = input('fall OK? (y/n)... type exit to quit','s');
                         if strcmpi(ftxt, 'n')
@@ -508,6 +567,7 @@ for i = 1:length(inputData)
         fTime = nan;
         AUC = nan;
         propagationRate = nan;
+        tau = nan;
     end
 
 
@@ -515,10 +575,11 @@ for i = 1:length(inputData)
     riseNan = isnan(rTime);
     fallNan = isnan(fTime);
     aucNan = isnan(AUC);
-
+    
     inputData(i).peakTraces = peakProfiles;
     inputData(i).riseTime = rTime(~riseNan);
     inputData(i).fallTime = fTime(~fallNan);
+    inputData(i).tau = tau;
     inputData(i).AUC = AUC(~aucNan);
     inputData(i).peakIntervals = tempint;
     inputData(i).meanInterval = mean(tempint, 'omitmissing');
@@ -581,9 +642,12 @@ end
 
 processedData = inputData(sortOrder);
 
+
 processedData(1).riseVector = vertcat(inputData(:).riseTime);
 processedData(1).fallVector = vertcat(inputData(:).fallTime);
+processedData(1).tauVector = vertcat(inputData(:).tau);
 processedData(1).AUCVector = vertcat(inputData(:).AUC);
+processedData(1).amplitudeVector = vertcat(inputData(:).peakAmplitude);
 processedData(1).intervalVector = vertcat(inputData(:).peakIntervals);
 processedData(1).meanIntervalVector = vertcat(inputData(:).meanInterval);
 processedData(1).propagationVector = vertcat(inputData(:).propagationRate);
@@ -615,13 +679,7 @@ end
 
 for i = 1:length(inputData)
     inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(expStart:expEnd,:);
-    % inputData(i).sumSignal = inputData(i).sumSignal(expStart:expEnd);
     inputData(i).bulkSignal = inputData(i).bulkSignal(expStart:expEnd);
-    % if isfield(inputData,'bulkAboveBkg')
-    %     if ~isempty(inputData(i).bulkAboveBkg)
-    %         inputData(i).bulkAboveBkg = inputData(i).bulkAboveBkg(expStart:expEnd);
-    %     end
-    % end
     inputData(i).backgroundSignal = inputData(i).backgroundSignal(expStart:expEnd);
     inputData(i).orientation = inputData(i).orientation(expStart:expEnd);
     inputData(i).area = inputData(i).area(expStart:expEnd);
@@ -641,22 +699,19 @@ end
 end
 
 function [processedData] = deltaF(inputData, settings)
-fps = settings.framerate;
     for i = 1:length(inputData)
-        
-        % define F0 as the median of the first 1 second
-        bulkf0 = median(inputData(i).bulkSignal(1:fps)); 
+        bulkSignal = inputData(i).bulkSignal;
+        % %% define F0 as the median of the first 1 second
+        % bulkf0 = median(inputData(i).bulkSignal(1:settings.framerate)); 
 
-        % %% define F0 as the median of the lowest 10% of values
-        % sortedSignal = sort(inputData(i).bulkSignal,"ascend");
-        % bulkf0 = mean(sortedSignal(1:round(length(sortedSignal)*0.01)),"omitmissing");
-
-        
-        for k = 1:length(inputData(i).bulkSignal)
-            inputData(i).bulkSignal(k) = (inputData(i).bulkSignal(k)-bulkf0)/bulkf0;
-        end
+        %% define F0 as the median of the lowest 5% of values.
+        sortedSignal = sort(bulkSignal,"ascend");
+        bulkf0 = mean(sortedSignal(1:round(length(sortedSignal)*0.05)),"omitmissing");
+        inputData(i).bulkSignal = sgolayfilt((bulkSignal-bulkf0)./bulkf0,3,25);
     end
     processedData = inputData;
 end
+
+
 
 
