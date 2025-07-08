@@ -14,7 +14,7 @@ else
 end
 
 
-averageProfiles = 1;
+averageProfiles = 0;
 
 traceylimits = settings.traceylimit;
 secondsPrePost = settings.spikeProfileWindow;
@@ -34,6 +34,11 @@ if plotcontrol ==1
         end
     end
 
+    if averageProfiles == 1
+        wtprofiles2plot = wtAverages;
+    else
+        wtprofiles2plot = wtprofiles;
+    end
 end
 
 mtprofiles = [mtdata(:).peakTraces];
@@ -44,6 +49,15 @@ for i = 1:length(mtdata)
     mtAverages(1:length(avg),i) = avg;
     end
 end
+
+if averageProfiles == 1
+    mtprofiles2plot = mtAverages;
+else
+    mtprofiles2plot = mtprofiles;
+end
+
+
+
 
 %% plotting
 singlewidth = 0.5;
@@ -67,31 +81,23 @@ if plotcontrol == 0
 
 end
 
-
-
-
-if averageProfiles == 1
-mtpktime = linspace(-timePreSpike/fps,timePostSpike/fps,size(mtprofiles,1))';
-mtpktimemat = repmat(mtpktime, [1,size(mtAverages,2)]);
-
-
-
-
+mtpktime = linspace(-timePreSpike/fps,timePostSpike/fps,size(mtprofiles2plot,1))';
+mtpktimemat = repmat(mtpktime, [1,size(mtprofiles2plot,2)]);
 
 hold on
 if plotcontrol ==1
 
-    wtpktime = linspace(-timePreSpike/fps,timePostSpike/fps,size(wtprofiles,1))';
-    wtpktimemat = repmat(wtpktime, [1,size(wtAverages,2)]);
+    wtpktime = linspace(-timePreSpike/fps,timePostSpike/fps,size(wtprofiles2plot,1))';
+    wtpktimemat = repmat(wtpktime, [1,size(wtprofiles2plot,2)]);
     wtpk = max(mean(wtprofiles,2,'omitnan'));
 
     if ~isempty(wtpktimemat)
-        plot(wtpktimemat, wtAverages, 'Color',wttracecol , 'LineWidth', singlewidth) % plot wild type individual traces
+        plot(wtpktimemat, wtprofiles2plot, 'Color',wttracecol , 'LineWidth', singlewidth) % plot wild type individual traces
     end
 end
 
 if ~isempty(mtpktimemat)
-    plot(mtpktimemat, mtAverages, 'Color',mttracecol ,'LineWidth', singlewidth); % plot mutant individual traces
+    plot(mtpktimemat, mtprofiles2plot, 'Color',mttracecol ,'LineWidth', singlewidth); % plot mutant individual traces
     plot(mtpktime, mean(mtprofiles,2,'omitnan'), 'Color', mtcolor, 'LineWidth', tracewidth); % plot mutant trace mean
 end
 
