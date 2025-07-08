@@ -1353,7 +1353,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.axialXTickInt.HorizontalAlignment = 'right';
             app.axialXTickInt.Tooltip = {'Increments for X Axis Ticks (minutes) for Axial Signal plots'};
             app.axialXTickInt.Position = [130 2 39 22];
-            app.axialXTickInt.Value = '2';
+            app.axialXTickInt.Value = '1';
 
             % Create SortDirectionButtonGroup
             app.SortDirectionButtonGroup = uibuttongroup(app.PlotSettingsTab);
@@ -1462,7 +1462,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.NormalizationDropDown.DropDownOpeningFcn = createCallbackFcn(app, @NormalizationDropDownValueChanged, true);
             app.NormalizationDropDown.ValueChangedFcn = createCallbackFcn(app, @NormalizationDropDownValueChanged, true);
             app.NormalizationDropDown.Position = [285 214 80 22];
-            app.NormalizationDropDown.Value = 'Delta F/F0';
+            app.NormalizationDropDown.Value = 'None';
 
             % Create AnalyzeOASdataCheckBox_2
             app.AnalyzeOASdataCheckBox_2 = uicheckbox(app.PlotSettingsTab);
