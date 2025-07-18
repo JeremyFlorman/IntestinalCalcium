@@ -29,8 +29,10 @@ removevignette = inputs.flatField; % if not zero, size of kernel to use for flat
 
 minwormarea = 10000; %lower limit to worm area
 maxwormarea = 20000; % upper limit to worm area
+numSegments = 100; % number of segments to sample when measuring axial signal
 axSigLen = 200; % how many pixels to use for registering axial signal.
-axSigHeight = 20; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+axSigHeight = 35; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+SEsize = 20;
 
 %%
 %%
@@ -46,7 +48,7 @@ for nf =startIndex:length(imgDir)
     bf = h5Data.bf;
     stimTimes = h5Data.stimTimes;
     velocity = h5Data.velocity;
-    vel = smoothdata(velocity, 'gaussian', 15);
+    % vel = smoothdata(velocity, 'gaussian', 15);
 
     [fold, nm, ~] = fileparts(path);
     protopath = regexp(fold,'\', 'split');
@@ -97,6 +99,20 @@ for nf =startIndex:length(imgDir)
 
     [imgWidth ,imgHeight, nFrames] = size(bf);
 
+    if imgHeight <500
+        axSigHeight = 7; 
+        SEsize = 5;
+        szFilter = 100;
+    elseif imgHeight <1000
+        axSigHeight = 20; 
+        SEsize = 5;
+        szFilter = 100;
+    elseif imgHeight >1000
+        axSigHeight = 35; 
+        SEsize = 20;
+        szFilter = 2000;
+    end
+
 
 
 
@@ -109,8 +125,8 @@ for nf =startIndex:length(imgDir)
     backgroundSignal = NaN(nFrames,1);
     orientation = NaN(nFrames,1);
     area = NaN(nFrames,1);
-
-
+    wormLength = NaN(length(info)/2);
+   
     time = linspace(0,round((nFrames)/fps/60,1),ceil(nFrames)); %minutes per frame
     wormIdx = [];
 
@@ -152,11 +168,14 @@ for nf =startIndex:length(imgDir)
         BW = bwmorph(BW,'clean');
         % BW = bwmorph(BW,'fill');
         tempb = BW;
-        BW = bwareaopen(BW, 100);
+        BW = bwareaopen(BW, szFilter);
 
 
-        BW = imdilate(BW,strel('disk',5));
-        BW = imerode(BW,strel('disk',5));
+        BW = imdilate(BW,strel('disk',SEsize));
+        BW = imerode(BW,strel('disk',SEsize));
+        BW = bwmorph(BW,"thicken",2);
+
+
 
         tempb2 = BW;
 
@@ -235,21 +254,41 @@ for nf =startIndex:length(imgDir)
                     GFP = double(GFP);
                     mCh = double(mCh);
 
-                    % Get total number of segments
-                    numSegments = length(sortSkel) - 1;
-                    nPoints = axSigHeight; % Number of sample points along the perpendicular line
+                    % Precompute ndgrid
+                    [Xgrid, Ygrid] = ndgrid(1:size(GFP, 1), 1:size(GFP, 2));
 
-                    % Initialize matrices for performance (keep as double for interpolation)
-                    temptrace = nan(nPoints, numSegments);
-                    tempbf = nan(nPoints, numSegments);
-                    perpX = nan(2, numSegments); % Store only two points per segment
-                    perpY = nan(2, numSegments);
+                    % Precompute interpolants once
+                    GFP_interp = griddedInterpolant(Xgrid, Ygrid, GFP, 'linear', 'nearest');
+                    mCh_interp = griddedInterpolant(Xgrid, Ygrid, mCh, 'linear', 'nearest');
 
-                    for ii = 1:numSegments
-                        if ii + stepSize < length(sortSkel)
-                            seg = sortSkel(ii:ii + stepSize, :);
+
+                    % Define the desired number of evenly spaced samples
+                    
+                    totalPoints = length(sortSkel);
+                    wormLength(i) = totalPoints;
+
+                    % Ensure we don't exceed available points
+                    segments2Sample = min(numSegments, totalPoints - 1);
+
+                    % Evenly select indices along sortSkel
+                    selectedIndices = round(linspace(1, totalPoints - 1, segments2Sample));
+
+                    % Number of points along the perpendicular line
+                    nPoints = axSigHeight;
+
+                    % Initialize matrices for performance
+                    temptrace = nan(nPoints, segments2Sample);
+                    tempbf = nan(nPoints, segments2Sample);
+                    perpX = nan(2, segments2Sample); % Store only two points per segment
+                    perpY = nan(2, segments2Sample);
+
+                    for ii = 1:segments2Sample
+                        idx = selectedIndices(ii);
+
+                        if idx + stepSize < totalPoints
+                            seg = sortSkel(idx:idx + stepSize, :);
                         else
-                            seg = sortSkel(ii:end, :);
+                            seg = sortSkel(idx:end, :);
                         end
 
                         A = [seg(1,2) seg(1,1)]; % [x y] coords of point 1
@@ -267,37 +306,30 @@ for nf =startIndex:length(imgDir)
                         % Ensure C and D are within bounds
                         C = max(min(C, [size(GFP,2), size(GFP,1)]), [1,1]);
                         D = max(min(D, [size(GFP,2), size(GFP,1)]), [1,1]);
-
-                        % Store only the two coordinate points
+                        
                         perpX(:, ii) = [C(1); D(1)];
                         perpY(:, ii) = [C(2); D(2)];
 
-                        % Generate linearly spaced points along the perpendicular line
-                        xq = linspace(C(1), D(1), nPoints);
-                        yq = linspace(C(2), D(2), nPoints);
 
-                        % Convert to double (if not already)
-                        xq = double(xq);
-                        yq = double(yq);
+
+                        % Generate linearly spaced points along the perpendicular line
+                        xq = linspace(C(1), D(1), axSigHeight);
+                        yq = linspace(C(2), D(2), axSigHeight);
 
                         try
-                            % Interpolate pixel values along the perpendicular line
-                            temptrace(:, ii) = interp2(GFP, xq, yq, 'linear');
-                            tempbf(:, ii) = interp2(mCh, xq, yq, 'linear');
+                            % Fix: Transpose xq and yq for NDGRID format
+                            temptrace(:, ii) = GFP_interp(yq', xq');
+                            tempbf(:, ii) = mCh_interp(yq', xq');
                         catch
                         end
                     end
 
                     hold off
 
-                    % Convert back to uint8 safely
-                    % temptrace = uint8(max(min(temptrace, 255), 0)); % Clip values to [0, 255] range
-                    % tempbf = uint8(max(min(tempbf, 255), 0));
-
+                
                     % Convert images back to uint8 (if needed for display later)
                     GFP = uint8(GFP);
                     mCh = uint8(mCh);
-
                     hold off
 
 
@@ -339,7 +371,17 @@ for nf =startIndex:length(imgDir)
 
                 area(i,1) = bwprops(wormIdx).Area;
 
+                % Upsample temptrace and tempbf to match original sortSkel size
+                originalIndices = 1:totalPoints - 1;
+                upsampledIndices = linspace(1, totalPoints - 1, segments2Sample);
 
+                try
+                    temptrace = interp1(upsampledIndices, temptrace', originalIndices, 'linear', 'extrap')';
+                    tempbf = interp1(upsampledIndices, tempbf', originalIndices, 'linear', 'extrap')';
+                catch
+                end
+
+                % Plot Stuff
 
                 if plotstuff == 1
                     if mod(i,framerate) == 0
@@ -467,7 +509,7 @@ for nf =startIndex:length(imgDir)
 
 
                         % velocity
-                        plot(time(1:i),velocity(1:i), 'Parent', velAx)
+                        plot(time(1:i),smoothdata(area(1:i),'gaussian', 30), 'Parent', velAx)
                         if ~isempty(stimTimes)
                             for k =1:length(stimTimes)
                                 if i>= stimTimes(k)
@@ -479,7 +521,7 @@ for nf =startIndex:length(imgDir)
                         end
 
                         xlim([0 time(end)]);
-                        ylabel(velAx, 'Velocity');
+                        ylabel(velAx, 'Worm Area (pixels)');
                         xlabel(velAx,'Time (min)');
                         velAx.TickLength = [0.005 0.005];
                         box off
@@ -534,7 +576,7 @@ for nf =startIndex:length(imgDir)
 
 
     % peak analysis
-    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',5,'MinPeakDistance',150);
+    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',3,'MinPeakDistance',150);
     peakpad = fps*15; % framerate*time in seconds;
     pktime = linspace(-15,15, peakpad*2)';
     if isempty(loc)
@@ -599,7 +641,7 @@ for nf =startIndex:length(imgDir)
         time = linspace(0,round((nFrames)/fps/60,1),nFrames); %minutes per frame
     end
     if ~exist('pk','var')
-        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',5, 'MinPeakDistance',150);
+        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',3, 'MinPeakDistance',150);
         peakpad = fps*15;
         pktime = linspace(-15,15, peakpad*2)';
         pkmean = mean(pktraces,2,'omitnan');
@@ -790,23 +832,24 @@ for nf =startIndex:length(imgDir)
         end
     end
 
-    clearvars -except inputs nf fld serverfolder startIndex startframe uploadresults...
-        isremote plotstuff videostuff framerate fps troubleshoot showNormals ...
-        showAxialSignal saveAxialMatrix crop useautothreshold useadaptivethreshold ...
-        removevignette minwormarea minwormarea maxwormarea axSigLen axSigHeight imgDir
+    % clearvars -except inputs nf fld serverfolder startIndex startframe uploadresults...
+    %     isremote plotstuff videostuff framerate fps troubleshoot showNormals ...
+    %     showAxialSignal saveAxialMatrix crop useautothreshold useadaptivethreshold ...
+    %     removevignette minwormarea minwormarea maxwormarea numSegments axSigLen axSigHeight imgDir ...
+    %     SEsize szFilter
 
 
-    % if exist('wormdata', 'var')
-    %     clear('wormdata');
-    % end
-    %
-    % clear('h5Data')
-    % clear('gfp')
-    % clear('bf')
-    %
-    %
-    % if exist('img', 'var')
-    %     clear('img')
-    % end
+    if exist('wormdata', 'var')
+        clear('wormdata');
+    end
+
+    clear('h5Data')
+    clear('gfp')
+    clear('bf')
+
+
+    if exist('img', 'var')
+        clear('img')
+    end
 
 end
