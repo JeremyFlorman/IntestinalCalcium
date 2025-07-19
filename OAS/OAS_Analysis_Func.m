@@ -125,9 +125,8 @@ for nf =startIndex:length(imgDir)
     backgroundSignal = NaN(nFrames,1);
     orientation = NaN(nFrames,1);
     area = NaN(nFrames,1);
-    wormLength = NaN(length(info)/2);
    
-    time = linspace(0,round((nFrames)/fps/60,1),ceil(nFrames)); %minutes per frame
+    time = (h5Data.time-h5Data.time(1))/60; %minutes per frame
     wormIdx = [];
 
     if saveAxialMatrix == 1
@@ -265,7 +264,6 @@ for nf =startIndex:length(imgDir)
                     % Define the desired number of evenly spaced samples
                     
                     totalPoints = length(sortSkel);
-                    wormLength(i) = totalPoints;
 
                     % Ensure we don't exceed available points
                     segments2Sample = min(numSegments, totalPoints - 1);
@@ -350,7 +348,9 @@ for nf =startIndex:length(imgDir)
 
                         if leftMean>rightMean
                             tt = fliplr(tt);
+                            temptrace = fliplr(temptrace);
                             abf = fliplr(abf);
+                            tempbf = fliplr(tempbf);
                         end
 
                         % % % % % % % % % % % % % % % % % % % %
@@ -415,8 +415,8 @@ for nf =startIndex:length(imgDir)
                                 gfpAdj = [0 0.3];
 
                                 mpad_Outskel = padarray(outskel, [size(mpadTrace,1),0], 'post');
-                                mmergedImage = vertcat(mCh, mpadTrace);
-                                mmergedOverlay = imoverlay(imadjust(mmergedImage, bfAdj), mpad_Outskel, [1 0 0]);
+                                mmergedImage = vertcat(mCh, mpadTrace)-50;
+                                mmergedOverlay = imoverlay(mmergedImage, mpad_Outskel, [1 0 0]);
                                 imshow(mmergedOverlay,'Parent', ax2)
                                 title(ax2,'Brightfield');
 
@@ -468,14 +468,18 @@ for nf =startIndex:length(imgDir)
                         elseif showAxialSignal == 1
                             axsig = smoothdata(axialSignal(1:i,:),1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
                             imagesc(axsig,'Parent',ax4)
-                            ax4.CLim = [0 100];
+                            ax4.CLim = [0 60];
                             ax4.XLim = [1, length(axialSignal)];
                             ax4.XAxis.Visible = 0;
                             ax4.YTickLabel = [];
                             ax4.YTick = [];
-                            ylabel(ax4, 'Axial Ca^2^+ Signal')
+                            % ylabel(ax4, 'Longitudinal Kymograph')
                             box(ax4, 'off')
                             colormap turbo
+                            cb = colorbar(ax4);
+                            cb.Location = 'manual';
+                            cb.Position = [0.0567 0.4828 0.0064 0.1594];
+                            cb.Label.String = 'Fluorescent Intensity (a.u.)';
 
                             if ~isempty(stimTimes)
                                 for k =1:length(stimTimes)
@@ -832,24 +836,24 @@ for nf =startIndex:length(imgDir)
         end
     end
 
-    % clearvars -except inputs nf fld serverfolder startIndex startframe uploadresults...
-    %     isremote plotstuff videostuff framerate fps troubleshoot showNormals ...
-    %     showAxialSignal saveAxialMatrix crop useautothreshold useadaptivethreshold ...
-    %     removevignette minwormarea minwormarea maxwormarea numSegments axSigLen axSigHeight imgDir ...
-    %     SEsize szFilter
+    clearvars -except inputs nf fld serverfolder startIndex startframe uploadresults...
+        isremote plotstuff videostuff framerate fps troubleshoot showNormals ...
+        showAxialSignal saveAxialMatrix crop useautothreshold useadaptivethreshold ...
+        removevignette minwormarea minwormarea maxwormarea numSegments axSigLen axSigHeight imgDir ...
+        SEsize szFilter
 
 
-    if exist('wormdata', 'var')
-        clear('wormdata');
-    end
-
-    clear('h5Data')
-    clear('gfp')
-    clear('bf')
-
-
-    if exist('img', 'var')
-        clear('img')
-    end
+    % if exist('wormdata', 'var')
+    %     clear('wormdata');
+    % end
+    %
+    % clear('h5Data')
+    % clear('gfp')
+    % clear('bf')
+    %
+    %
+    % if exist('img', 'var')
+    %     clear('img')
+    % end
 
 end
