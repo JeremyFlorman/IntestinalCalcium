@@ -122,8 +122,7 @@ acq = 0; % acquires log data within recording range when set to 1;
 stimTimes = [];
 xLoc = NaN(length(time),1);
 yLoc = NaN(length(time),1);
-xflip = 1;
-yflip = 1;
+
 
 for i = 1:length(logd)
     fid = fopen(fullfile(logd(i).folder, logd(i).name),"r");

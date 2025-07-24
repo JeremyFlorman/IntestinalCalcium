@@ -466,7 +466,11 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if parsedInputs.isOAS == 0
             freelyMovingAnalysis_Func(parsedInputs)
             elseif parsedInputs.isOAS==1
-                OAS_Analysis_Func(parsedInputs)
+                if parsedInputs.loadTiff == 1
+                    OAS_Analysis_Func(parsedInputs)
+                elseif parsedInputs.loadTiff == 0 
+                    OAS_Analysis_Func_Slices(parsedInputs)
+                end
             end
 
 

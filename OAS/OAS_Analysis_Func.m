@@ -117,11 +117,8 @@ for nf =startIndex:length(imgDir)
 
 
     axialSignal = NaN(nFrames, axSigLen);
-    %     autoAxialSignal = NaN(nFrames, axSigLen);
     axialBF = NaN(nFrames, axSigLen);
-    sumSignal = NaN(nFrames,1);
     bulkSignal = NaN(nFrames,1);
-    bulkAboveBkg = NaN(nFrames,1);
     backgroundSignal = NaN(nFrames,1);
     orientation = NaN(nFrames,1);
     area = NaN(nFrames,1);

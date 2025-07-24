@@ -4,11 +4,11 @@ function [] = combineWormdata(datafolder)
 
 if nargin <1
     %     datafolder = uigetdir('Z:\Calcium Imaging\Intestinal_Calcium_FreelyMoving')
-    datafolder = 'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\';
+    datafolder = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\';
     % datafolder = 'Y:\Calcium Imaging\Intestinal_Calcium\Rebekka\dec_mutants\';
 end
 
-combinedDataFolder = 'C:\Users\Jeremy\Desktop\Calcium Imaging\FreelyMoving_Data\combinedData\DMP_mutants\wildtype';
+combinedDataFolder = 'C:\Users\Jeremy\Dropbox\Intestinal Calcium Paper\Data\Figure 1\wildtype\wt_Post_Feb2025';
 
 
 
@@ -21,7 +21,7 @@ for i = 1:length(nms)
     dates(i)=str2double(r{1});
 end
 
-dateflag = dates>230410; %set date range to include in merged dataset. format is yymmdd
+dateflag = dates>250201; %set date range to include in merged dataset. format is yymmdd
 
 d = d(dateflag);
 

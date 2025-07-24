@@ -1,7 +1,7 @@
 %% this function converts H5 videos from OAS to side-by-side tiff files, 
 % similar to optosplit recordings
 
-fld = 'C:\Users\Jeremy\Desktop\foodEncounter'
+fld = 'C:\Users\Jeremy\Desktop\20240724_10x_WT_tph1_01_wellfed'
 
 
 imgDir = dir([fld '\**\*behavior\*.h5']);
