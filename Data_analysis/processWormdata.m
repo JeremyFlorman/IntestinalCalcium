@@ -125,6 +125,13 @@ elseif strcmp(normalize, 'Control') == 1 % normalize bulk signal by dividing by 
     end
 end
 
+% crop to first experiment
+trimstim =1;
+if trimstim == 1
+    wtdata = trim2stim(wtdata,settings);
+    mtdata = trim2stim(mtdata,settings);
+end
+
 if trimExperimentLength == 1 || analyzePartial == 1
     mtdata = trimExp(mtdata,settings);
     wtdata = trimExp(wtdata, settings);
@@ -135,18 +142,18 @@ end
 mtdata = processSpikes(mtdata,settings);
 wtdata = processSpikes(wtdata,settings);
 
-if isfield(mtdata, 'genotype')
-    dataName = strrep(mtdata(1).genotype,'-','Minus');
-    dataName = strrep(dataName, '+', 'Plus');
-    dataName = strrep(dataName, ' ', '');
-    dataName = strrep(dataName, '(', '');
-    dataName = strrep(dataName, ')', '');
-
-    assignin("base", [dataName 'Data'], mtdata)
-    assignin("base", [dataName '_ControlData'], wtdata)
-else
-    assignin("base", 'SingleSpikeData', mtdata);
-end
+% if isfield(mtdata, 'genotype')
+%     dataName = strrep(mtdata(1).genotype,'-','Minus');
+%     dataName = strrep(dataName, '+', 'Plus');
+%     dataName = strrep(dataName, ' ', '');
+%     dataName = strrep(dataName, '(', '');
+%     dataName = strrep(dataName, ')', '');
+% 
+%     assignin("base", [dataName 'Data'], mtdata)
+%     assignin("base", [dataName '_ControlData'], wtdata)
+% else
+%     assignin("base", 'SingleSpikeData', mtdata);
+% end
 
 
 
@@ -166,7 +173,7 @@ normAx = 0; % nomralize axial signal?
 for i = 1:length(inputData)
     % Subtract Background and fill missing datapoints in bulk signal
     if ~strcmp(settings.normalize, 'Delta F/F0')
-    inputData(i).bulkSignal = fillmissing(inputData(i).bulkSignal-inputData(i).backgroundSignal, 'movmedian',100);
+        inputData(i).bulkSignal = fillmissing(inputData(i).bulkSignal-inputData(i).backgroundSignal, 'movmedian',100);
     end
 
     % fill outliers more than 3 standard deviations outside moving mean
@@ -258,7 +265,7 @@ for i = 1:length(inputData)
         splitpoints(end) = length(bulkSignal);
         AUC = nan(length(templocs),1);
         propagationRate = nan(length(templocs),1);
-        
+
 
 
 
@@ -469,8 +476,8 @@ for i = 1:length(inputData)
             fallY(j) = {fY(fstart:fend)};
 
             fTime(j) = length(fallX{j})/settings.framerate;
-            
-            %% Decay Constant 
+
+            %% Decay Constant
             isTau = 0;
             if ~isempty(fstart) && ~isempty(fend) && fend > fstart + 5
                 isTau = 1;
@@ -534,8 +541,8 @@ for i = 1:length(inputData)
                     end
 
                     line(fallX{j},fallY{j}, 'Color', 'r', 'LineStyle', ':','Marker', 'v','MarkerSize', 2)
-                    
-                    if isTau == 1                    
+
+                    if isTau == 1
                         hold on
                         plot(fallStart:fallEnd, expModel(bFit, t_fit), 'm-', 'LineWidth', 1.2);
                         hold off
@@ -575,7 +582,7 @@ for i = 1:length(inputData)
     riseNan = isnan(rTime);
     fallNan = isnan(fTime);
     aucNan = isnan(AUC);
-    
+
     inputData(i).peakTraces = peakProfiles;
     inputData(i).riseTime = rTime(~riseNan);
     inputData(i).fallTime = fTime(~fallNan);
@@ -660,6 +667,55 @@ if validateRiseFall == 1 && keepValidating == 1
 end
 
 end
+%% ToDO add to GUI!!!
+function [processedData] = trim2stim(inputData,settings)
+
+for i = 1:length(inputData)
+    if isfield(inputData, 'stimTimes')
+        if ~isempty(inputData(i).stimTimes)
+            firstStim = inputData(i).stimTimes(1);
+            prePadding = 30*settings.framerate;
+            expStart = firstStim-prePadding;
+            expEnd = length(inputData(i).bulkSignal);
+            % figure()
+            % pretrim = inputData(i).bulkSignal;
+
+            if expStart>0
+                inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(expStart:expEnd,:);
+
+                inputData(i).bulkSignal = inputData(i).bulkSignal(expStart:expEnd);
+                inputData(i).backgroundSignal = inputData(i).backgroundSignal(expStart:expEnd);
+                inputData(i).orientation = inputData(i).orientation(expStart:expEnd);
+                inputData(i).area = inputData(i).area(expStart:expEnd);
+                if isfield(inputData,'velocity')
+                    inputData(i).velocity = inputData(i).velocity(expStart:expEnd);
+                end
+
+                
+
+            elseif expStart<1
+                nanPadVector = nan(abs(expStart),1);
+                nanPadMat = nan(abs(expStart),size(inputData(i).autoAxialSignal,2));
+
+                inputData(i).autoAxialSignal = vertcat(nanPadMat, inputData(i).autoAxialSignal);
+                inputData(i).bulkSignal = vertcat(nanPadVector, inputData(i).bulkSignal);
+                inputData(i).backgroundSignal = vertcat(nanPadVector,inputData(i).backgroundSignal);
+                inputData(i).orientation = vertcat(nanPadVector,inputData(i).orientation);
+                inputData(i).area = vertcat(nanPadVector,inputData(i).area);
+                if isfield(inputData,'velocity')
+                    inputData(i).velocity = vertcat(nanPadVector,inputData(i).velocity);
+                end
+            end
+            inputData(i).stimTimes(1) = prePadding;
+            % posttrim = inputData(i).bulkSignal;
+            
+            % plot(1:length(pretrim), pretrim, 1:length(posttrim), posttrim)
+
+        end
+    end
+end
+processedData = inputData;
+end
 
 %% trim experiments
 function [processedData] = trimExp(inputData,settings)
@@ -699,17 +755,17 @@ end
 end
 
 function [processedData] = deltaF(inputData, settings)
-    for i = 1:length(inputData)
-        bulkSignal = inputData(i).bulkSignal;
-        % %% define F0 as the median of the first 1 second
-        % bulkf0 = median(inputData(i).bulkSignal(1:settings.framerate)); 
+for i = 1:length(inputData)
+    bulkSignal = inputData(i).bulkSignal;
+    % %% define F0 as the median of the first 1 second
+    % bulkf0 = median(inputData(i).bulkSignal(1:settings.framerate));
 
-        %% define F0 as the median of the lowest 5% of values.
-        sortedSignal = sort(bulkSignal,"ascend");
-        bulkf0 = mean(sortedSignal(1:round(length(sortedSignal)*0.05)),"omitmissing");
-        inputData(i).bulkSignal = sgolayfilt((bulkSignal-bulkf0)./bulkf0,3,25);
-    end
-    processedData = inputData;
+    %% define F0 as the median of the lowest 5% of values.
+    sortedSignal = sort(bulkSignal,"ascend");
+    bulkf0 = mean(sortedSignal(1:round(length(sortedSignal)*0.05)),"omitmissing");
+    inputData(i).bulkSignal = sgolayfilt((bulkSignal-bulkf0)./bulkf0,3,25);
+end
+processedData = inputData;
 end
 
 
