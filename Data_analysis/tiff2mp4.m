@@ -1,5 +1,5 @@
 
- filename = 'C:\Users\Jeremy\Desktop\250408_zfis178_UNC-31AID;zfex1268(pha-4-TIR)+4mMAuxPlates_3\250408_zfis178_UNC-31AID;zfex1268(pha-4-TIR)+4mMAuxPlates_3.tif';
+ filename = 'C:\Users\Jeremy\Dropbox\NS&B2025\ventral bias alberto.mp4';
 
 [fp, name, ext] = fileparts(filename);
 info = imfinfo(filename);
