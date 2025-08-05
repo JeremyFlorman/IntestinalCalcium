@@ -216,7 +216,16 @@ secondsPrePost = settings.spikeProfileWindow;
 framerate = settings.framerate;
 validatePropagationRate = settings.validatePropagationRate;
 validateRiseFall = settings.validateRiseFall;
-propMethod =1;
+propMethod =2;
+
+% pixel Scaling
+if settings.isOAS == 1
+    pxPerMM = 381; % pixel scaling for 4x objective in 2x2 binning on OAS
+elseif settings.isOAS == 0 
+    pxPerMM = 200.071; % pixel scaling for 5x objective in 4x4 binning on Zeiss inverted scope
+end
+
+umPerPixel = 1000/pxPerMM;
 
 
 timePreSpike = framerate*secondsPrePost;
@@ -252,7 +261,8 @@ for i = 1:length(inputData)
     tempint = [];
     bulkSignal = inputData(i).bulkSignal;
     axialSignal = inputData(i).autoAxialSignal;
-    chunksize = floor(0.2*size(axialSignal,2));
+    wormLength = inputData(i).wormLength;
+    % chunksize = floor(0.2*size(axialSignal,2));
 
     [tempamp, templocs] = findpeaks(bulkSignal, 'MinPeakProminence', peakthreshold, 'MinPeakDistance',peakdistance,'MinPeakWidth',peakwidth);
 
@@ -271,91 +281,103 @@ for i = 1:length(inputData)
 
 
 
-        for q = 1:length(templocs)
 
+        for q = 1:length(templocs)
 
             %% wave propagation rate
             axPre = templocs(q)-floor(timePreSpike/3);
             axPost = templocs(q)+floor(timePreSpike/3);
             if axPre>0 && axPost<= length(axialSignal)
-                try
-                    axialPeak = smoothdata(axialSignal(axPre:axPost,:)',2, 'movmean', 60,'omitnan');
+                axialPeak = smoothdata(axialSignal(axPre:axPost,:)',2, 'movmean', 60,'omitnan');
+                avgWormLengthPx = mean(wormLength(axPre:axPost));
 
-                    headstart = 25;
-                    head = mean(axialPeak(headstart:chunksize+headstart,:),1); % axial signal in head segment
-                    tail = mean(axialPeak(end-chunksize:end,:),1);  % axial signal in tail segment
-                    [hpk, hloc] = findpeaks(head, 'SortStr','descend');
-                    [tpk, tloc] = findpeaks(tail, 'SortStr', 'descend');
-
-                    headRise = head(1:hloc(1))';
-                    tailRise = tail(1:tloc(1))';
-
-                    % find inflection point using derivative
-                    [~, headmax] = max(diff(headRise));
-                    [~, tailmax] = max(diff(tailRise));
-
-                    % find inflection point using full-width@half-maximum
-                    hFWHM = find(headRise<= hpk(1)/2,1,'last');
-                    tFWHM = find(tailRise<= tpk(1)/2,1,'last');
+                % split axial signal into fixed # of bins to measure
+                % inflection point
+                headstart = 25; % where is the boundary between intestine and head (in pixels)
+                numBins = 5; % how many bins to split the intestine into
+                binEdges = round(linspace(headstart, size(axialPeak,1),numBins+1)); % position of bin edges
+                intestineLengthPx = avgWormLengthPx*(1-(headstart/size(axialPeak,1))); % Determine # of pixels in the intestine based on how many we deemed part of the head/pharynx
+                intestineLengthUm = intestineLengthPx*umPerPixel; % convert pixels to micron scaling
+                binSizeUm = intestineLengthUm/numBins; % size of bins in microns
 
 
-                    if propMethod == 1 % derivative
-                        propagationRate(q) = (headmax-tailmax)/settings.framerate;
-                        hInflect = headmax;
-                        tInflect = tailmax;
+                % preallocate variables
+                binSignal = nan(size(axialPeak,2),numBins);
+                pkLoc = nan(numBins,1);
+                pkAmp = nan(numBins, 1);
+                inflectPt = nan(numBins,1);
+                fwhm = nan(numBins,1);
 
-                    elseif propMethod == 2 % full width @ half maximum
-                        hInflect = hFWHM;
-                        tInflect = tFWHM;
-                        if ~isempty(hFWHM) && ~isempty(tFWHM)
-                            propagationRate(q) = (hFWHM-tFWHM)/settings.framerate;
-                        end
-                    elseif propMethod == 3 % peak location
-                        hInflect = hloc(1);
-                        tInflect = tloc(1);
-                        if ~isempty(hloc) && ~isempty(tloc)
-                            propagationRate(q) = (hloc(1)-tloc(1))/settings.framerate;
-                        end
-                    end
+                % x values for plotting binned signal with respect to time
+                binTime = repmat(linspace(0,size(axialPeak,2)/framerate,size(axialPeak,2))', 1, numBins);
 
-                catch
+                % get average signal in each bin to calculate peak locations and inflection points
+                for binIdx = 1:numBins
+                    binSignal(:,binIdx) = mean(axialPeak(binEdges(binIdx):binEdges(binIdx+1),:), 1, 'omitmissing');
+                    [pk,loc,w] = findpeaks(binSignal(:,binIdx),NPeaks=1, SortStr="descend");
+
+                    pkLoc(binIdx) = loc; % peak position
+                    pkAmp(binIdx) = pk; % peak amplitude
+                    [~, inflectPt(binIdx)] = max(diff(binSignal(:,binIdx))); % find position of the max rate of change in signal
+                    fwhm(binIdx) = round(loc-(w/2)); % inflection points defined as points at half-maximum based off half-width from findpeaks
+                end
+
+                waveInit = []; % variable to hold selected inflection points based on what propagation method chosen
+
+                if propMethod == 1 % derivative
+                    waveInit = inflectPt;
+                elseif propMethod == 2 % full width @ half maximum
+                    waveInit = fwhm;
+                elseif propMethod == 3 % peak location
+                    waveInit = pkLoc;
+                end
+                
+                % Calculate propagation rate
+                if ~isempty(waveInit)
+                    propagationTime = -1*(diff(waveInit)/framerate); % time in seconds for signal to propagate from one bin to the next, anterior propagation is negative
+                    propagationRate(q) =intestineLengthUm/sum(abs(propagationTime),"omitmissing");
                 end
 
 
                 if validatePropagationRate == 1
                     if propagationRate(q)>5 || propagationRate(q) <1
-                        x = 1:size(head,2);
-                        plot(x,head,x,tail,'Parent',propAx);
+
+
+                        Col = viridis(numBins);
+                        colororder(Col);
+                        plot(binTime, binSignal,'Parent',propAx)
 
                         hold(propAx, "on")
-
-                        plot(hloc(1),hpk(1)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
-                        if ~isempty(hInflect)
-                            plot(hInflect,head(hInflect)*1.05, 'v', 'MarkerFaceColor', [.07 .62 1],'MarkerEdgeColor', [.07 .62 1],'Parent',propAx)
-                        end
-
-                        plot(tloc(1),tpk(1)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
-                        if ~isempty(tInflect)
-                            plot(tInflect,tail(tInflect)*1.05, 'v', 'MarkerFaceColor', [.93 .69 .13],'MarkerEdgeColor', [.93 .69 .13],'Parent',propAx)
+                        for pltIdx =1:numBins
+                            currentColor = Col(pltIdx,:);
+                            plot(pkLoc(pltIdx)/framerate,pkAmp(pltIdx)*1.05, 'v', 'MarkerFaceColor', currentColor, 'MarkerEdgeColor', currentColor, 'Parent', propAx);
+                            if ~isempty(waveInit(pltIdx))
+                                initPt = waveInit(pltIdx);
+                                plot(initPt/framerate,binSignal(initPt,pltIdx)*1.05, 'v', 'MarkerFaceColor', currentColor, 'MarkerEdgeColor', currentColor,'Parent',propAx)
+                            end
                         end
 
                         hold(propAx, "off")
-                        xlim(propAx, [0 length(head)])
-                        %
-                        %                     line([headmax headmax], propAx.YLim,'linestyle', ':', 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', propAx)
-                        %                     line([tailmax tailmax], propAx.YLim, 'linestyle', ':','Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', propAx)
-                        %
+                        xlim(propAx, [0 binTime(end)])
+
                         imagesc(axialPeak,'Parent', axAx)
-                        pkSz = size(axialPeak);
-                        rectangle('Position',[0 pkSz(1)-chunksize pkSz(2) chunksize],'linestyle', ':','EdgeColor', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
-                        rectangle('Position',[0 headstart pkSz(2), chunksize],'linestyle', ':','EdgeColor', [.07 .62 1], 'linewidth', 1.5, 'Parent', axAx)
+                        % colormap(axAx,'viridis');
 
-                        line([hInflect hInflect], [headstart headstart+chunksize], 'Color', [.07 .62 1], 'linewidth' ,1.5, 'Parent', axAx)
-                        line([tInflect tInflect], [pkSz(1) pkSz(1)-chunksize],'Color', [.93 .69 .13], 'linewidth', 1.5, 'Parent', axAx)
+                        for pltIdx = 1:numBins
+                            rectX = 0;
+                            rectY = binEdges(pltIdx); % this should be pltIdx+1 for the lower left corner of rectangle, but Y axis is reversed!
+                            rectW = size(binSignal,1);
+                            rectH = binEdges(2)-binEdges(1);
 
-                        title(['Propagation time: ' num2str(propagationRate(q)) ' seconds'], 'Parent',axFig)
+                            currentColor = Col(pltIdx,:);
+                            % plot rectangle around each bin
+                            rectangle('Position',[rectX, rectY,rectW, rectH],'linestyle', ':','EdgeColor', currentColor, 'linewidth', 1.5, 'Parent', axAx)
+                            % plot a line at each inflection point
+                            line([waveInit(pltIdx) waveInit(pltIdx)], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
 
+                        end
 
+                        title(['Propagation rate: ' num2str(propagationRate(q)) ' \mum/sec'], 'Parent',axFig)
 
                         txt = input("Look ok? if not press letter key before hitting enter. Type 'exit' to quit","s");
 
@@ -367,13 +389,8 @@ for i = 1:length(inputData)
                         if ~isempty(txt) && strcmp(txt,'exit')
                             validatePropagationRate = 0;
                         end
-
                     end
-
                 end
-
-
-
             end
 
             %% Peak kinetics
@@ -563,14 +580,7 @@ for i = 1:length(inputData)
                     end
                 end
             end
-
-
-
         end
-
-
-
-
 
     elseif isempty(templocs)
         rTime = nan;
@@ -579,9 +589,6 @@ for i = 1:length(inputData)
         propagationRate = nan;
         tau = nan;
     end
-
-
-
 
     tau(tau==0) = nan;
     riseNan = isnan(rTime);
