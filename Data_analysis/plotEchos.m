@@ -31,6 +31,7 @@ mtcolor = settings.mtcolor;
 mtedgecolor = settings.mtedgecolor;
 regline = 0; % add regression line? 1=yes, 0=no;
 markersize = 15;
+plotAnimalMean = 0;
 
 for i = 1:length(mtdata)
 mtint = mtdata(i).peakIntervals;
@@ -42,7 +43,13 @@ mtint = mtdata(i).peakIntervals;
                 [mtcurrInt, mtprevInt] = getEveryOtherCorrelation(mtint);
         end
 
-        intmat = [mtcurrInt mtprevInt];
+        if plotAnimalMean == 1
+            intmat = [mean(mtcurrInt,1) mean(mtprevInt,1)];
+        else
+            intmat = [mtcurrInt mtprevInt];
+        end
+
+        
         mtintervalMatrix = vertcat(mtintervalMatrix,intmat);
 
     end
@@ -64,12 +71,15 @@ if plotcontrol ==1
             end
 
         end
+        
         if ~isempty(wtint)
-            try
+            if plotAnimalMean == 1
+                wtintmat = [mean(wtcurrInt,1) mean(wtprevInt,1)];
+            else
                 wtintmat = [wtcurrInt wtprevInt];
-                wtintervalMatrix = vertcat(wtintervalMatrix,wtintmat);
-            catch
             end
+
+            wtintervalMatrix = vertcat(wtintervalMatrix,wtintmat);
         end
     end
 end
@@ -154,6 +164,8 @@ if plotcontrol == 1
 
         if labelYAxis == 1
             ylabel('Previous Interval (s)')
+        elseif labelYAxis == 0
+            yticklabels([]);
         end
 
         line(ax.XLim, [avgint avgint], 'LineStyle', ':','Color', 'k','LineWidth', 1)
@@ -203,6 +215,8 @@ elseif plotcontrol == 0
 
         if labelYAxis == 1
             ylabel('Previous Interval (s)')
+        elseif labelYAxis == 0
+            yticklabels([]);
         end
     end
 
