@@ -27,6 +27,7 @@ if combineByKeyword == 0
     dd = dir([datadir '\**\*_wormdata.mat' ]);
 
     names = cell(length(dd),1);
+    dates = nan(length(dd),1);
 
     for i = 1:length(dd)
         tempname = split(dd(i).name, '_');
@@ -45,18 +46,21 @@ end
 for i = 1:length(genotypes)
     d = dir([datadir '\**\*_' genotypes{i} '_*_wormdata.mat']);
     [datadir '\**\*_' genotypes{i} '_*_wormdata.mat']
-    % %% Exclude/include experiments based on date specified in dateflag
-    % nms = {d.name};
-    % dates = nan(1,length(nms));
-    % for j = 1:length(nms)
-    %     r = regexp(nms{j}, '_zfis178_', 'split');
-    %
-    %     dates(j)=str2double(r{1});
-    % end
-    %
-    % [row,col] = find(dates == 231101); %set date range to include in merged dataset. format is yymmdd
-    % d = d(col,row);
-    % %%%
+
+    %% Exclude/include experiments based on date specified in dateflag
+    nms = {d.name};
+    dates = nan(length(nms),1);
+    for j = 1:length(nms)
+        r = regexp(nms{j}, '_zfis178_', 'split');
+        dates(j)=str2double(r{1});
+    end
+
+    combineByDate = 0;
+    if combineByDate == 1
+    dateFlag = find(dates < 250101); %set date range to include in merged dataset. format is yymmdd
+    d = d(dateFlag);
+    end
+    %% 
 
     disp(['Found ' num2str(length(d)) ' files with genotype ' genotypes{i}])
 
