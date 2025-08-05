@@ -67,6 +67,7 @@ end
 normalize = settings.normalize;
 trimExperimentLength = settings.trimExperimentLength;
 analyzePartial = settings.analyzePartial;
+saveWormdata2workspace = 0;
 
 
 if ischar(wormdata) || isstring(wormdata)
@@ -142,19 +143,20 @@ end
 mtdata = processSpikes(mtdata,settings);
 wtdata = processSpikes(wtdata,settings);
 
-% if isfield(mtdata, 'genotype')
-%     dataName = strrep(mtdata(1).genotype,'-','Minus');
-%     dataName = strrep(dataName, '+', 'Plus');
-%     dataName = strrep(dataName, ' ', '');
-%     dataName = strrep(dataName, '(', '');
-%     dataName = strrep(dataName, ')', '');
-% 
-%     assignin("base", [dataName 'Data'], mtdata)
-%     assignin("base", [dataName '_ControlData'], wtdata)
-% else
-%     assignin("base", 'SingleSpikeData', mtdata);
-% end
+if saveWormdata2workspace == 1
+    if isfield(mtdata, 'genotype')
+        dataName = strrep(mtdata(1).genotype,'-','Minus');
+        dataName = strrep(dataName, '+', 'Plus');
+        dataName = strrep(dataName, ' ', '');
+        dataName = strrep(dataName, '(', '');
+        dataName = strrep(dataName, ')', '');
 
+        assignin("base", [dataName 'Data'], mtdata)
+        % assignin("base", [dataName '_ControlData'], wtdata)
+    else
+        assignin("base", 'SingleSpikeData', mtdata);
+    end
+end
 
 
 
@@ -214,7 +216,7 @@ secondsPrePost = settings.spikeProfileWindow;
 framerate = settings.framerate;
 validatePropagationRate = settings.validatePropagationRate;
 validateRiseFall = settings.validateRiseFall;
-propMethod =3;
+propMethod =1;
 
 
 timePreSpike = framerate*secondsPrePost;
@@ -321,7 +323,7 @@ for i = 1:length(inputData)
 
 
                 if validatePropagationRate == 1
-                    if propagationRate(q)>5 || propagationRate(q) <0
+                    if propagationRate(q)>5 || propagationRate(q) <1
                         x = 1:size(head,2);
                         plot(x,head,x,tail,'Parent',propAx);
 
@@ -552,6 +554,7 @@ for i = 1:length(inputData)
                         ftxt = input('fall OK? (y/n)... type exit to quit','s');
                         if strcmpi(ftxt, 'n')
                             fTime(j) = nan;
+                            tau(j) = nan;
                         elseif strcmpi(ftxt, 'exit')
                             keepValidating = 0;
                             break
@@ -579,14 +582,17 @@ for i = 1:length(inputData)
 
 
 
+
+    tau(tau==0) = nan;
     riseNan = isnan(rTime);
     fallNan = isnan(fTime);
     aucNan = isnan(AUC);
+    tauNan = isnan(tau);
 
     inputData(i).peakTraces = peakProfiles;
     inputData(i).riseTime = rTime(~riseNan);
     inputData(i).fallTime = fTime(~fallNan);
-    inputData(i).tau = tau;
+    inputData(i).tau = tau(~tauNan);
     inputData(i).AUC = AUC(~aucNan);
     inputData(i).peakIntervals = tempint;
     inputData(i).meanInterval = mean(tempint, 'omitmissing');
@@ -664,6 +670,7 @@ if validateRiseFall == 1 && keepValidating == 1
     riseFallSaveName = fullfile(path,file);
     writematrix(processedData(1).riseVector, riseFallSaveName, 'Sheet', 'Rise Time');
     writematrix(processedData(1).fallVector, riseFallSaveName, 'Sheet', 'Fall Time');
+    writematrix(processedData(1).tauVector, riseFallSaveName, 'Sheet', 'Decay Constant');
 end
 
 end
