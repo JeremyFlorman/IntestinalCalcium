@@ -126,6 +126,8 @@ if labelYAxis == 1
     elseif strcmp(normalization, 'Control') == 1
         ylabel(titles(4))
     end
+elseif labelYAxis == 0
+    yticklabels([]);
 end
 
 if labelXAxis ==1
@@ -144,7 +146,7 @@ if plotcontrol == 1
             sigval = ['p=' num2str(round(p,5))];
         end
         ax1 = gca();
-        text(ax1.XLim(1)+abs(ax1.XLim(1))*0.05,ax1.YLim(2)-ax1.YLim(2)*.05,sigval,'FontSize', 10)
+        % text(ax1.XLim(1)+abs(ax1.XLim(1))*0.05,ax1.YLim(2)-ax1.YLim(2)*.05,sigval,'FontSize', 10)
     end
 end
 
