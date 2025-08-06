@@ -45,9 +45,6 @@ else
     moving_rel_idx = beh_indices.relative_index;
 end
 
-
-
-
 registered_t = nan(length(ref_t),1);
 registered_file_idx = nan(length(ref_t),1);
 registered_rel_idx = nan(length(ref_t),1);
