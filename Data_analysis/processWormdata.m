@@ -274,6 +274,7 @@ for i = 1:length(inputData)
         splitpoints(end) = length(bulkSignal);
         AUC = nan(length(templocs),1);
         propagationRate = nan(length(templocs),1);
+        avgKymograph = nan(size(axialSignal,2), floor(timePreSpike/3)*2+1, length(templocs));
 
 
 
@@ -285,11 +286,14 @@ for i = 1:length(inputData)
             axPost = templocs(q)+floor(timePreSpike/3);
             if axPre>0 && axPost<= length(axialSignal)
                 axialPeak = smoothdata(axialSignal(axPre:axPost,:)',2, 'movmean', 60,'omitnan');
+                avgKymograph(:,:,q) = axialPeak;
                 avgWormLengthPx = mean(wormLength(axPre:axPost));
+                avgWormLengthUm = avgWormLengthPx*umPerPixel;
 
                 headstart = 25; % where is the boundary between intestine and head (in pixels)
                 numBins = settings.numBins; % how many bins to split the intestine into
                 binEdges = round(linspace(headstart, size(axialPeak,1),numBins+1)); % position of bin edges
+                binCenters = (binEdges(1:end-1) + binEdges(2:end)) / 2; % position of bin centers
                 intestineLengthPx = avgWormLengthPx*(1-(headstart/size(axialPeak,1))); % Determine # of pixels in the intestine based on how many we deemed part of the head/pharynx
                 intestineLengthUm = intestineLengthPx*umPerPixel; % convert pixels to micron scaling
                 propMethod =settings.propMethod; % method to define inflection point for propagation rate (1=derivative, 2=half maximum, 3=peak location)
@@ -310,10 +314,17 @@ for i = 1:length(inputData)
                 for binIdx = 1:numBins
                     binSignal(:,binIdx) = mean(axialPeak(binEdges(binIdx):binEdges(binIdx+1),:), 1, 'omitmissing');
                     [pk,loc,w] = findpeaks(binSignal(:,binIdx),NPeaks=1, SortStr="descend");
-
+                    
+                    %% peak location inflection point
                     pkLoc(binIdx) = loc; % peak position
                     pkAmp(binIdx) = pk; % peak amplitude
-                    [~, inflectPt(binIdx)] = max(diff(binSignal(:,binIdx))); % find position of the max rate of change in signal
+                    
+                    %% derivative inflection point
+                    % [~, inflectPt(binIdx)] = max(diff(binSignal(:,binIdx))); % find position of the max rate of change in signal
+                    risePhase = 1:loc;
+                    dy = smoothdata(gradient(binSignal(risePhase,binIdx)), 'movmean', 5);
+                    [~, inflectPt(binIdx)] = max(dy);
+                    %% half maximum peak amplitude inflection point 
                     fwhm(binIdx) = round(loc-(w/2)); % inflection points defined as points at half-maximum based off half-width from findpeaks
                 end
 
@@ -329,8 +340,14 @@ for i = 1:length(inputData)
                 
                 % Calculate propagation rate
                 if ~isempty(waveInit)
-                    propagationTime = -1*(diff(waveInit)/framerate); % time in seconds for signal to propagate from one bin to the next, anterior propagation is negative
-                    propagationRate(q) =intestineLengthUm/sum(abs(propagationTime),"omitmissing");
+                    inflectTime = waveInit/framerate; % inflection point time in seconds
+                    inflectDistUm = binCenters*umPerPixel; % position in microns of the bin center
+
+                    coeffs = polyfit(inflectTime, inflectDistUm, 1);
+                    propagationRate(q) = coeffs(1);
+
+                    % propagationTime = -1*(diff(waveInit)/framerate); % time in seconds for signal to propagate from one bin to the next, anterior propagation is negative
+                    % propagationRate(q) =intestineLengthUm/sum(abs(propagationTime),"omitmissing");
                 end
 
 
@@ -358,14 +375,14 @@ for i = 1:length(inputData)
 
 
                         %% Kymograph plotting
-                        imagesc(axialPeak,'Parent', axAx)
+                        imagesc([0 binTime(end)], [0 avgWormLengthUm], axialPeak,'Parent', axAx)
                         % colormap(axAx,'viridis');
 
                         for pltIdx = 1:numBins
                             rectX = 0;
-                            rectY = binEdges(pltIdx); % this should be pltIdx+1 for the lower left corner of rectangle, but Y axis is reversed!
+                            rectY = binEdges(pltIdx)*umPerPixel; % this should be pltIdx+1 for the lower left corner of rectangle, but Y axis is reversed!
                             rectW = size(binSignal,1);
-                            rectH = binEdges(2)-binEdges(1);
+                            rectH = binEdges(2)*umPerPixel-binEdges(1)*umPerPixel;
 
                             currentColor = Col(pltIdx,:);
                             
@@ -373,7 +390,14 @@ for i = 1:length(inputData)
                             rectangle('Position',[rectX, rectY,rectW, rectH],'linestyle', ':','EdgeColor', currentColor, 'linewidth', 1.5, 'Parent', axAx)
                             
                             % plot a line at each inflection point
-                            line([waveInit(pltIdx) waveInit(pltIdx)], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
+                            line([waveInit(pltIdx)/framerate waveInit(pltIdx)/framerate], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
+
+                            % plot the polynomial that is used to fit the inflection points
+                            tFit = linspace(min(inflectTime), max(inflectTime), 500);
+                            yFit = polyval(coeffs, tFit);
+                            hold on
+                            plot(tFit, yFit, 'r', 'LineWidth', 2);
+
 
                         end
                         title(['Propagation rate: ' num2str(propagationRate(q)) ' \mum/sec'], 'Parent',axFig)
@@ -603,6 +627,7 @@ for i = 1:length(inputData)
     inputData(i).peakAmplitude = tempamp;
     inputData(i).peakLoc = templocs;
     inputData(i).propagationRate = propagationRate;
+    inputData(i).avgKymograph = mean(avgKymograph,3,'omitmissing');
 
     if ~isempty(templocs)
         num(i) = length(templocs);
