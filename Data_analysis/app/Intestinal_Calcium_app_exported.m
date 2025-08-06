@@ -145,6 +145,15 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         axialYLim                      matlab.ui.control.EditField
         AxialSignallimLabel            matlab.ui.control.Label
         miscsettingsTab                matlab.ui.container.Tab
+        saveWormDataToWorkspace        matlab.ui.control.CheckBox
+        WavePropagationSettingsPanel   matlab.ui.container.Panel
+        NumberofBinsEditField          matlab.ui.control.NumericEditField
+        NumberofBinsEditFieldLabel     matlab.ui.control.Label
+        InflectionPointDetection       matlab.ui.container.ButtonGroup
+        PeakLocationButton             matlab.ui.control.RadioButton
+        HalfMaximumButton              matlab.ui.control.RadioButton
+        DerivativeButton               matlab.ui.control.RadioButton
+        validatePropagationRate        matlab.ui.control.CheckBox
         validateRiseFallButton         matlab.ui.control.Button
         ColorsPanel                    matlab.ui.container.Panel
         wtColor                        matlab.ui.control.EditField
@@ -154,7 +163,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         mtColor                        matlab.ui.control.EditField
         mutantcolorEditFieldLabel      matlab.ui.control.Label
         SpikeKineticsPanel             matlab.ui.container.Panel
-        validatePropagationRate        matlab.ui.control.CheckBox
         validateRiseFall               matlab.ui.control.CheckBox
         showFitParams                  matlab.ui.control.CheckBox
     end
@@ -307,14 +315,27 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.partEnd = app.partEnd.Value;
 
             %% Spike Kinetics and Validation Settings
-            plotSettings.validatePropagationRate = app.validatePropagationRate.Value;
             plotSettings.validateRiseFall = app.validateRiseFall.Value;
             plotSettings.showFitParams = app.showFitParams.Value;
+            
+            plotSettings.validatePropagationRate = app.validatePropagationRate.Value;
+            plotSettings.numBins = app.NumberofBinsEditField.Value;
+            if app.DerivativeButton.Value == 1
+                plotSettings.propMethod = 1;
+            elseif app.HalfMaximumButton.Value == 1
+                plotSettings.propMethod = 2;
+            elseif app.PeakLocationButton.Value == 1
+                plotSettings.propMethod = 3;
+            end
+
+
 
             %% single trace plotting
             plotSettings.singleSpike = app.spikeEditField.Value;
             plotSettings.spikeWindow = app.windowsizeEditField.Value;
 
+            
+            plotSettings.saveWormdata2workspace = app.saveWormDataToWorkspace.Value;
 
         end
 
@@ -401,6 +422,21 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
            app.IntervalHistogramCheckBox.Value = plotSettings.plotHist;
            app.PeakProfileCheckBox.Value = plotSettings.plotProfile;
            app.CorrelationCheckBox.Value = plotSettings.plotCorr;
+
+
+            %% Spike Kinetics
+            app.NumberofBinsEditField.Value = plotSettings.numBins;
+            if plotSettings.propMethod == 1
+                app.DerivativeButton.Value = 1;
+            elseif plotSettings.propMethod == 2 
+                app.HalfMaximumButton.Value = 1;
+            elseif plotSettings.propMethod == 3
+                app.PeakLocationButton.Value = 1;
+            end
+
+            app.saveWormDataToWorkspace.Value = plotSettings.saveWormdata2workspace;
+
+
 
         end
     end
@@ -649,7 +685,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         function loadSettingsMenuSelected(app, event)
             uiload()
             figure(app.IntestinalCalciumAppUIFigure)
+            if exist('plotSettings', 'var') == 1
             applyPlotSettings(app,plotSettings);
+            elseif exist('defaultPlotSettings','var') == 1
+                applyPlotSettings(app, defaultPlotSettings)
+            end
+
         end
 
         % Menu selected function: savedefaultsettingsMenu
@@ -1657,11 +1698,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.validateRiseFall.Text = 'Validate rise/fall?';
             app.validateRiseFall.Position = [2 25 138 24];
 
-            % Create validatePropagationRate
-            app.validatePropagationRate = uicheckbox(app.SpikeKineticsPanel);
-            app.validatePropagationRate.Text = 'Validate propagation?';
-            app.validatePropagationRate.Position = [1 2 138 24];
-
             % Create ColorsPanel
             app.ColorsPanel = uipanel(app.miscsettingsTab);
             app.ColorsPanel.Title = 'Colors';
@@ -1707,6 +1743,55 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.validateRiseFallButton.ButtonPushedFcn = createCallbackFcn(app, @validateRiseFallButtonPushed, true);
             app.validateRiseFallButton.Position = [67 291 104 36];
             app.validateRiseFallButton.Text = 'Validate Rise/Fall';
+
+            % Create WavePropagationSettingsPanel
+            app.WavePropagationSettingsPanel = uipanel(app.miscsettingsTab);
+            app.WavePropagationSettingsPanel.Title = 'Wave Propagation Settings';
+            app.WavePropagationSettingsPanel.FontWeight = 'bold';
+            app.WavePropagationSettingsPanel.Position = [34 71 164 203];
+
+            % Create validatePropagationRate
+            app.validatePropagationRate = uicheckbox(app.WavePropagationSettingsPanel);
+            app.validatePropagationRate.Text = 'Validate propagation?';
+            app.validatePropagationRate.Position = [12 152 138 24];
+
+            % Create InflectionPointDetection
+            app.InflectionPointDetection = uibuttongroup(app.WavePropagationSettingsPanel);
+            app.InflectionPointDetection.Title = 'Inflection Point Detection';
+            app.InflectionPointDetection.Position = [12 43 147 101];
+
+            % Create DerivativeButton
+            app.DerivativeButton = uiradiobutton(app.InflectionPointDetection);
+            app.DerivativeButton.Text = 'Derivative';
+            app.DerivativeButton.Position = [11 60 75 22];
+            app.DerivativeButton.Value = true;
+
+            % Create HalfMaximumButton
+            app.HalfMaximumButton = uiradiobutton(app.InflectionPointDetection);
+            app.HalfMaximumButton.Text = 'Half Maximum';
+            app.HalfMaximumButton.Position = [11 38 98 22];
+
+            % Create PeakLocationButton
+            app.PeakLocationButton = uiradiobutton(app.InflectionPointDetection);
+            app.PeakLocationButton.Text = 'Peak Location';
+            app.PeakLocationButton.Position = [11 16 98 22];
+
+            % Create NumberofBinsEditFieldLabel
+            app.NumberofBinsEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
+            app.NumberofBinsEditFieldLabel.HorizontalAlignment = 'right';
+            app.NumberofBinsEditFieldLabel.Tooltip = {'How many segments should the intestine be divided into for measuring inflection point'};
+            app.NumberofBinsEditFieldLabel.Position = [18 13 88 22];
+            app.NumberofBinsEditFieldLabel.Text = 'Number of Bins';
+
+            % Create NumberofBinsEditField
+            app.NumberofBinsEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
+            app.NumberofBinsEditField.Position = [120 14 33 20];
+            app.NumberofBinsEditField.Value = 10;
+
+            % Create saveWormDataToWorkspace
+            app.saveWormDataToWorkspace = uicheckbox(app.miscsettingsTab);
+            app.saveWormDataToWorkspace.Text = 'Save processed wormdata to workspace?';
+            app.saveWormDataToWorkspace.Position = [222 259 246 28];
 
             % Show the figure after all components are created
             app.IntestinalCalciumAppUIFigure.Visible = 'on';

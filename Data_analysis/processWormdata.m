@@ -67,7 +67,7 @@ end
 normalize = settings.normalize;
 trimExperimentLength = settings.trimExperimentLength;
 analyzePartial = settings.analyzePartial;
-saveWormdata2workspace = 0;
+saveWormdata2workspace = settings.saveWormdata2workspace;
 
 
 if ischar(wormdata) || isstring(wormdata)
@@ -216,7 +216,6 @@ secondsPrePost = settings.spikeProfileWindow;
 framerate = settings.framerate;
 validatePropagationRate = settings.validatePropagationRate;
 validateRiseFall = settings.validateRiseFall;
-propMethod =2;
 
 % pixel Scaling
 if settings.isOAS == 1
@@ -227,10 +226,8 @@ end
 
 umPerPixel = 1000/pxPerMM;
 
-
 timePreSpike = framerate*secondsPrePost;
 timePostSpike = framerate*secondsPrePost;
-
 
 num = nan(length(inputData),1);
 AvAmp = nan(length(inputData),1);
@@ -283,7 +280,6 @@ for i = 1:length(inputData)
 
 
         for q = 1:length(templocs)
-
             %% wave propagation rate
             axPre = templocs(q)-floor(timePreSpike/3);
             axPost = templocs(q)+floor(timePreSpike/3);
@@ -291,13 +287,12 @@ for i = 1:length(inputData)
                 axialPeak = smoothdata(axialSignal(axPre:axPost,:)',2, 'movmean', 60,'omitnan');
                 avgWormLengthPx = mean(wormLength(axPre:axPost));
 
-                % split axial signal into fixed # of bins to measure
-                % inflection point
                 headstart = 25; % where is the boundary between intestine and head (in pixels)
-                numBins = 5; % how many bins to split the intestine into
+                numBins = settings.numBins; % how many bins to split the intestine into
                 binEdges = round(linspace(headstart, size(axialPeak,1),numBins+1)); % position of bin edges
                 intestineLengthPx = avgWormLengthPx*(1-(headstart/size(axialPeak,1))); % Determine # of pixels in the intestine based on how many we deemed part of the head/pharynx
                 intestineLengthUm = intestineLengthPx*umPerPixel; % convert pixels to micron scaling
+                propMethod =settings.propMethod; % method to define inflection point for propagation rate (1=derivative, 2=half maximum, 3=peak location)
                 binSizeUm = intestineLengthUm/numBins; % size of bins in microns
 
 
@@ -339,18 +334,19 @@ for i = 1:length(inputData)
                 end
 
 
+                % plotting propagation rates
                 if validatePropagationRate == 1
                     if propagationRate(q)>5 || propagationRate(q) <1
-
-
                         Col = viridis(numBins);
                         colororder(Col);
-                        plot(binTime, binSignal,'Parent',propAx)
 
+                        %% Trace plotting
+                        plot(binTime, binSignal,'Parent',propAx)
                         hold(propAx, "on")
+
                         for pltIdx =1:numBins
                             currentColor = Col(pltIdx,:);
-                            plot(pkLoc(pltIdx)/framerate,pkAmp(pltIdx)*1.05, 'v', 'MarkerFaceColor', currentColor, 'MarkerEdgeColor', currentColor, 'Parent', propAx);
+                            % plot(pkLoc(pltIdx)/framerate,pkAmp(pltIdx)*1.05, 'v', 'MarkerFaceColor', currentColor, 'MarkerEdgeColor', currentColor, 'Parent', propAx);
                             if ~isempty(waveInit(pltIdx))
                                 initPt = waveInit(pltIdx);
                                 plot(initPt/framerate,binSignal(initPt,pltIdx)*1.05, 'v', 'MarkerFaceColor', currentColor, 'MarkerEdgeColor', currentColor,'Parent',propAx)
@@ -360,6 +356,8 @@ for i = 1:length(inputData)
                         hold(propAx, "off")
                         xlim(propAx, [0 binTime(end)])
 
+
+                        %% Kymograph plotting
                         imagesc(axialPeak,'Parent', axAx)
                         % colormap(axAx,'viridis');
 
@@ -370,20 +368,19 @@ for i = 1:length(inputData)
                             rectH = binEdges(2)-binEdges(1);
 
                             currentColor = Col(pltIdx,:);
+                            
                             % plot rectangle around each bin
                             rectangle('Position',[rectX, rectY,rectW, rectH],'linestyle', ':','EdgeColor', currentColor, 'linewidth', 1.5, 'Parent', axAx)
+                            
                             % plot a line at each inflection point
                             line([waveInit(pltIdx) waveInit(pltIdx)], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
 
                         end
-
                         title(['Propagation rate: ' num2str(propagationRate(q)) ' \mum/sec'], 'Parent',axFig)
-
                         txt = input("Look ok? if not press letter key before hitting enter. Type 'exit' to quit","s");
 
                         if ~isempty(txt)
                             propagationRate(q) = NaN;
-
                         end
 
                         if ~isempty(txt) && strcmp(txt,'exit')
