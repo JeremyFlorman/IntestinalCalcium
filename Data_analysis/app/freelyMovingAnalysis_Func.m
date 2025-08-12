@@ -8,8 +8,8 @@ startframe = inputs.startFrame; % when to begin analysis
 
 uploadresults = inputs.uploadResults; % upload data to remote location (serverfolder)?
 isremote = inputs.isRemote;     % is our tiff file on the server? If so, we'll copy to local
-                                % folder to run the analysis then move the results to the
-                                % server.
+% folder to run the analysis then move the results to the
+% server.
 
 plotstuff = inputs.plotResults; % display tracking
 videostuff =inputs.recordVideo; % record video
@@ -32,7 +32,9 @@ maxwormarea = 4000; % upper limit to worm area
 numSegments = 100; % number of segments to sample when measuring axial signal
 axSigLen = 200; % how many pixels to use for registering axial signal.(i.e. pixels from head to tail)
 axSigHeight = 10; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
-SEsize = 20;
+
+SEclose = strel('diamond', 6);
+SEopen = strel('diamond', 3);
 
 
 %%
@@ -105,13 +107,18 @@ for nf =startIndex:length(tdir)
     axialSignal = NaN(length(info)/2, axSigLen);
 
     axialBF = NaN(length(info)/2, axSigLen);
-    % sumSignal = NaN(length(info)/2,1);
     bulkSignal = NaN(length(info)/2,1);
-    % bulkAboveBkg = NaN(length(info)/2,1);
     backgroundSignal = NaN(length(info)/2,1);
     orientation = NaN(length(info)/2,1);
     area = NaN(length(info)/2,1);
     wormLength = NaN(length(info)/2,1);
+
+    hBinary = [];
+    hNormals = [];
+    hBF = [];
+    hAxial = [];
+    hBkg = [];
+    hBulk = [];
 
 
     time = linspace(0,round((length(info)/2)/fps/60,1),ceil(length(info)/2)); %minutes per frame
@@ -122,7 +129,7 @@ for nf =startIndex:length(tdir)
     end
 
 
-    
+
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     roiPath = dir([tdir(nf).folder '\*ROIs.mat']);
     if ~isempty(roiPath)
@@ -138,7 +145,7 @@ for nf =startIndex:length(tdir)
             if ~isempty(roiStruct(i).roi)
                 x = roiStruct(i).roi(:,1);
                 y = roiStruct(i).roi(:,2);
-                numPoints = 200;
+                numPoints = axSigLen;
                 % Interpolate points along the polyline
                 xInterp = interp1(1:numel(x), x, linspace(1, numel(x), numPoints), 'linear');
                 yInterp = interp1(1:numel(y), y, linspace(1, numel(y), numPoints), 'linear');
@@ -217,16 +224,14 @@ for nf =startIndex:length(tdir)
 
 
         BW = imcomplement(BW);
-        % BW = bwmorph(BW,'clean');
-        % BW = bwmorph(BW,'fill');
         tempb = BW;
 
-        
         BW = bwareaopen(BW, 100);
-        BW = imfill(BW,'holes');
-        
-        BW = imdilate(BW,strel('disk',6));
-        BW = imerode(BW,strel('disk',6));
+        BW = imdilate(BW,SEclose);
+        BW = imerode(BW,SEclose);
+        BW = imopen(BW, SEopen);
+
+
         tempb2 = BW;
 
         if troubleshoot == 1
@@ -282,7 +287,7 @@ for nf =startIndex:length(tdir)
                 if useROI == 1
                     roiIndex = find(roiFrames<= i,1,'last');
                 end
-                
+
                 if useROI == 1 && i>= roiFrames(1) && nnz(binaryMask(:,:,roiIndex))>0
                     skel = binaryMask(:,:,roiIndex);
                     roiActive = 1;
@@ -295,7 +300,7 @@ for nf =startIndex:length(tdir)
                 [ep] = bwmorph(skel,'endpoints');
 
 
-               % Extract Axial signal by sampling perpendicular lines from skeleton %
+                % Extract Axial signal by sampling perpendicular lines from skeleton %
 
                 if nnz(ep) >0
                     [ey,ex] = find(ep,1);
@@ -317,7 +322,7 @@ for nf =startIndex:length(tdir)
 
 
                     % Define the desired number of evenly spaced samples
-                    
+
                     totalPoints = length(sortSkel);
                     wormLength(i) = totalPoints;
 
@@ -364,7 +369,7 @@ for nf =startIndex:length(tdir)
                         % Ensure C and D are within bounds
                         C = max(min(C, [size(GFP,2), size(GFP,1)]), [1,1]);
                         D = max(min(D, [size(GFP,2), size(GFP,1)]), [1,1]);
-                        
+
                         perpX(:, ii) = [C(1); D(1)];
                         perpY(:, ii) = [C(2); D(2)];
 
@@ -382,21 +387,9 @@ for nf =startIndex:length(tdir)
                         end
                     end
 
-                    hold off
 
-                
-                    % Convert images back to uint8 (if needed for display later)
                     GFP = uint16(GFP);
                     mCh = uint16(mCh);
-                    hold off
-
-
-
-
-                    % temptrace = cell2mat(temptrace);
-                    % tempbf = cell2mat(tempbf);
-                    % perpX = cell2mat(perpX);
-                    % perpY = cell2mat(perpY);
 
 
                     if ~isempty(temptrace)
@@ -413,16 +406,16 @@ for nf =startIndex:length(tdir)
 
                             % % % % real-time autoFixSignal % % %
                             % if roiActive == 0
-                                querryLength = length(tt)*0.1; % fraction of signal to querry
-                                leftMean = mean(tt(1:querryLength),'omitnan');
-                                rightMean = mean(tt(length(tt)-querryLength:length(tt)),'omitnan');
+                            querryLength = length(tt)*0.1; % fraction of signal to querry
+                            leftMean = mean(tt(1:querryLength),'omitnan');
+                            rightMean = mean(tt(length(tt)-querryLength:length(tt)),'omitnan');
 
-                                if leftMean>rightMean
-                                    tt = fliplr(tt);
-                                    temptrace = fliplr(temptrace);
-                                    abf = fliplr(abf);
-                                    tempbf = fliplr(tempbf);
-                                end
+                            if leftMean>rightMean
+                                tt = fliplr(tt);
+                                temptrace = fliplr(temptrace);
+                                abf = fliplr(abf);
+                                tempbf = fliplr(tempbf);
+                            end
                             % end
                             % % % % % % % % % % % % % % % % % % % %
 
@@ -439,52 +432,30 @@ for nf =startIndex:length(tdir)
 
                 % Bulk signal and background signal
                 blksig = GFP(mask);
-                % sumSignal(i,1) = sum(blksig,"all",'omitnan');
                 bulkSignal(i,1) = mean(blksig,"all",'omitnan');
                 backgroundSignal(i,1) = mean(GFP(~mask),'all','omitnan');
-
-                % abovebkg = blksig>mean(GFP(~mask));
-                % bulkAboveBkg(i,1) = mean(blksig(abovebkg)-mean(GFP(~mask)),"all",'omitnan');
-
                 area(i,1) = bwprops(wormIdx).Area;
 
 
 
                 if plotstuff == 1
-                    if mod(i,framerate) == 0
+                    if i == startframe || mod(i - startframe, framerate) == 0
 
-                        imshow(label2rgb(L,'jet','k','shuffle'),'Parent', ax1)
-                        
-                        if showNormals == 1
-                            line(perpX,perpY,'Color', [0.9 0.9 0.9],'Parent', ax1)
-                            title(ax1,'Binary Mask + Normal Vectors');
-                        else 
-                            title(ax1,'Binary Mask');
-                        end
-
-                        if troubleshoot == 1
-                            imshow(tempb,'Parent', ax2);
-                            title(ax2,'Initial Threshold');
-
-                            imshow(tempb2,'Parent', ax3);
-                            title(ax3,'Processed Mask');
-                        else
+                        if troubleshoot == 0
                             try
-
                                 mdiff = size(mCh,2)-size(tempbf,2);
 
                                 if mdiff>0
                                     mpadTrace = padarray(tempbf,[0, ceil(mdiff/2)],0,'both');
                                     mpadTrace = mpadTrace(:,1:size(mCh, 2));
                                 elseif mdiff<0
-                                    mpaTrace = tempbf(:,abs(mdiff):size(mCh, 2));
+                                    mpadTrace = tempbf(:,abs(mdiff):size(mCh, 2));
                                 end
 
                                 mpad_Outskel = padarray(outskel, [size(mpadTrace,1),0], 'post');
                                 mmergedImage = vertcat(mCh, mpadTrace);
                                 mmergedOverlay = imoverlay(imadjust(mmergedImage, [0.05 0.21]), mpad_Outskel, [1 0 0]);
-                                imshow(mmergedOverlay,'Parent', ax2)
-                                title(ax2,'Brightfield');
+
 
                                 gdiff = size(GFP,2)-size(temptrace,2);
 
@@ -498,8 +469,7 @@ for nf =startIndex:length(tdir)
                                 gpad_Outskel = padarray(outskel, [size(gpadTrace,1),0], 'post');
                                 gmergedImage = vertcat(GFP, gpadTrace);
                                 gmergedOverlay = imoverlay(imadjust(gmergedImage, [0.06 0.2]), gpad_Outskel, [0 1 0]);
-                                imshow(gmergedOverlay,'Parent', ax3)
-                                title(ax3,'GCaMP');
+
                             catch
                                 imshow(imoverlay(imadjust(mCh, [0.05 0.21]), outskel, [1 0 0]), 'Parent', ax2)
                                 title(ax2,'Brightfield');
@@ -507,32 +477,43 @@ for nf =startIndex:length(tdir)
                                 imshow(imoverlay(imadjust(GFP,[0.06 0.1]), outskel, [0 1 0]), 'Parent', ax3)
                                 title(ax3,'GCaMP');
                             end
+
+                        elseif troubleshoot == 1
+                            imshow(tempb,'Parent', ax2);
+                            title(ax2,'Initial Threshold');
+
+                            imshow(tempb2,'Parent', ax3);
+                            title(ax3,'Processed Mask');
                         end
 
-                        if showAxialSignal == 0
-                            plot(time,area(:), 'Parent', ax4);
-                            title(ax4,'Worm Area');
-                            ylabel(ax4,'Pixels');
-                            xlabel(ax4,'Time (min)');
 
-                            plot(time,orientation(:), 'Parent', ax5);
-                            title(ax5,'Worm Orientation');
-                            ylabel(ax5,'Degrees');
-                            xlabel(ax5,'Time (min)');
 
-                            plot(1:size(axialSignal,2),axialSignal(i,:), 'g',...
-                                1:size(axialBF,2),axialBF(i,:),'r', 'Parent', ax6)
-                            ax6.XLim = [0 size(axialSignal,2)];
-                            ax6.YLim = [0 50000];
-                            title(ax6,'Signal Along Midline');
-                            ylabel(ax6,'Mean Fluorescent Intensity (a.u.)');
-                            xlabel(ax6, 'head <--- Distance (pixels) ---> tail');
-                            legend(ax6,{'GCaMP6', 'Brightfield'}, 'Location', 'northwest', ...
-                                'Box', 'off');
 
-                        elseif showAxialSignal == 1
-                            axsig = smoothdata(axialSignal,1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
-                            imagesc(axsig,'Parent',ax4)
+
+                        axsig = smoothdata(axialSignal,1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
+
+                        if i == startframe  % plot for the first time
+                            %% Binary Mask
+                            hBinary = imshow(label2rgb(L,'jet','k','shuffle'),'Parent', ax1);
+
+                            if showNormals == 1
+                                hNormals = line(perpX,perpY,'Color', [0.9 0.9 0.9],'Parent', ax1);
+                                title(ax1,'Binary Mask + Normal Vectors');
+                            end
+
+                            %% Bright field image
+                            hBF = imshow(mmergedOverlay,'Parent', ax2);
+
+                            title(ax2,'Brightfield');
+
+                            %% GCaMP image
+                            hGFP = imshow(gmergedOverlay,'Parent', ax3);
+
+                            title(ax3,'GCaMP');
+
+                            %% Axial Signal
+                            hAxial = imagesc(axsig,'Parent',ax4);
+
                             ax4.CLim = [-500 30000];
                             ax4.XAxis.Visible = 0;
                             ax4.YAxis.Visible = 0;
@@ -543,17 +524,46 @@ for nf =startIndex:length(tdir)
                             cb.Position = [0.0507 0.3054 0.0095 0.1676];
                             cb.Label.String = 'Fluorescent Intensity (a.u.)';
 
+                            %% Bulk Signal
+                            hBulk = plot(time,bulkSignal(:),'Parent', ax7);
+                            hold(ax7, 'on')
+                            hBkg = plot(time,backgroundSignal(:), 'Parent', ax7);
+                            hold(ax7, 'off')
+                            xlim(ax7,[0 time(end)]);
+                            title(ax7, 'Mean Bulk Signal')
+                            ylabel(ax7, 'Mean Fluorescence (a.u.)');
+                            xlabel(ax7,'Time (min)');
+                            box off
+                            drawnow
                         end
 
-                        plot(time,bulkSignal(:),time,backgroundSignal(:), 'Parent', ax7)
-                        if i>1
-                            xlim(ax7,[0 time(end)]);
+                        %% update plots
+                        if i ~= startframe
+                            % Binary Mask
+                            hBinary.CData = label2rgb(L,'jet','k','shuffle');
+                            for ii = 1:length(perpX)
+                                hNormals(ii).XData = perpX(:, ii);
+                                hNormals(ii).YData = perpY(:, ii);
+                            end
+
+                            if troubleshoot == 0
+                                % Brightfield
+                                hBF.CData = mmergedOverlay;
+
+                                % GCaMP
+                                hGFP.CData = gmergedOverlay;
+                            end
+
+                            % Axial Signal
+                            hAxial.CData = axsig;
+
+                            % Bulk & Background Signal
+                            hBulk.XData = time;
+                            hBulk.YData = bulkSignal;
+
+                            hBkg.XData = time';
+                            hBkg.YData = backgroundSignal;
                         end
-                        title(ax7, 'Mean Bulk Signal')
-                        ylabel(ax7, 'Mean Fluorescence (a.u.)');
-                        xlabel(ax7,'Time (min)');
-                        box off
-                        drawnow
 
                         if videostuff == 1
                             frame = getframe(vidfig);

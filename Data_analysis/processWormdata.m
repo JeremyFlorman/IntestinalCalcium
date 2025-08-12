@@ -68,6 +68,7 @@ normalize = settings.normalize;
 trimExperimentLength = settings.trimExperimentLength;
 analyzePartial = settings.analyzePartial;
 saveWormdata2workspace = settings.saveWormdata2workspace;
+trimstim = settings.trim2stim;
 
 
 if ischar(wormdata) || isstring(wormdata)
@@ -127,7 +128,7 @@ elseif strcmp(normalize, 'Control') == 1 % normalize bulk signal by dividing by 
 end
 
 % crop to first experiment
-trimstim =1;
+
 if trimstim == 1
     wtdata = trim2stim(wtdata,settings);
     mtdata = trim2stim(mtdata,settings);

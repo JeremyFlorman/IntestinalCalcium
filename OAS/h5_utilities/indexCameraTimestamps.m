@@ -19,8 +19,7 @@ img_size = cell(3,1);
 for idx = 1:length(h5_files)
     disp(['Getting timestamps from file ' num2str(idx) ' of ' num2str(length(h5_files))])
     this_file = fullfile(h5_files(idx).folder, h5_files(idx).name);
-    local_filepath = ['C:\tmp\' h5_files(idx).name];
-    copyfile(this_file, local_filepath);
+      
 
     temp_times = h5read(this_file, '/times');
     temp_relative_index = 1:size(temp_times,1);
@@ -32,7 +31,6 @@ for idx = 1:length(h5_files)
     img_info = h5info(this_file, '/data');
     img_size(idx) = {img_info.ChunkSize};
 
-    delete(local_filepath);
 end
 
 

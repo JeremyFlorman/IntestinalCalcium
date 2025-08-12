@@ -145,6 +145,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         axialYLim                      matlab.ui.control.EditField
         AxialSignallimLabel            matlab.ui.control.Label
         miscsettingsTab                matlab.ui.container.Tab
+        trim2stim                      matlab.ui.control.CheckBox
         saveWormDataToWorkspace        matlab.ui.control.CheckBox
         WavePropagationSettingsPanel   matlab.ui.container.Panel
         NumberofBinsEditField          matlab.ui.control.NumericEditField
@@ -313,6 +314,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.analyzePartial = app.AnalyzePartialRecordingCheckBox.Value;
             plotSettings.partStart = app.partStart.Value;
             plotSettings.partEnd = app.partEnd.Value;
+            plotSettings.trim2stim = app.trim2stim.Value;
 
             %% Spike Kinetics and Validation Settings
             plotSettings.validateRiseFall = app.validateRiseFall.Value;
@@ -412,6 +414,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.AnalyzePartialRecordingCheckBox.Value = plotSettings.analyzePartial;
             app.partStart.Value = plotSettings.partStart;
             app.partEnd.Value = plotSettings.partEnd;
+
+            app.trim2stim.Value = plotSettings.trim2stim;
             
 
             %% plot multigenotype settings
@@ -847,7 +851,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.IntestinalCalciumAppUIFigure.Position = [100 100 473 475];
             app.IntestinalCalciumAppUIFigure.Name = 'Intestinal Calcium App';
             app.IntestinalCalciumAppUIFigure.Icon = fullfile(pathToMLAPP, 'worm_Icon.png');
-            app.IntestinalCalciumAppUIFigure.WindowStyle = 'alwaysontop';
+            % app.IntestinalCalciumAppUIFigure.WindowStyle = 'alwaysontop';
 
             % Create FileMenu
             app.FileMenu = uimenu(app.IntestinalCalciumAppUIFigure);
@@ -1805,6 +1809,11 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.saveWormDataToWorkspace = uicheckbox(app.miscsettingsTab);
             app.saveWormDataToWorkspace.Text = 'Save processed wormdata to workspace?';
             app.saveWormDataToWorkspace.Position = [222 259 246 28];
+
+            % Create trim2stim
+            app.trim2stim = uicheckbox(app.miscsettingsTab);
+            app.trim2stim.Text = 'Trim experiment to first stimulus?';
+            app.trim2stim.Position = [223 226 246 28];
 
             % Show the figure after all components are created
             app.IntestinalCalciumAppUIFigure.Visible = 'on';
