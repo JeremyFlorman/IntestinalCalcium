@@ -334,7 +334,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.singleSpike = app.spikeEditField.Value;
             plotSettings.spikeWindow = app.windowsizeEditField.Value;
 
-            
+
             plotSettings.saveWormdata2workspace = app.saveWormDataToWorkspace.Value;
 
         end
@@ -606,6 +606,10 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             disp('Plotting...')
             plot_MatchedControl(app.outputDir.Value,settings);
+            
+            if app.saveWormDataToWorkspace.Value == 1
+                assignin("base", 'settings', settings)
+            end
 
         end
 
@@ -627,6 +631,10 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             settings = parsePlotSettings(app);
             disp('Plotting...')
             plot_MultiGenotype(outputdir, settings)
+
+            if app.saveWormDataToWorkspace.Value == 1
+                assignin("base", 'settings', settings)
+            end
 
 
         end
@@ -670,8 +678,13 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             [file, path] = uigetfile([searchStart '\*.mat']);
             figure(app.IntestinalCalciumAppUIFigure)
             app.DataDir.Value = path;
-            plotSettings = parsePlotSettings(app);
-            plot_SingleTrace(fullfile(path,file), plotSettings)
+            settings = parsePlotSettings(app);
+            plot_SingleTrace(fullfile(path,file), settings)
+
+            if app.saveWormDataToWorkspace.Value == 1
+                assignin("base", 'settings', settings)
+            end
+
         end
 
         % Menu selected function: saveSettings

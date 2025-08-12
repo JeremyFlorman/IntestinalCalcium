@@ -2,13 +2,13 @@ function [] = fixAxialSignal(startpath)
 %UNTITLED3 Summary of this function goes here
 %   Detailed explanation goes here
 %
-if isempty(startpath)
+% if isempty(startpath)
 [fn,fp] = uigetfile("Z:\Calcium Imaging\Intestinal_Calcium\Exogenous_Tyramine\Receptor_Mutants\wildtype-30mM-TA\220217_zfis178_wildtype-30mM-TA_1");
-else 
-    d = dir([startpath '\*wormdata.mat']);
-    fn = d(1).name;
-    fp = d(1).folder;
-end
+% else 
+%     d = dir([startpath '\*wormdata.mat']);
+%     fn = d(1).name;
+%     fp = d(1).folder;
+% end
 
 path = fullfile(fp,fn);
 tempdir = 'C:\tmp';

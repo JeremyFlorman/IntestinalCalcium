@@ -1,6 +1,10 @@
-function [] = OAS_Analysis_Func(inputs)
+function [] = OAS_Analysis_Func_Slices(inputs)
 fld = inputs.tiffDir; %'C:\Users\Jeremy\Desktop\220316_zfis178_wildtype_1'; % Folder containing the data you want to analyze
+
 serverfolder = inputs.remoteDir; %'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\itr-1\;'  % upload everything to this location.
+if isempty(serverfolder)
+    serverfolder = fld;
+end
 
 %% settings
 startIndex = inputs.startFile; % which video to start analysis.
@@ -43,12 +47,56 @@ imgDir = unique({imgDir.folder});
 for nf =startIndex:length(imgDir)
 
     path = imgDir{nf}
+    
+    [fold, nm, ~] = fileparts(path);
+    protopath = regexp(fold,'\', 'split');
+    expSuffix = [protopath{end} '_' num2str(nf)];
+    protosavename = [fold '\' expSuffix];
+
+
+    % copy remote files
+    if isremote == 1
+        logFiles = dir([fld '\*log.txt']);
+
+        for logIdx = 1:length(logFiles)
+            disp(['Copying log file ' num2str(logIdx) ' of ' num2str(length(logFiles))])
+
+            logPath = fullfile(logFiles(logIdx).folder, logFiles(logIdx).name);
+            localLogPath = ['C:\tmp\' logFiles(logIdx).name];
+            copyfile(logPath, localLogPath);
+        end
+        
+        
+        beh_remote_fp = path;
+        gcamp_remote_fp = strrep(path, 'behavior', 'gcamp');
+
+        beh_local_fp = strrep(path, fold, 'C:\tmp');
+        gcamp_local_fp = strrep(beh_local_fp, 'behavior', 'gcamp');
+
+        if ~isfolder(beh_local_fp)
+            disp('Copying Behavior Files...')
+            copyfile(beh_remote_fp, beh_local_fp);
+        end
+        
+        if ~isfolder(gcamp_local_fp)
+            disp('Copying GCaMP Files...')
+            copyfile(gcamp_remote_fp, gcamp_local_fp);
+        end
+    
+    path = beh_local_fp;
+    end
+
+
+
+
     %% get info from h5 files 
+    disp('Synching Camera feeds...')
     [behavior_indices, gcamp_indices] = syncDualCameras(path);
     
     %% get info from log files
+    disp('Processing Log Files...')
     timestamps = behavior_indices.timestamps;
-    log_events = processLogFile(path,timestamps,inputs.isRemote);
+    log_events = processLogFile(path,timestamps);
     stimTimes = log_events.stimTimes;
     velocity = log_events.velocity;
 
@@ -58,11 +106,6 @@ for nf =startIndex:length(imgDir)
     nFrames = length(timestamps);
 
 
-    
-    [fold, nm, ~] = fileparts(path);
-    protopath = regexp(fold,'\', 'split');
-    expSuffix = [protopath{end} '_' num2str(nf)];
-    protosavename = [fold '\' expSuffix];
 
     %%
     if plotstuff == 1
@@ -114,7 +157,7 @@ for nf =startIndex:length(imgDir)
         szFilter = 100;
     elseif imgHeight <1000
         axSigHeight = 20; 
-        SEsize = 5;
+        SEsize = 8;
         szFilter = 100;
     elseif imgHeight >1000
         axSigHeight = 35; 
@@ -142,8 +185,41 @@ for nf =startIndex:length(imgDir)
     %% Tracking Block
     tic
     for i = startframe:nFrames
-        mCh =getSlice(i,behavior_indices);
-        GFP = getSlice(i,gcamp_indices);
+
+        % use synced video indices to check if we need to load the next h5
+        % file
+        current_beh_file_index = behavior_indices.h5_file_index(i);
+        beh_file_path = behavior_indices.h5_path{current_beh_file_index};
+        beh_relative_index = behavior_indices.relative_index(i);
+
+        current_gcamp_file_index = gcamp_indices.h5_file_index(i);
+        gcamp_file_path = gcamp_indices.h5_path{current_gcamp_file_index};
+        gcamp_relative_index = gcamp_indices.relative_index(i);
+
+
+        if i == startframe
+            behavior_h5 = h5read(beh_file_path, '/data');
+            gcamp_h5 = h5read(gcamp_file_path, '/data');
+            previous_beh_file_index = current_beh_file_index;
+            previous_gcamp_file_index = current_gcamp_file_index;
+        elseif i>1
+            if current_beh_file_index ~= previous_beh_file_index
+                disp(['loading ' beh_file_path])
+                behavior_h5 = h5read(beh_file_path, '/data');
+            end
+
+            if current_gcamp_file_index ~= previous_gcamp_file_index
+                disp(['loading ' gcamp_file_path])
+                gcamp_h5 = h5read(gcamp_file_path, '/data');
+            end
+            previous_beh_file_index = current_beh_file_index;
+            previous_gcamp_file_index = current_gcamp_file_index;
+        end
+        
+        mCh = behavior_h5(:,:, beh_relative_index);
+        GFP = gcamp_h5(:,:,gcamp_relative_index);
+
+
 
         if removevignette ~=0
             mCh = imflatfield(mCh,removevignette);
@@ -172,9 +248,11 @@ for nf =startIndex:length(imgDir)
         BW = bwareaopen(BW, szFilter);
 
 
-        BW = imdilate(BW,strel('disk',SEsize));
-        BW = imerode(BW,strel('disk',SEsize));
-        BW = bwmorph(BW,"thicken",2);
+        BW = imdilate(BW,strel('diamond',SEsize));
+        BW = imerode(BW,strel('diamond',SEsize));
+
+        BW = imopen(BW, strel('diamond',4));
+        BW = bwmorph(BW,"spur",inf);
 
 
 
@@ -482,6 +560,7 @@ for nf =startIndex:length(imgDir)
                             cb.Location = 'manual';
                             cb.Position = [0.0567 0.4828 0.0064 0.1594];
                             cb.Label.String = 'Fluorescent Intensity (a.u.)';
+                            
 
                             if ~isempty(stimTimes)
                                 for k =1:length(stimTimes)
@@ -774,8 +853,12 @@ for nf =startIndex:length(imgDir)
     %     ylabel(gca, 'Time (min)')
 
 
-
+    if isremote == 1
+    reg = regexp(beh_file_path, '\', 'split');
+    else
     reg = regexp(path, '\', 'split');
+    end
+
     reg = [reg{end-1} ' | ' reg{end}];
     title(t, strrep(strrep(reg,'_', ' ' ), 'flircamera behavior', ''));
 
@@ -827,35 +910,63 @@ for nf =startIndex:length(imgDir)
             clear('img')
 
             % copy wormdata
-            [statuswormdata,~,~]=copyfile(datasavename, serverLocation);
+            [statuswormdata,~,~]=copyfile(datasavename, serverfolder);
 
             % copy summary plots
-            [statussummaryplot,~,~]=copyfile(summaryPlotName, serverLocation);
+            [statussummaryplot,~,~]=copyfile(summaryPlotName, serverfolder);
 
             % copy summary plots
-            [statusvideoplot,~,~]=copyfile(videopath, serverLocation);
+            [statusvideoplot,~,~]=copyfile(videopath, serverfolder);
 
         end
     end
 
-    clearvars -except inputs nf fld serverfolder startIndex startframe uploadresults...
-        isremote plotstuff videostuff framerate fps troubleshoot showNormals ...
-        showAxialSignal saveAxialMatrix crop useautothreshold useadaptivethreshold ...
-        removevignette minwormarea minwormarea maxwormarea numSegments axSigLen axSigHeight imgDir ...
-        SEsize szFilter
+    % clearvars -except inputs nf fld serverfolder startIndex startframe uploadresults...
+    %     isremote plotstuff videostuff framerate fps troubleshoot showNormals ...
+    %     showAxialSignal saveAxialMatrix crop useautothreshold useadaptivethreshold ...
+    %     removevignette minwormarea minwormarea maxwormarea numSegments axSigLen axSigHeight imgDir ...
+    %     SEsize szFilter
+
+%%
+    if isremote
+        logFiles = dir('C:\tmp\*log.txt');
+
+        for logIdx = 1:length(logFiles)
+            disp(['Deleting log file ' num2str(logIdx) ' of ' num2str(length(logFiles))])
+            logPath = fullfile(logFiles(logIdx).folder, logFiles(logIdx).name);
+            delete(logPath)
+        end
+
+        beh_dir = dir(beh_local_fp);
+        beh_dir = beh_dir(3:end);
+        for i = 1:length(beh_dir)
+            file2delete = fullfile(beh_dir(i).folder, beh_dir(i).name);
+            delete(file2delete);
+        end
+        rmdir(beh_local_fp);
 
 
-    % if exist('wormdata', 'var')
-    %     clear('wormdata');
-    % end
-    %
-    % clear('h5Data')
-    % clear('gfp')
-    % clear('bf')
-    %
-    %
-    % if exist('img', 'var')
-    %     clear('img')
-    % end
+        gcamp_dir = dir(gcamp_local_fp);
+        gcamp_dir = gcamp_dir(3:end);
+        for i = 1:length(gcamp_dir)
+            file2delete = fullfile(gcamp_dir(i).folder, gcamp_dir(i).name);
+            delete(file2delete);
+        end
+        rmdir(gcamp_local_fp);
+
+    end
+
+    if exist('wormdata', 'var')
+        clear('wormdata');
+    end
+
+    clear('h5Data')
+    clear('gfp')
+    clear('bf')
+
+
+    if exist('img', 'var')
+        clear('img')
+    end
 
 end

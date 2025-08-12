@@ -136,5 +136,5 @@ for idx = singlespike %:length(loc)
     outpath = [filepath '\' name 'spike_' num2str(singlespike) '_SingleTrace.png'];
     exportgraphics(gcf, outpath)
 end
-diff(loc)/15
+
 end
