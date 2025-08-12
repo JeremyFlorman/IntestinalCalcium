@@ -17,7 +17,9 @@ end
 
 gcamp_folder = strrep(beh_folder, 'behavior', 'gcamp');
 
+disp('Getting Behavior Timestamps...')
 [beh_indices] = indexCameraTimestamps(beh_folder);
+disp('Getting GCaMP Timestamps...')
 [gc_indices] = indexCameraTimestamps(gcamp_folder);
 
 

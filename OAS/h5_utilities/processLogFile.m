@@ -1,4 +1,4 @@
-function [log_events] = processLogFile(foldername,time, isRemote)
+function [log_events] = processLogFile(foldername,time)
 %UNTITLED4 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -15,13 +15,9 @@ starttime = time(1);
 
 for i = 1:length(logd)
     log_path = fullfile(logd(i).folder, logd(i).name);
-    if isRemote == 1
-        copyfile(log_path, 'C:\tmp')
-        local_path = fullfile('C:\tmp', logd(i).name);
-        fid = fopen(local_path,"r");
-    elseif isRemote == 0
-        fid = fopen(local_path,"r");
-    end
+
+    fid = fopen(log_path,"r");
+
 
     while~feof(fid)
         line = fgetl(fid);
@@ -70,7 +66,7 @@ for i = 1:length(logd)
 
     end
     fclose(fid);
-    delete(local_path)
+
 end
 
 %% calculate instantaneous velocity
