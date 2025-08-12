@@ -36,6 +36,7 @@ maxwormarea = 20000; % upper limit to worm area
 numSegments = 100; % number of segments to sample when measuring axial signal
 axSigLen = 200; % how many pixels to use for registering axial signal.
 axSigHeight = 35; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
+
 SEsize = 20;
 
 %%
@@ -47,7 +48,7 @@ imgDir = unique({imgDir.folder});
 for nf =startIndex:length(imgDir)
 
     path = imgDir{nf}
-    
+
     [fold, nm, ~] = fileparts(path);
     protopath = regexp(fold,'\', 'split');
     expSuffix = [protopath{end} '_' num2str(nf)];
@@ -65,8 +66,8 @@ for nf =startIndex:length(imgDir)
             localLogPath = ['C:\tmp\' logFiles(logIdx).name];
             copyfile(logPath, localLogPath);
         end
-        
-        
+
+
         beh_remote_fp = path;
         gcamp_remote_fp = strrep(path, 'behavior', 'gcamp');
 
@@ -77,22 +78,22 @@ for nf =startIndex:length(imgDir)
             disp('Copying Behavior Files...')
             copyfile(beh_remote_fp, beh_local_fp);
         end
-        
+
         if ~isfolder(gcamp_local_fp)
             disp('Copying GCaMP Files...')
             copyfile(gcamp_remote_fp, gcamp_local_fp);
         end
-    
-    path = beh_local_fp;
+
+        path = beh_local_fp;
     end
 
 
 
 
-    %% get info from h5 files 
+    %% get info from h5 files
     disp('Synching Camera feeds...')
     [behavior_indices, gcamp_indices] = syncDualCameras(path);
-    
+
     %% get info from log files
     disp('Processing Log Files...')
     timestamps = behavior_indices.timestamps;
@@ -149,24 +150,25 @@ for nf =startIndex:length(imgDir)
     %     normAx = axes(Parent=normfig);
     %     end
 
-    
+
 
     if imgHeight <500
-        axSigHeight = 7; 
+        axSigHeight = 7;
         SEsize = 5;
         szFilter = 100;
     elseif imgHeight <1000
-        axSigHeight = 20; 
+        axSigHeight = 20;
         SEsize = 8;
         szFilter = 100;
     elseif imgHeight >1000
-        axSigHeight = 35; 
+        axSigHeight = 35;
         SEsize = 20;
         szFilter = 2000;
     end
 
 
-
+    SEclose = strel('diamond',SEsize);
+    SEopen = strel('diamond', 4);
 
     axialSignal = NaN(nFrames, axSigLen);
     axialBF = NaN(nFrames, axSigLen);
@@ -174,7 +176,7 @@ for nf =startIndex:length(imgDir)
     backgroundSignal = NaN(nFrames,1);
     orientation = NaN(nFrames,1);
     area = NaN(nFrames,1);
-   
+
     time = (log_events.time-log_events.time(1))/60; %minutes per frame
     wormIdx = [];
 
@@ -183,6 +185,20 @@ for nf =startIndex:length(imgDir)
     end
 
     %% Tracking Block
+    hBinary = [];
+    hNormals = [];
+    hBF = [];
+    hGFP = [];
+    hKymo = [];
+    hBulk = [];
+    hBkg = [];
+    hArea = [];
+
+    hAxStim = [];
+    hBulkStim = [];
+    hAreaStim = [];
+
+
     tic
     for i = startframe:nFrames
 
@@ -215,7 +231,7 @@ for nf =startIndex:length(imgDir)
             previous_beh_file_index = current_beh_file_index;
             previous_gcamp_file_index = current_gcamp_file_index;
         end
-        
+
         mCh = behavior_h5(:,:, beh_relative_index);
         GFP = gcamp_h5(:,:,gcamp_relative_index);
 
@@ -248,11 +264,11 @@ for nf =startIndex:length(imgDir)
         BW = bwareaopen(BW, szFilter);
 
 
-        BW = imdilate(BW,strel('diamond',SEsize));
-        BW = imerode(BW,strel('diamond',SEsize));
+        BW = imdilate(BW,SEclose);
+        BW = imerode(BW,SEclose);
 
-        BW = imopen(BW, strel('diamond',4));
-        BW = bwmorph(BW,"spur",inf);
+        BW = imopen(BW, SEopen);
+        % BW = bwmorph(BW,"spur",inf);
 
 
 
@@ -342,7 +358,7 @@ for nf =startIndex:length(imgDir)
 
 
                     % Define the desired number of evenly spaced samples
-                    
+
                     totalPoints = length(sortSkel);
 
                     % Ensure we don't exceed available points
@@ -384,7 +400,7 @@ for nf =startIndex:length(imgDir)
                         % Ensure C and D are within bounds
                         C = max(min(C, [size(GFP,2), size(GFP,1)]), [1,1]);
                         D = max(min(D, [size(GFP,2), size(GFP,1)]), [1,1]);
-                        
+
                         perpX(:, ii) = [C(1); D(1)];
                         perpY(:, ii) = [C(2); D(2)];
 
@@ -404,7 +420,7 @@ for nf =startIndex:length(imgDir)
 
                     hold off
 
-                
+
                     % Convert images back to uint8 (if needed for display later)
                     GFP = uint8(GFP);
                     mCh = uint8(mCh);
@@ -464,14 +480,17 @@ for nf =startIndex:length(imgDir)
                 % Plot Stuff
 
                 if plotstuff == 1
-                    if mod(i,framerate) == 0
+                    if i == startframe || mod(i - startframe, framerate) == 0
 
-                        imshow(label2rgb(L,'jet','k','shuffle'),'Parent', ax1)
-                        title(ax1,'Binary Mask');
-                        if showNormals == 1
-                            line(perpX,perpY,'Color', [0.9 0.9 0.9],'Parent', ax1)
+                        % plot binary mask
+                        if i == startframe
+                            hBinary = imshow(label2rgb(L,'jet','k','shuffle'),'Parent', ax1);
                             title(ax1,'Binary Mask + Normal Vectors');
+                            if showNormals == 1
+                                hNormals = line(perpX,perpY,'Color', [0.9 0.9 0.9],'Parent', ax1);
+                            end
                         end
+
 
                         if troubleshoot == 1
                             imshow(tempb,'Parent', ax2);
@@ -497,8 +516,6 @@ for nf =startIndex:length(imgDir)
                                 mpad_Outskel = padarray(outskel, [size(mpadTrace,1),0], 'post');
                                 mmergedImage = vertcat(mCh, mpadTrace)-50;
                                 mmergedOverlay = imoverlay(mmergedImage, mpad_Outskel, [1 0 0]);
-                                imshow(mmergedOverlay,'Parent', ax2)
-                                title(ax2,'Brightfield');
 
                                 gdiff = size(GFP,2)-size(temptrace,2);
 
@@ -512,9 +529,16 @@ for nf =startIndex:length(imgDir)
                                 gpad_Outskel = padarray(outskel, [size(gpadTrace,1),0], 'post');
                                 gmergedImage = vertcat(GFP, gpadTrace);
                                 gmergedOverlay = imoverlay(imadjust(gmergedImage, gfpAdj), gpad_Outskel, [0 1 0]);
-                                imshow(gmergedOverlay,'Parent', ax3)
-                                colormap(ax3, "turbo")
-                                title(ax3,'GCaMP');
+
+                                % plot brightfield and GCaMP images
+                                if i == startframe
+                                    hBF = imshow(mmergedOverlay,'Parent', ax2);
+                                    title(ax2,'Brightfield');
+
+                                    hGFP = imshow(gmergedOverlay,'Parent', ax3);
+                                    colormap(ax3, "turbo")
+                                    title(ax3,'GCaMP');
+                                end
                             catch
                                 imshow(imoverlay(imadjust(mCh, bfAdj), outskel, [1 0 0]), 'Parent', ax2)
                                 title(ax2,'Brightfield');
@@ -547,71 +571,137 @@ for nf =startIndex:length(imgDir)
                             % axial signal
                         elseif showAxialSignal == 1
                             axsig = smoothdata(axialSignal(1:i,:),1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
-                            imagesc(axsig,'Parent',ax4)
-                            ax4.CLim = [0 60];
-                            ax4.XLim = [1, length(axialSignal)];
-                            ax4.XAxis.Visible = 0;
-                            ax4.YTickLabel = [];
-                            ax4.YTick = [];
-                            % ylabel(ax4, 'Longitudinal Kymograph')
-                            box(ax4, 'off')
-                            colormap turbo
-                            cb = colorbar(ax4);
-                            cb.Location = 'manual';
-                            cb.Position = [0.0567 0.4828 0.0064 0.1594];
-                            cb.Label.String = 'Fluorescent Intensity (a.u.)';
-                            
 
-                            if ~isempty(stimTimes)
-                                for k =1:length(stimTimes)
-                                    hold(ax4, "on")
-                                    if i>= stimTimes(k)
-                                        plot(stimTimes(k),1,'Marker', 'diamond', 'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'Parent', ax4)
-                                    end
-                                    hold(ax4, "off")
-                                end
+                            if i == startframe
+                                hKymo = imagesc(axsig,'Parent',ax4);
+                                ax4.CLim = [0 60];
+                                ax4.XLim = [1, length(axialSignal)];
+                                ax4.XAxis.Visible = 0;
+                                ax4.YTickLabel = [];
+                                ax4.YTick = [];
+                                % ylabel(ax4, 'Longitudinal Kymograph')
+                                box(ax4, 'off')
+                                colormap turbo
+                                cb = colorbar(ax4);
+                                cb.Location = 'manual';
+                                cb.Position = [0.0567 0.4828 0.0064 0.1594];
+                                cb.Label.String = 'Fluorescent Intensity (a.u.)';
                             end
+
+                            stimX = stimTimes(stimTimes<=i);
+                            axStimY = repmat(1, size(stimX));
+
+                            if i >= stimTimes(1) && i <= stimTimes(1)+framerate
+                                hAxStim = line(stimX,axStimY,'Marker', 'diamond', 'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'LineStyle', 'none','Parent', ax4);
+                            end
+
                         end
+
                         % bulk signal
-
-                        plot(time,bulkSignal,time',backgroundSignal, 'Parent', ax7)
-                        ax7.XLim = [0 time(end)];
-                        ylabel(ax7, 'Bulk Ca^2^+ Signal');
-
+                        if i == startframe 
+                            hBulk = plot(time,bulkSignal, 'Parent', ax7);
+                            hold(ax7, 'on')
+                            hBkg = plot(time',backgroundSignal, 'Parent', ax7);
+                            hold(ax7, 'off')
+                            ax7.XLim = [0 time(end)];
+                            ylabel(ax7, 'Bulk Ca^2^+ Signal');
+                            box(ax7, 'off')
+                            ax7.TickLength = [0.005 0.005];
+                        end
 
                         %
-                        if ~isempty(stimTimes)
-                            for k =1:length(stimTimes)
-                                if i>= stimTimes(k)
-                                    hold(ax7, "on")
-                                    plot(time(stimTimes(k)),ax7.YLim(2)*0.99,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'Parent', ax7)
-                                    hold(ax7, 'off')
-                                end
-                            end
+                        bulkStimY = repmat(ax7.YLim(2)*0.99, size(stimX));
+                        
+                        if i >= stimTimes(1) && i < stimTimes(1)+framerate
+                            hBulkStim = line(time(stimX),bulkStimY,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0], 'LineStyle', 'none', 'Parent', ax7);
                         end
-                        box(ax7, 'off')
-                        ax7.TickLength = [0.005 0.005];
+                        % if ~isempty(stimTimes)
+                        %     for k =1:length(stimTimes)
+                        %         if i>= stimTimes(k)
+                        %             hold(ax7, "on")
+                        %             plot(time(stimTimes(k)),ax7.YLim(2)*0.99,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'Parent', ax7)
+                        %             hold(ax7, 'off')
+                        %         end
+                        %     end
+                        % end
 
 
-                        % velocity
-                        plot(time(1:i),smoothdata(area(1:i),'gaussian', 30), 'Parent', velAx)
-                        if ~isempty(stimTimes)
-                            for k =1:length(stimTimes)
-                                if i>= stimTimes(k)
-                                    hold(velAx, "on")
-                                    plot(time(stimTimes(k)),velAx.YLim(2)*0.99,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
-                                    hold(velAx, 'off')
-                                end
-                            end
-                        end
 
+                        % Area
+                        if i == startframe
+                        hArea = plot(time(1:i),smoothdata(area(1:i),'gaussian', 30), 'Parent', velAx);
+
+                        avgArea = median(area,"omitmissing");
+                        areaPad = avgArea *0.05;
+                        ylim([avgArea-areaPad avgArea+areaPad]);
                         xlim([0 time(end)]);
+
                         ylabel(velAx, 'Worm Area (pixels)');
                         xlabel(velAx,'Time (min)');
                         velAx.TickLength = [0.005 0.005];
                         box off
+                        end
 
-                        drawnow
+
+                        areaStimY = repmat(velAx.YLim(2)*0.99, size(stimX));
+
+                        if i >= stimTimes(1) && i < stimTimes(1)+framerate
+                            hAreaStim = line(time(stimX),areaStimY,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'LineStyle', 'none','Parent', velAx);
+                        end
+
+                        % if ~isempty(stimTimes)
+                        %     for k =1:length(stimTimes)
+                        %         if i>= stimTimes(k)
+                        %             hold(velAx, "on")
+                        %             plot(time(stimTimes(k)),velAx.YLim(2)*0.99,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
+                        %             hold(velAx, 'off')
+                        %         end
+                        %     end
+                        % end
+                        
+                        %% update plots 
+                        if i ~= startframe
+                            % Binary Mask
+                            hBinary.CData = label2rgb(L,'jet','k','shuffle');
+                            for ii = 1:length(perpX)
+                                hNormals(ii).XData = perpX(:, ii);
+                                hNormals(ii).YData = perpY(:, ii);
+                            end
+                            
+                            % Brightfield
+                            hBF.CData = mmergedOverlay;
+
+                            % GCaMP
+                            hGFP.CData = gmergedOverlay;
+
+                            % Axial Signal
+                            hKymo.CData = axsig;
+
+                            % Bulk & Background Signal 
+                            hBulk.XData = time;
+                            hBulk.YData = bulkSignal;
+
+                            hBkg.XData = time';
+                            hBkg.YData = backgroundSignal;
+
+                            % Area
+                            hArea.XData = time(1:i);
+                            hArea.YData = smoothdata(area(1:i),'gaussian', 30);
+
+                            if i>stimTimes(1)
+                                hAxStim.XData = stimX;
+                                hAxStim.YData = axStimY;
+
+                                hBulkStim.XData = time(stimX);
+                                hBulkStim.YData = bulkStimY;
+
+                                hAreaStim.XData = time(stimX);
+                                hAreaStim.YData = areaStimY;
+                            end
+
+
+                        drawnow limitrate
+                        end
 
                         if videostuff == 1
                             frame = getframe(vidfig);
@@ -854,9 +944,9 @@ for nf =startIndex:length(imgDir)
 
 
     if isremote == 1
-    reg = regexp(beh_file_path, '\', 'split');
+        reg = regexp(beh_file_path, '\', 'split');
     else
-    reg = regexp(path, '\', 'split');
+        reg = regexp(path, '\', 'split');
     end
 
     reg = [reg{end-1} ' | ' reg{end}];
@@ -927,7 +1017,7 @@ for nf =startIndex:length(imgDir)
     %     removevignette minwormarea minwormarea maxwormarea numSegments axSigLen axSigHeight imgDir ...
     %     SEsize szFilter
 
-%%
+    %%
     if isremote
         logFiles = dir('C:\tmp\*log.txt');
 
