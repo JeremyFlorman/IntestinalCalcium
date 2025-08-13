@@ -322,10 +322,8 @@ for nf =startIndex:length(tdir)
 
 
                     % Define the desired number of evenly spaced samples
-
                     totalPoints = length(sortSkel);
-                    wormLength(i) = totalPoints;
-
+                    
                     % Ensure we don't exceed available points
                     segments2Sample = min(numSegments, totalPoints - 1);
 
@@ -430,11 +428,22 @@ for nf =startIndex:length(tdir)
                     end
                 end
 
-                % Bulk signal and background signal
+                %% Bulk signal
                 blksig = GFP(mask);
                 bulkSignal(i,1) = mean(blksig,"all",'omitnan');
-                backgroundSignal(i,1) = mean(GFP(~mask),'all','omitnan');
+
+                %% Background Signal - lowest 5% of values outside the ROI
+                bkgsig = GFP(~mask);
+                thresh = prctile(bkgsig, 1);
+                bkgMask = false(size(mask));
+                bkgMask(~mask) = GFP(~mask)<=thresh;
+                backgroundSignal(i,1) = mean(GFP(bkgMask),'all','omitnan');
+
+                %% Worm Area
                 area(i,1) = bwprops(wormIdx).Area;
+
+                %% Worm Length 
+                wormLength(i) = totalPoints;
 
 
 
@@ -466,7 +475,7 @@ for nf =startIndex:length(tdir)
                                     gpadTrace = temptrace(:,abs(gdiff):size(GFP, 2));
                                 end
 
-                                gpad_Outskel = padarray(outskel, [size(gpadTrace,1),0], 'post');
+                                gpad_Outskel = padarray(bkgMask+outskel, [size(gpadTrace,1),0], 'post');
                                 gmergedImage = vertcat(GFP, gpadTrace);
                                 gmergedOverlay = imoverlay(imadjust(gmergedImage, [0.06 0.2]), gpad_Outskel, [0 1 0]);
 

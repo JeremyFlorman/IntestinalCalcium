@@ -178,6 +178,7 @@ for nf =startIndex:length(imgDir)
     backgroundSignal = NaN(nFrames,1);
     orientation = NaN(nFrames,1);
     area = NaN(nFrames,1);
+    wormLength = NaN(nFrames, 1);
 
     time = (log_events.time-log_events.time(1))/60; %minutes per frame
     wormIdx = [];
@@ -460,16 +461,23 @@ for nf =startIndex:length(imgDir)
                     end
                 end
 
-                % Bulk signal and background signal
+                %% Bulk signal
                 blksig = GFP(mask);
-                % sumSignal(i,1) = sum(blksig,"all",'omitnan');
                 bulkSignal(i,1) = mean(blksig,"all",'omitnan');
-                backgroundSignal(i,1) = mean(GFP(~mask),'all','omitnan');
-                antSignal(i) = mean(axialSignal(i,25:25+20), 'omitmissing');
-                postSignal(i) = mean(axialSignal(i, end-20:end), 'omitmissing');
 
+                %% Background Signal - lowest 5% of values outside the ROI
+                bkgsig = GFP(~mask);
+                thresh = prctile(bkgsig, 1);
+                bkgMask = false(size(mask));
+                bkgMask(~mask) = GFP(~mask)<=thresh;
+                backgroundSignal(i,1) = mean(GFP(bkgMask),'all','omitnan');
 
+                %% Worm Area
                 area(i,1) = bwprops(wormIdx).Area;
+
+                %% Worm Length 
+                wormLength(i) = totalPoints;
+
 
                 % Upsample temptrace and tempbf to match original sortSkel size
                 originalIndices = 1:totalPoints - 1;
@@ -779,6 +787,7 @@ for nf =startIndex:length(imgDir)
     wormdata.backgroundSignal = backgroundSignal;
     wormdata.orientation = orientation;
     wormdata.area = area;
+    wormdata.wormLength = wormLength;
     wormdata.peakTraces = pktraces;
     wormdata.peakLoc = loc;
     wormdata.include = 1;
