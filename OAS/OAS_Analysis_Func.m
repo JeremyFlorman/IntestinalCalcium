@@ -1,6 +1,10 @@
 function [] = OAS_Analysis_Func(inputs)
 fld = inputs.tiffDir; %'C:\Users\Jeremy\Desktop\220316_zfis178_wildtype_1'; % Folder containing the data you want to analyze
+
 serverfolder = inputs.remoteDir; %'Y:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants\itr-1\;'  % upload everything to this location.
+if isempty(serverfolder)
+    serverfolder = fld;
+end
 
 %% settings
 startIndex = inputs.startFile; % which video to start analysis.
@@ -32,7 +36,8 @@ maxwormarea = 20000; % upper limit to worm area
 numSegments = 100; % number of segments to sample when measuring axial signal
 axSigLen = 200; % how many pixels to use for registering axial signal.
 axSigHeight = 35; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
-SEsize = 20;
+
+% SEsize = 20;
 
 %%
 %%
@@ -43,17 +48,65 @@ imgDir = unique({imgDir.folder});
 for nf =startIndex:length(imgDir)
 
     path = imgDir{nf}
-    h5Data = processH5(path);
-    gfp = h5Data.gfp;
-    bf = h5Data.bf;
-    stimTimes = h5Data.stimTimes;
-    velocity = h5Data.velocity;
-    % vel = smoothdata(velocity, 'gaussian', 15);
 
     [fold, nm, ~] = fileparts(path);
     protopath = regexp(fold,'\', 'split');
     expSuffix = [protopath{end} '_' num2str(nf)];
     protosavename = [fold '\' expSuffix];
+
+
+    % copy remote files
+    % if isremote == 1
+    %     logFiles = dir([fld '\*log.txt']);
+    % 
+    %     for logIdx = 1:length(logFiles)
+    %         disp(['Copying log file ' num2str(logIdx) ' of ' num2str(length(logFiles))])
+    % 
+    %         logPath = fullfile(logFiles(logIdx).folder, logFiles(logIdx).name);
+    %         localLogPath = ['C:\tmp\' logFiles(logIdx).name];
+    %         copyfile(logPath, localLogPath);
+    %     end
+    % 
+    % 
+    %     beh_remote_fp = path;
+    %     gcamp_remote_fp = strrep(path, 'behavior', 'gcamp');
+    % 
+    %     beh_local_fp = strrep(path, fold, 'C:\tmp');
+    %     gcamp_local_fp = strrep(beh_local_fp, 'behavior', 'gcamp');
+    % 
+    %     if ~isfolder(beh_local_fp)
+    %         disp('Copying Behavior Files...')
+    %         copyfile(beh_remote_fp, beh_local_fp);
+    %     end
+    % 
+    %     if ~isfolder(gcamp_local_fp)
+    %         disp('Copying GCaMP Files...')
+    %         copyfile(gcamp_remote_fp, gcamp_local_fp);
+    %     end
+    % 
+    %     path = beh_local_fp;
+    % end
+
+
+
+
+    %% get info from h5 files
+    disp('Synching Camera feeds...')
+    [behavior_indices, gcamp_indices] = syncDualCameras(path,isremote);
+
+    %% get info from log files
+    disp('Processing Log Files...')
+    timestamps = behavior_indices.timestamps;
+    log_events = processLogFile(path,timestamps, isremote);
+    stimTimes = log_events.stimTimes;
+    velocity = log_events.velocity;
+
+    %% Image parameters
+    imgWidth = behavior_indices.img_size{1}(1);
+    imgHeight = behavior_indices.img_size{1}(2);
+    nFrames = length(timestamps);
+
+
 
     %%
     if plotstuff == 1
@@ -97,48 +150,152 @@ for nf =startIndex:length(imgDir)
     %     normAx = axes(Parent=normfig);
     %     end
 
-    [imgWidth ,imgHeight, nFrames] = size(bf);
+
 
     if imgHeight <500
-        axSigHeight = 7; 
+        axSigHeight = 7;
         SEsize = 5;
         szFilter = 100;
     elseif imgHeight <1000
-        axSigHeight = 20; 
-        SEsize = 5;
+        axSigHeight = 20;
+        SEsize = 8;
         szFilter = 100;
     elseif imgHeight >1000
-        axSigHeight = 35; 
+        axSigHeight = 35;
         SEsize = 20;
         szFilter = 2000;
     end
 
 
-
+    SEclose = strel('diamond',SEsize);
+    SEopen = strel('diamond', 4);
 
     axialSignal = NaN(nFrames, axSigLen);
     axialBF = NaN(nFrames, axSigLen);
     bulkSignal = NaN(nFrames,1);
+    antSignal = NaN(nFrames,1);
+    postSignal = NaN(nFrames,1);
     backgroundSignal = NaN(nFrames,1);
     orientation = NaN(nFrames,1);
     area = NaN(nFrames,1);
-   
-    time = (h5Data.time-h5Data.time(1))/60; %minutes per frame
+    wormLength = NaN(nFrames, 1);
+
+    time = (log_events.time-log_events.time(1))/60; %minutes per frame
     wormIdx = [];
 
     if saveAxialMatrix == 1
         axialMatrix = NaN(axSigHeight, axSigLen,nFrames);
     end
 
+
+    hBinary = [];
+    hBF = [];
+    hGFP = [];
+    hKymo = [];
+    hBulk = [];
+    hBkg = [];
+    hAnterior = [];
+    hPosterior = [];
+    hArea = [];
+
+    hNormals = gobjects(numSegments,1);
+
+    for normIdx = 1:numSegments
+        hNormals(normIdx) = line(nan(2,1), nan(2,1),'Color', [0.6 0.6 0.6],'Parent', ax1);
+    end
+
+    hAxStim = [];
+    hBulkStim = [];
+    hAreaStim = [];
+
     %% Tracking Block
     tic
     for i = startframe:nFrames
+        % use synced video indices to check if we need to load the next h5
+        % file. Every loop the file index is checked and updates the path
+        % of the corresponding h5 file. the relative file index tells which
+        % slice to read from that file. When the file index changes the 
+        % appropriate h5 file is loaded, otherwise successive slices are
+        % read.
+
+        current_beh_file_index = behavior_indices.h5_file_index(i);
+        beh_file_path = behavior_indices.h5_path{current_beh_file_index};
+        beh_relative_index = behavior_indices.relative_index(i);
+
+        current_gcamp_file_index = gcamp_indices.h5_file_index(i);
+        gcamp_file_path = gcamp_indices.h5_path{current_gcamp_file_index};
+        gcamp_relative_index = gcamp_indices.relative_index(i);
+
+        %% load the first h5 file
+        if i == startframe
+            if isremote == 1
+                mkdir('C:\tmp\beh');
+                mkdir('C:\tmp\gcamp');
+                [~, beh_name] = fileparts(beh_file_path);
+                [~, gcamp_name] = fileparts(gcamp_file_path);
+
+                beh_local_path = ['C:\tmp\beh' beh_name];
+                gcamp_local_path = ['C:\tmp\gcamp' gcamp_name];
+                copyfile(beh_file_path, beh_local_path);
+                copyfile(gcamp_file_path, gcamp_local_path);
+
+                behavior_h5 = h5read(beh_local_path, '/data');
+                gcamp_h5 = h5read(gcamp_local_path, '/data');
+                previous_beh_file_index = current_beh_file_index;
+                previous_gcamp_file_index = current_gcamp_file_index;
+
+                delete(beh_local_path);
+                delete(gcamp_local_path);
+
+            elseif isremote == 0
+
+                behavior_h5 = h5read(beh_file_path, '/data');
+                gcamp_h5 = h5read(gcamp_file_path, '/data');
+                previous_beh_file_index = current_beh_file_index;
+                previous_gcamp_file_index = current_gcamp_file_index;
+            end
+
+        %% Load subsequent h5 files when necessary
+        elseif i>1
+            if current_beh_file_index ~= previous_beh_file_index
+                if isremote == 1
+                    [~, beh_name] = fileparts(beh_file_path);
+                    beh_local_path = ['C:\tmp\beh' beh_name];
+                    copyfile(beh_file_path, beh_local_path);
+                    disp(['loading local copy of: ' beh_file_path])
+                    behavior_h5 = h5read(beh_local_path, '/data');
+                    delete(beh_local_path)
+
+                elseif isremote == 0
+                disp(['loading ' beh_file_path])
+                behavior_h5 = h5read(beh_file_path, '/data');
+                end
+            end
+
+            if current_gcamp_file_index ~= previous_gcamp_file_index
+                if isremote == 1
+                    [~, gcamp_name] = fileparts(gcamp_file_path);
+                    gcamp_local_path = ['C:\tmp\beh' gcamp_name];
+                    copyfile(gcamp_file_path, gcamp_local_path);
+                    disp(['loading local copy of: ' gcamp_file_path])
+                    gcamp_h5 = h5read(gcamp_local_path, '/data');
+                    delete(gcamp_local_path)
+
+                elseif isremote == 0
+                    disp(['loading ' gcamp_file_path])
+                    gcamp_h5 = h5read(gcamp_file_path, '/data');
+                end
+            end
 
 
+            previous_beh_file_index = current_beh_file_index;
+            previous_gcamp_file_index = current_gcamp_file_index;
+        end
 
-        mCh = bf(:,:,i);
-        GFP = gfp(:,:,i);
-        %         GFP = imwarp(gfp(:,:,i),tform,'OutputView',rA);
+        mCh = behavior_h5(:,:, beh_relative_index);
+        GFP = gcamp_h5(:,:,gcamp_relative_index);
+
+
 
         if removevignette ~=0
             mCh = imflatfield(mCh,removevignette);
@@ -167,9 +324,11 @@ for nf =startIndex:length(imgDir)
         BW = bwareaopen(BW, szFilter);
 
 
-        BW = imdilate(BW,strel('disk',SEsize));
-        BW = imerode(BW,strel('disk',SEsize));
-        BW = bwmorph(BW,"thicken",2);
+        BW = imdilate(BW,SEclose);
+        BW = imerode(BW,SEclose);
+
+        BW = imopen(BW, SEopen);
+        % BW = bwmorph(BW,"spur",inf);
 
 
 
@@ -259,7 +418,7 @@ for nf =startIndex:length(imgDir)
 
 
                     % Define the desired number of evenly spaced samples
-                    
+
                     totalPoints = length(sortSkel);
 
                     % Ensure we don't exceed available points
@@ -301,7 +460,7 @@ for nf =startIndex:length(imgDir)
                         % Ensure C and D are within bounds
                         C = max(min(C, [size(GFP,2), size(GFP,1)]), [1,1]);
                         D = max(min(D, [size(GFP,2), size(GFP,1)]), [1,1]);
-                        
+
                         perpX(:, ii) = [C(1); D(1)];
                         perpY(:, ii) = [C(2); D(2)];
 
@@ -321,7 +480,7 @@ for nf =startIndex:length(imgDir)
 
                     hold off
 
-                
+
                     % Convert images back to uint8 (if needed for display later)
                     GFP = uint8(GFP);
                     mCh = uint8(mCh);
@@ -357,16 +516,23 @@ for nf =startIndex:length(imgDir)
                     end
                 end
 
-                % Bulk signal and background signal
+                %% Bulk signal
                 blksig = GFP(mask);
-                % sumSignal(i,1) = sum(blksig,"all",'omitnan');
                 bulkSignal(i,1) = mean(blksig,"all",'omitnan');
-                backgroundSignal(i,1) = mean(GFP(~mask),'all','omitnan');
 
-                % abovebkg = blksig>mean(GFP(~mask));
-                % bulkAboveBkg(i,1) = mean(blksig(abovebkg)-mean(GFP(~mask)),"all",'omitnan');
+                %% Background Signal - lowest 5% of values outside the ROI
+                bkgsig = GFP(~mask);
+                thresh = prctile(bkgsig, 1);
+                bkgMask = false(size(mask));
+                bkgMask(~mask) = GFP(~mask)<=thresh;
+                backgroundSignal(i,1) = mean(GFP(bkgMask),'all','omitnan');
 
+                %% Worm Area
                 area(i,1) = bwprops(wormIdx).Area;
+
+                %% Worm Length 
+                wormLength(i) = totalPoints;
+
 
                 % Upsample temptrace and tempbf to match original sortSkel size
                 originalIndices = 1:totalPoints - 1;
@@ -381,24 +547,10 @@ for nf =startIndex:length(imgDir)
                 % Plot Stuff
 
                 if plotstuff == 1
-                    if mod(i,framerate) == 0
+                    if i == startframe || mod(i - startframe, framerate) == 0
 
-                        imshow(label2rgb(L,'jet','k','shuffle'),'Parent', ax1)
-                        title(ax1,'Binary Mask');
-                        if showNormals == 1
-                            line(perpX,perpY,'Color', [0.9 0.9 0.9],'Parent', ax1)
-                            title(ax1,'Binary Mask + Normal Vectors');
-                        end
-
-                        if troubleshoot == 1
-                            imshow(tempb,'Parent', ax2);
-                            title(ax2,'Initial Threshold');
-
-                            imshow(tempb2,'Parent', ax3);
-                            title(ax3,'Processed Mask');
-                        else
+                        if troubleshoot == 0
                             try
-
                                 mdiff = size(mCh,2)-size(tempbf,2);
 
                                 if mdiff>0
@@ -414,8 +566,6 @@ for nf =startIndex:length(imgDir)
                                 mpad_Outskel = padarray(outskel, [size(mpadTrace,1),0], 'post');
                                 mmergedImage = vertcat(mCh, mpadTrace)-50;
                                 mmergedOverlay = imoverlay(mmergedImage, mpad_Outskel, [1 0 0]);
-                                imshow(mmergedOverlay,'Parent', ax2)
-                                title(ax2,'Brightfield');
 
                                 gdiff = size(GFP,2)-size(temptrace,2);
 
@@ -423,15 +573,22 @@ for nf =startIndex:length(imgDir)
                                     gpadTrace = padarray(temptrace,[0, ceil(gdiff/2)],0,'both');
                                     gpadTrace = gpadTrace(:,1:size(GFP, 2));
                                 elseif gdiff<0
-                                    gpaTrace = temptrace(:,abs(gdiff):size(GFP, 2));
+                                    gpadTrace = temptrace(:,abs(gdiff):size(GFP, 2));
                                 end
-                                map = turbo(256);
+                                
                                 gpad_Outskel = padarray(outskel, [size(gpadTrace,1),0], 'post');
                                 gmergedImage = vertcat(GFP, gpadTrace);
                                 gmergedOverlay = imoverlay(imadjust(gmergedImage, gfpAdj), gpad_Outskel, [0 1 0]);
-                                imshow(gmergedOverlay,'Parent', ax3)
-                                colormap(ax3, "turbo")
-                                title(ax3,'GCaMP');
+
+                                % plot brightfield and GCaMP images
+                                if i == startframe
+                                    hBF = imshow(mmergedOverlay,'Parent', ax2);
+                                    title(ax2,'Brightfield');
+
+                                    hGFP = imshow(gmergedOverlay,'Parent', ax3);
+                                    colormap(ax3, "turbo")
+                                    title(ax3,'GCaMP');
+                                end
                             catch
                                 imshow(imoverlay(imadjust(mCh, bfAdj), outskel, [1 0 0]), 'Parent', ax2)
                                 title(ax2,'Brightfield');
@@ -439,32 +596,51 @@ for nf =startIndex:length(imgDir)
                                 imshow(imoverlay(imadjust(GFP,gfpAdj), outskel, [0 1 0]), 'Parent', ax3)
                                 title(ax3,'GCaMP');
                             end
+
+                        elseif troubleshoot == 1
+
+                            imshow(tempb,'Parent', ax2);
+                            title(ax2,'Initial Threshold');
+
+                            imshow(tempb2,'Parent', ax3);
+                            title(ax3,'Processed Mask');
                         end
 
-                        if showAxialSignal == 0
-                            plot(time,area(:), 'Parent', ax4);
-                            title(ax4,'Worm Area');
-                            ylabel(ax4,'Pixels');
-                            xlabel(ax4,'Time (min)');
 
-                            plot(time,orientation(:), 'Parent', ax5);
-                            title(ax5,'Worm Orientation');
-                            ylabel(ax5,'Degrees');
-                            xlabel(ax5,'Time (min)');
 
-                            plot(1:size(axialSignal,2),axialSignal(i,:), 'g',...
-                                1:size(axialBF,2),axialBF(i,:),'r', 'Parent', ax6)
-                            ax6.XLim = [0 size(axialSignal,2)];
-                            ax6.YLim = [0 30];
-                            title(ax6,'Signal Along Midline');
-                            ylabel(ax6,'Mean Fluorescent Intensity (a.u.)');
-                            xlabel(ax6, 'head <--- Distance (pixels) ---> tail');
-                            legend(ax6,{'GCaMP6', 'Brightfield'}, 'Location', 'northwest', ...
-                                'Box', 'off');
-                            % axial signal
-                        elseif showAxialSignal == 1
-                            axsig = smoothdata(axialSignal(1:i,:),1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
-                            imagesc(axsig,'Parent',ax4)
+                        axsig = smoothdata(axialSignal(1:i,:),1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
+
+                        if i == startframe  % plot for the first time
+                            %% Binary Mask
+                            hold(ax1, 'on')
+                            hBinary = imshow(label2rgb(L,'jet','k','shuffle'),'Parent', ax1);
+                            hold(ax1, 'off')
+                            %% Normal Vectors
+                            if showNormals == 1
+                                nSegs = size(perpX, 2);
+
+                                set(hNormals(1:nSegs), {'XData'}, squeeze(num2cell(perpX,1))', ...
+                                    {'YData'}, squeeze(num2cell(perpY,1))');
+
+                                nanPairs = repmat({[NaN NaN]}, numSegments-nSegs, 1);
+                                set(hNormals(nSegs+1:end), {'XData'}, nanPairs, {'YData'}, nanPairs);
+                                title(ax1,'Binary Mask + Normal Vectors');
+                                uistack(hNormals, 'top')
+                            end
+
+
+                            %% Bright field image
+                            hBF = imshow(mmergedOverlay,'Parent', ax2);
+
+                            title(ax2,'Brightfield');
+
+                            %% GCaMP image
+                            hGFP = imshow(gmergedOverlay,'Parent', ax3);
+
+                            title(ax3,'GCaMP');
+
+                            %% Axial Signal
+                            hKymo = imagesc(axsig,'Parent',ax4);
                             ax4.CLim = [0 60];
                             ax4.XLim = [1, length(axialSignal)];
                             ax4.XAxis.Visible = 0;
@@ -478,56 +654,96 @@ for nf =startIndex:length(imgDir)
                             cb.Position = [0.0567 0.4828 0.0064 0.1594];
                             cb.Label.String = 'Fluorescent Intensity (a.u.)';
 
-                            if ~isempty(stimTimes)
-                                for k =1:length(stimTimes)
-                                    hold(ax4, "on")
-                                    if i>= stimTimes(k)
-                                        plot(stimTimes(k),1,'Marker', 'diamond', 'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'Parent', ax4)
-                                    end
-                                    hold(ax4, "off")
-                                end
-                            end
+
+                            %% Bulk signal
+                            hBulk = plot(time,bulkSignal, 'Parent', ax7);
+                            hold(ax7, 'on')
+                            hBkg = plot(time',backgroundSignal, 'Parent', ax7);
+                            hAnterior = plot(time, antSignal,'g', 'Parent', ax7);
+                            hPosterior = plot(time, postSignal, 'r', 'Parent', ax7);
+
+                            hold(ax7, 'off')
+                            ax7.XLim = [0 time(end)];
+                            ylabel(ax7, 'Bulk Ca^2^+ Signal');
+                            box(ax7, 'off')
+                            ax7.TickLength = [0.005 0.005];
+                            
+                            %% Area
+                            hArea = plot(time(1:i),smoothdata(area(1:i),'gaussian', 30), 'Parent', velAx);
+                            xlim([0 time(end)]);
+                            ylabel(velAx, 'Worm Area (pixels)');
+                            xlabel(velAx,'Time (min)');
+                            velAx.TickLength = [0.005 0.005];
+                            box off
                         end
-                        % bulk signal
 
-                        plot(time,bulkSignal,time',backgroundSignal, 'Parent', ax7)
-                        ax7.XLim = [0 time(end)];
-                        ylabel(ax7, 'Bulk Ca^2^+ Signal');
-
-
-                        %
+                        %% plot stimuli
                         if ~isempty(stimTimes)
-                            for k =1:length(stimTimes)
-                                if i>= stimTimes(k)
-                                    hold(ax7, "on")
-                                    plot(time(stimTimes(k)),ax7.YLim(2)*0.99,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'Parent', ax7)
-                                    hold(ax7, 'off')
-                                end
-                            end
-                        end
-                        box(ax7, 'off')
-                        ax7.TickLength = [0.005 0.005];
+                            stimX = stimTimes(stimTimes<=i);
+                            axStimY = repmat(1, size(stimX));
+                            areaStimY = repmat(velAx.YLim(2)*0.99, size(stimX));
+                            bulkStimY = repmat(ax7.YLim(2)*0.99, size(stimX));
 
-
-                        % velocity
-                        plot(time(1:i),smoothdata(area(1:i),'gaussian', 30), 'Parent', velAx)
-                        if ~isempty(stimTimes)
-                            for k =1:length(stimTimes)
-                                if i>= stimTimes(k)
-                                    hold(velAx, "on")
-                                    plot(time(stimTimes(k)),velAx.YLim(2)*0.99,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
-                                    hold(velAx, 'off')
-                                end
+                            if i >= stimTimes(1) && i <= stimTimes(1)+framerate
+                                hAxStim = line(stimX,axStimY,'Marker', 'diamond', 'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'LineStyle', 'none','Parent', ax4);
+                                hBulkStim = line(time(stimX),bulkStimY,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0], 'LineStyle', 'none', 'Parent', ax7);
+                                hAreaStim = line(time(stimX),areaStimY,'Marker', 'v', 'MarkerSize', 8, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0],'LineStyle', 'none','Parent', velAx);
                             end
                         end
 
-                        xlim([0 time(end)]);
-                        ylabel(velAx, 'Worm Area (pixels)');
-                        xlabel(velAx,'Time (min)');
-                        velAx.TickLength = [0.005 0.005];
-                        box off
+                        %% update plots
+                        if i ~= startframe
+                            % Binary Mask
+                            hBinary.CData = label2rgb(L,'jet','k','shuffle');
+                            numSegs = size(perpX,2);
+                            set(hNormals(1:numSegs), {'XData'}, squeeze(num2cell(perpX,1))', ...
+                                {'YData'}, squeeze(num2cell(perpY,1))');
 
-                        drawnow
+                            nanPairs = repmat({[NaN NaN]}, numel(hNormals)-numSegs, 1);
+                            set(hNormals(numSegs+1:end), {'XData'}, nanPairs, {'YData'}, nanPairs);
+
+                            if troubleshoot == 0
+                                % Brightfield
+                                hBF.CData = mmergedOverlay;
+
+                                % GCaMP
+                                hGFP.CData = gmergedOverlay;
+                            end
+
+                            % Axial Signal
+                            hKymo.CData = axsig;
+
+                            % Bulk & Background Signal
+                            hBulk.XData = time;
+                            hBulk.YData = bulkSignal;
+
+                            hAnterior.XData = time;
+                            hAnterior.YData = antSignal;
+
+                            hPosterior.XData = time;
+                            hPosterior.YData = postSignal;
+
+                            hBkg.XData = time';
+                            hBkg.YData = backgroundSignal;
+
+                            % Area
+                            hArea.XData = time(1:i);
+                            hArea.YData = smoothdata(area(1:i),'gaussian', 30);
+
+                            if ~isempty(stimTimes) && i>stimTimes(1)
+                                hAxStim.XData = stimX;
+                                hAxStim.YData = axStimY;
+
+                                hBulkStim.XData = time(stimX);
+                                hBulkStim.YData = bulkStimY;
+
+                                hAreaStim.XData = time(stimX);
+                                hAreaStim.YData = areaStimY;
+                            end
+
+
+                            drawnow limitrate
+                        end
 
                         if videostuff == 1
                             frame = getframe(vidfig);
@@ -614,11 +830,12 @@ for nf =startIndex:length(imgDir)
     wormdata.backgroundSignal = backgroundSignal;
     wormdata.orientation = orientation;
     wormdata.area = area;
+    wormdata.wormLength = wormLength;
     wormdata.peakTraces = pktraces;
     wormdata.peakLoc = loc;
     wormdata.include = 1;
     wormdata.stimTimes = stimTimes;
-    wormdata.velocity = h5Data.velocity;
+    wormdata.velocity = log_events.velocity;
 
     save(datasavename, 'wormdata')
 
@@ -769,8 +986,12 @@ for nf =startIndex:length(imgDir)
     %     ylabel(gca, 'Time (min)')
 
 
+    if isremote == 1
+        reg = regexp(beh_file_path, '\', 'split');
+    else
+        reg = regexp(path, '\', 'split');
+    end
 
-    reg = regexp(path, '\', 'split');
     reg = [reg{end-1} ' | ' reg{end}];
     title(t, strrep(strrep(reg,'_', ' ' ), 'flircamera behavior', ''));
 
@@ -822,35 +1043,68 @@ for nf =startIndex:length(imgDir)
             clear('img')
 
             % copy wormdata
-            [statuswormdata,~,~]=copyfile(datasavename, serverLocation);
+            [statuswormdata,~,~]=copyfile(datasavename, serverfolder);
 
             % copy summary plots
-            [statussummaryplot,~,~]=copyfile(summaryPlotName, serverLocation);
+            [statussummaryplot,~,~]=copyfile(summaryPlotName, serverfolder);
 
             % copy summary plots
-            [statusvideoplot,~,~]=copyfile(videopath, serverLocation);
+            [statusvideoplot,~,~]=copyfile(videopath, serverfolder);
 
         end
     end
 
-    clearvars -except inputs nf fld serverfolder startIndex startframe uploadresults...
-        isremote plotstuff videostuff framerate fps troubleshoot showNormals ...
-        showAxialSignal saveAxialMatrix crop useautothreshold useadaptivethreshold ...
-        removevignette minwormarea minwormarea maxwormarea numSegments axSigLen axSigHeight imgDir ...
-        SEsize szFilter
+    % clearvars -except inputs nf fld serverfolder startIndex startframe uploadresults...
+    %     isremote plotstuff videostuff framerate fps troubleshoot showNormals ...
+    %     showAxialSignal saveAxialMatrix crop useautothreshold useadaptivethreshold ...
+    %     removevignette minwormarea minwormarea maxwormarea numSegments axSigLen axSigHeight imgDir ...
+    %     SEsize szFilter
+
+    %%
+    % if isremote
+    %     logFiles = dir('C:\tmp\*log.txt');
+    % 
+    %     for logIdx = 1:length(logFiles)
+    %         disp(['Deleting log file ' num2str(logIdx) ' of ' num2str(length(logFiles))])
+    %         logPath = fullfile(logFiles(logIdx).folder, logFiles(logIdx).name);
+    %         delete(logPath)
+    %     end
+    % 
+    %     beh_dir = dir(beh_local_fp);
+    %     beh_dir = beh_dir(3:end);
+    %     for i = 1:length(beh_dir)
+    %         file2delete = fullfile(beh_dir(i).folder, beh_dir(i).name);
+    %         delete(file2delete);
+    %     end
+    %     rmdir(beh_local_fp);
+    % 
+    % 
+    %     gcamp_dir = dir(gcamp_local_fp);
+    %     gcamp_dir = gcamp_dir(3:end);
+    %     for i = 1:length(gcamp_dir)
+    %         file2delete = fullfile(gcamp_dir(i).folder, gcamp_dir(i).name);
+    %         delete(file2delete);
+    %     end
+    %     rmdir(gcamp_local_fp);
+    % 
+    % end
+
+    if exist('wormdata', 'var')
+        clear('wormdata');
+    end
+
+    clear('h5Data')
+    clear('gfp')
+    clear('bf')
 
 
-    % if exist('wormdata', 'var')
-    %     clear('wormdata');
-    % end
-    %
-    % clear('h5Data')
-    % clear('gfp')
-    % clear('bf')
-    %
-    %
-    % if exist('img', 'var')
-    %     clear('img')
-    % end
+    if exist('img', 'var')
+        clear('img')
+    end
+
+    if isremote == 1
+        rmdir('C:\tmp\beh')
+        rmdir('C:\tmp\gcamp')
+    end
 
 end

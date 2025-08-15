@@ -1,4 +1,4 @@
-function [log_events] = processLogFile(foldername,time)
+function [log_events] = processLogFile(foldername,time, isremote)
 %UNTITLED4 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -16,8 +16,13 @@ starttime = time(1);
 for i = 1:length(logd)
     log_path = fullfile(logd(i).folder, logd(i).name);
 
-    fid = fopen(log_path,"r");
-
+    if isremote == 1
+        local_path = ['C:\tmp\' logd(i).name];
+        copyfile(log_path, local_path)
+        fid = fopen(local_path,"r");
+    elseif isremote == 0
+        fid = fopen(log_path,"r");
+    end
 
     while~feof(fid)
         line = fgetl(fid);
@@ -66,6 +71,10 @@ for i = 1:length(logd)
 
     end
     fclose(fid);
+
+    if isremote == 1
+        delete(local_path)
+    end
 
 end
 

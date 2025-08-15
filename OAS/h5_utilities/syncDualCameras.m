@@ -1,4 +1,4 @@
-function [behavior_indices, gcamp_indices] = syncDualCameras(beh_folder)
+function [behavior_indices, gcamp_indices] = syncDualCameras(beh_folder, isremote)
 %syncDualCameras takes concatenated timestamps from indexCameraTimestamps()
 %and returns a timestamps, file and slice indexes for closest matching
 %frames
@@ -18,9 +18,9 @@ end
 gcamp_folder = strrep(beh_folder, 'behavior', 'gcamp');
 
 disp('Getting Behavior Timestamps...')
-[beh_indices] = indexCameraTimestamps(beh_folder);
+[beh_indices] = indexCameraTimestamps(beh_folder, isremote);
 disp('Getting GCaMP Timestamps...')
-[gc_indices] = indexCameraTimestamps(gcamp_folder);
+[gc_indices] = indexCameraTimestamps(gcamp_folder, isremote);
 
 
 %% Plot Camera Jitter

@@ -1,4 +1,4 @@
-function [indices] = indexCameraTimestamps(folder)
+function [indices] = indexCameraTimestamps(folder, isremote)
 %indexCameraTimestamps concatenates timestamps in chunked video recordings
 %and returns the times, the cooresponding h5 file and the relative index
 %within the file
@@ -19,9 +19,16 @@ img_size = cell(3,1);
 for idx = 1:length(h5_files)
     disp(['Getting timestamps from file ' num2str(idx) ' of ' num2str(length(h5_files))])
     this_file = fullfile(h5_files(idx).folder, h5_files(idx).name);
-      
 
-    temp_times = h5read(this_file, '/times');
+    if isremote == 1
+        local_path = ['C:\tmp\' h5_files(idx).name];
+        copyfile(this_file, local_path)
+        temp_times = h5read(local_path, '/times');
+        delete(local_path)
+    elseif isremote == 0
+        temp_times = h5read(this_file, '/times');
+    end
+
     temp_relative_index = 1:size(temp_times,1);
     timestamps = vertcat(timestamps, temp_times);
     h5_file_index = vertcat(h5_file_index, repmat(idx, size(temp_times,1), 1));
@@ -30,7 +37,6 @@ for idx = 1:length(h5_files)
 
     img_info = h5info(this_file, '/data');
     img_size(idx) = {img_info.ChunkSize};
-
 end
 
 

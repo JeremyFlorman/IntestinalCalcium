@@ -148,6 +148,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         trim2stim                      matlab.ui.control.CheckBox
         saveWormDataToWorkspace        matlab.ui.control.CheckBox
         WavePropagationSettingsPanel   matlab.ui.container.Panel
+        NumSegmentsEditField           matlab.ui.control.NumericEditField
+        NumSegmentsEditFieldLabel      matlab.ui.control.Label
         NumberofBinsEditField          matlab.ui.control.NumericEditField
         NumberofBinsEditFieldLabel     matlab.ui.control.Label
         InflectionPointDetection       matlab.ui.container.ButtonGroup
@@ -322,6 +324,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             
             plotSettings.validatePropagationRate = app.validatePropagationRate.Value;
             plotSettings.numBins = app.NumberofBinsEditField.Value;
+            plotSettings.numSegments = app.NumSegmentsEditField.Value;
             if app.DerivativeButton.Value == 1
                 plotSettings.propMethod = 1;
             elseif app.HalfMaximumButton.Value == 1
@@ -429,7 +432,9 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
 
             %% Spike Kinetics
+            app.validatePropagationRate.Value = plotSettings.validatePropagationRate;
             app.NumberofBinsEditField.Value = plotSettings.numBins;
+            app.NumSegmentsEditField.Value = plotSettings.numSegments;
             if plotSettings.propMethod == 1
                 app.DerivativeButton.Value = 1;
             elseif plotSettings.propMethod == 2 
@@ -508,8 +513,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             elseif parsedInputs.isOAS==1
                 if parsedInputs.loadTiff == 1
                     OAS_Analysis_Func(parsedInputs)
-                elseif parsedInputs.loadTiff == 0 
-                    OAS_Analysis_Func_Slices(parsedInputs)
                 end
             end
 
@@ -851,7 +854,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.IntestinalCalciumAppUIFigure.Position = [100 100 473 475];
             app.IntestinalCalciumAppUIFigure.Name = 'Intestinal Calcium App';
             app.IntestinalCalciumAppUIFigure.Icon = fullfile(pathToMLAPP, 'worm_Icon.png');
-            % app.IntestinalCalciumAppUIFigure.WindowStyle = 'alwaysontop';
+            app.IntestinalCalciumAppUIFigure.WindowStyle = 'alwaysontop';
 
             % Create FileMenu
             app.FileMenu = uimenu(app.IntestinalCalciumAppUIFigure);
@@ -998,7 +1001,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.CropPixelsEditField = uieditfield(app.TrackingTab, 'numeric');
             app.CropPixelsEditField.Tooltip = {'Number of edge pixels to crop. This helps remove black edges from split channel recordings. '};
             app.CropPixelsEditField.Position = [158 193 25 26];
-            app.CropPixelsEditField.Value = 3;
+            app.CropPixelsEditField.Value = 5;
 
             % Create CropPixelsEditFieldLabel
             app.CropPixelsEditFieldLabel = uilabel(app.TrackingTab);
@@ -1034,7 +1037,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.FlatfieldCorrectionEditField = uieditfield(app.TrackingTab, 'numeric');
             app.FlatfieldCorrectionEditField.Tooltip = {'Size of rolling ball used for flatfield correction (pixels)'};
             app.FlatfieldCorrectionEditField.Position = [158 124 25 26];
-            app.FlatfieldCorrectionEditField.Value = 30;
 
             % Create FlatfieldCorrectionEditFieldLabel
             app.FlatfieldCorrectionEditFieldLabel = uilabel(app.TrackingTab);
@@ -1703,17 +1705,17 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.SpikeKineticsPanel = uipanel(app.miscsettingsTab);
             app.SpikeKineticsPanel.Title = 'Spike Kinetics ';
             app.SpikeKineticsPanel.FontWeight = 'bold';
-            app.SpikeKineticsPanel.Position = [50 334 143 87];
+            app.SpikeKineticsPanel.Position = [50 357 143 64];
 
             % Create showFitParams
             app.showFitParams = uicheckbox(app.SpikeKineticsPanel);
             app.showFitParams.Text = 'Show rise/fall time fit?';
-            app.showFitParams.Position = [3 44 139 22];
+            app.showFitParams.Position = [4 21 139 22];
 
             % Create validateRiseFall
             app.validateRiseFall = uicheckbox(app.SpikeKineticsPanel);
             app.validateRiseFall.Text = 'Validate rise/fall?';
-            app.validateRiseFall.Position = [2 25 138 24];
+            app.validateRiseFall.Position = [4 2 138 24];
 
             % Create ColorsPanel
             app.ColorsPanel = uipanel(app.miscsettingsTab);
@@ -1765,28 +1767,28 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.WavePropagationSettingsPanel = uipanel(app.miscsettingsTab);
             app.WavePropagationSettingsPanel.Title = 'Wave Propagation Settings';
             app.WavePropagationSettingsPanel.FontWeight = 'bold';
-            app.WavePropagationSettingsPanel.Position = [34 71 164 203];
+            app.WavePropagationSettingsPanel.Position = [34 36 164 238];
 
             % Create validatePropagationRate
             app.validatePropagationRate = uicheckbox(app.WavePropagationSettingsPanel);
             app.validatePropagationRate.Text = 'Validate propagation?';
-            app.validatePropagationRate.Position = [12 152 138 24];
+            app.validatePropagationRate.Position = [12 187 138 24];
 
             % Create InflectionPointDetection
             app.InflectionPointDetection = uibuttongroup(app.WavePropagationSettingsPanel);
             app.InflectionPointDetection.Title = 'Inflection Point Detection';
-            app.InflectionPointDetection.Position = [12 43 147 101];
+            app.InflectionPointDetection.Position = [12 78 147 101];
 
             % Create DerivativeButton
             app.DerivativeButton = uiradiobutton(app.InflectionPointDetection);
             app.DerivativeButton.Text = 'Derivative';
             app.DerivativeButton.Position = [11 60 75 22];
-            app.DerivativeButton.Value = true;
 
             % Create HalfMaximumButton
             app.HalfMaximumButton = uiradiobutton(app.InflectionPointDetection);
             app.HalfMaximumButton.Text = 'Half Maximum';
             app.HalfMaximumButton.Position = [11 38 98 22];
+            app.HalfMaximumButton.Value = true;
 
             % Create PeakLocationButton
             app.PeakLocationButton = uiradiobutton(app.InflectionPointDetection);
@@ -1797,13 +1799,25 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.NumberofBinsEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
             app.NumberofBinsEditFieldLabel.HorizontalAlignment = 'right';
             app.NumberofBinsEditFieldLabel.Tooltip = {'How many segments should the intestine be divided into for measuring inflection point'};
-            app.NumberofBinsEditFieldLabel.Position = [18 13 88 22];
+            app.NumberofBinsEditFieldLabel.Position = [18 48 88 22];
             app.NumberofBinsEditFieldLabel.Text = 'Number of Bins';
 
             % Create NumberofBinsEditField
             app.NumberofBinsEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
-            app.NumberofBinsEditField.Position = [120 14 33 20];
-            app.NumberofBinsEditField.Value = 10;
+            app.NumberofBinsEditField.Position = [120 49 33 20];
+            app.NumberofBinsEditField.Value = 9;
+
+            % Create NumSegmentsEditFieldLabel
+            app.NumSegmentsEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
+            app.NumSegmentsEditFieldLabel.HorizontalAlignment = 'right';
+            app.NumSegmentsEditFieldLabel.Tooltip = {'How many segments should the intestine be divided into for measuring inflection point'};
+            app.NumSegmentsEditFieldLabel.Position = [12 16 95 23];
+            app.NumSegmentsEditFieldLabel.Text = 'Num Segments';
+
+            % Create NumSegmentsEditField
+            app.NumSegmentsEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
+            app.NumSegmentsEditField.Position = [120 17 33 20];
+            app.NumSegmentsEditField.Value = 2;
 
             % Create saveWormDataToWorkspace
             app.saveWormDataToWorkspace = uicheckbox(app.miscsettingsTab);

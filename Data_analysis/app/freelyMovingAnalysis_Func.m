@@ -114,15 +114,18 @@ for nf =startIndex:length(tdir)
     wormLength = NaN(length(info)/2,1);
 
     hBinary = [];
-    hNormals = [];
     hBF = [];
     hAxial = [];
     hBkg = [];
     hBulk = [];
+    hNormals = gobjects(numSegments,1); 
+
+    for normIdx = 1:numSegments
+        hNormals(normIdx) = line(nan(2,1), nan(2,1),'Color', [0.6 0.6 0.6],'Parent', ax1);
+    end
 
 
     time = linspace(0,round((length(info)/2)/fps/60,1),ceil(length(info)/2)); %minutes per frame
-    wormIdx = [];
 
     if saveAxialMatrix == 1
         axialMatrix = NaN(axSigHeight+1, axSigLen,length(info)/2);
@@ -432,7 +435,7 @@ for nf =startIndex:length(tdir)
                 blksig = GFP(mask);
                 bulkSignal(i,1) = mean(blksig,"all",'omitnan');
 
-                %% Background Signal - lowest 5% of values outside the ROI
+                %% Background Signal - lowest 1% of values outside the ROI
                 bkgsig = GFP(~mask);
                 thresh = prctile(bkgsig, 1);
                 bkgMask = false(size(mask));
@@ -503,12 +506,22 @@ for nf =startIndex:length(tdir)
 
                         if i == startframe  % plot for the first time
                             %% Binary Mask
+                            hold(ax1, 'on')
                             hBinary = imshow(label2rgb(L,'jet','k','shuffle'),'Parent', ax1);
-
+                            hold(ax1, 'off')
+                            %% Normal Vectors
                             if showNormals == 1
-                                hNormals = line(perpX,perpY,'Color', [0.9 0.9 0.9],'Parent', ax1);
+                                nSegs = size(perpX, 2);
+
+                                set(hNormals(1:nSegs), {'XData'}, squeeze(num2cell(perpX,1))', ...
+                                    {'YData'}, squeeze(num2cell(perpY,1))');
+
+                                nanPairs = repmat({[NaN NaN]}, numSegments-nSegs, 1);
+                                set(hNormals(nSegs+1:end), {'XData'}, nanPairs, {'YData'}, nanPairs);
                                 title(ax1,'Binary Mask + Normal Vectors');
+                                uistack(hNormals, 'top')
                             end
+
 
                             %% Bright field image
                             hBF = imshow(mmergedOverlay,'Parent', ax2);
@@ -550,10 +563,20 @@ for nf =startIndex:length(tdir)
                         if i ~= startframe
                             % Binary Mask
                             hBinary.CData = label2rgb(L,'jet','k','shuffle');
-                            for ii = 1:length(perpX)
-                                hNormals(ii).XData = perpX(:, ii);
-                                hNormals(ii).YData = perpY(:, ii);
-                            end
+
+                            numSegs = size(perpX,2);
+                            set(hNormals(1:numSegs), {'XData'}, squeeze(num2cell(perpX,1))', ...
+                                {'YData'}, squeeze(num2cell(perpY,1))');
+
+                            nanPairs = repmat({[NaN NaN]}, numel(hNormals)-numSegs, 1);
+                            set(hNormals(numSegs+1:end), {'XData'}, nanPairs, {'YData'}, nanPairs);
+                            % try
+                            %     for ii = 1:length(perpX)
+                            %         hNormals(ii).XData = perpX(:, ii);
+                            %         hNormals(ii).YData = perpY(:, ii);
+                            %     end
+                            % catch
+                            % end
 
                             if troubleshoot == 0
                                 % Brightfield

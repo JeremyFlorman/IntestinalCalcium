@@ -56,48 +56,48 @@ for nf =startIndex:length(imgDir)
 
 
     % copy remote files
-    if isremote == 1
-        logFiles = dir([fld '\*log.txt']);
-
-        for logIdx = 1:length(logFiles)
-            disp(['Copying log file ' num2str(logIdx) ' of ' num2str(length(logFiles))])
-
-            logPath = fullfile(logFiles(logIdx).folder, logFiles(logIdx).name);
-            localLogPath = ['C:\tmp\' logFiles(logIdx).name];
-            copyfile(logPath, localLogPath);
-        end
-
-
-        beh_remote_fp = path;
-        gcamp_remote_fp = strrep(path, 'behavior', 'gcamp');
-
-        beh_local_fp = strrep(path, fold, 'C:\tmp');
-        gcamp_local_fp = strrep(beh_local_fp, 'behavior', 'gcamp');
-
-        if ~isfolder(beh_local_fp)
-            disp('Copying Behavior Files...')
-            copyfile(beh_remote_fp, beh_local_fp);
-        end
-
-        if ~isfolder(gcamp_local_fp)
-            disp('Copying GCaMP Files...')
-            copyfile(gcamp_remote_fp, gcamp_local_fp);
-        end
-
-        path = beh_local_fp;
-    end
+    % if isremote == 1
+    %     logFiles = dir([fld '\*log.txt']);
+    % 
+    %     for logIdx = 1:length(logFiles)
+    %         disp(['Copying log file ' num2str(logIdx) ' of ' num2str(length(logFiles))])
+    % 
+    %         logPath = fullfile(logFiles(logIdx).folder, logFiles(logIdx).name);
+    %         localLogPath = ['C:\tmp\' logFiles(logIdx).name];
+    %         copyfile(logPath, localLogPath);
+    %     end
+    % 
+    % 
+    %     beh_remote_fp = path;
+    %     gcamp_remote_fp = strrep(path, 'behavior', 'gcamp');
+    % 
+    %     beh_local_fp = strrep(path, fold, 'C:\tmp');
+    %     gcamp_local_fp = strrep(beh_local_fp, 'behavior', 'gcamp');
+    % 
+    %     if ~isfolder(beh_local_fp)
+    %         disp('Copying Behavior Files...')
+    %         copyfile(beh_remote_fp, beh_local_fp);
+    %     end
+    % 
+    %     if ~isfolder(gcamp_local_fp)
+    %         disp('Copying GCaMP Files...')
+    %         copyfile(gcamp_remote_fp, gcamp_local_fp);
+    %     end
+    % 
+    %     path = beh_local_fp;
+    % end
 
 
 
 
     %% get info from h5 files
     disp('Synching Camera feeds...')
-    [behavior_indices, gcamp_indices] = syncDualCameras(path);
+    [behavior_indices, gcamp_indices] = syncDualCameras(path,isremote);
 
     %% get info from log files
     disp('Processing Log Files...')
     timestamps = behavior_indices.timestamps;
-    log_events = processLogFile(path,timestamps);
+    log_events = processLogFile(path,timestamps, isremote);
     stimTimes = log_events.stimTimes;
     velocity = log_events.velocity;
 
@@ -206,9 +206,13 @@ for nf =startIndex:length(imgDir)
     %% Tracking Block
     tic
     for i = startframe:nFrames
-
         % use synced video indices to check if we need to load the next h5
-        % file
+        % file. Every loop the file index is checked and updates the path
+        % of the corresponding h5 file. the relative file index tells which
+        % slice to read from that file. When the file index changes the 
+        % appropriate h5 file is loaded, otherwise successive slices are
+        % read.
+
         current_beh_file_index = behavior_indices.h5_file_index(i);
         beh_file_path = behavior_indices.h5_path{current_beh_file_index};
         beh_relative_index = behavior_indices.relative_index(i);
@@ -217,22 +221,68 @@ for nf =startIndex:length(imgDir)
         gcamp_file_path = gcamp_indices.h5_path{current_gcamp_file_index};
         gcamp_relative_index = gcamp_indices.relative_index(i);
 
-
+        %% load the first h5 file
         if i == startframe
-            behavior_h5 = h5read(beh_file_path, '/data');
-            gcamp_h5 = h5read(gcamp_file_path, '/data');
-            previous_beh_file_index = current_beh_file_index;
-            previous_gcamp_file_index = current_gcamp_file_index;
+            if isremote == 1
+                mkdir('C:\tmp\beh');
+                mkdir('C:\tmp\gcamp');
+                [~, beh_name] = fileparts(beh_file_path);
+                [~, gcamp_name] = fileparts(gcamp_file_path);
+
+                beh_local_path = ['C:\tmp\beh' beh_name];
+                gcamp_local_path = ['C:\tmp\gcamp' gcamp_name];
+                copyfile(beh_file_path, beh_local_path);
+                copyfile(gcamp_file_path, gcamp_local_path);
+
+                behavior_h5 = h5read(beh_local_path, '/data');
+                gcamp_h5 = h5read(gcamp_local_path, '/data');
+                previous_beh_file_index = current_beh_file_index;
+                previous_gcamp_file_index = current_gcamp_file_index;
+
+                delete(beh_local_path);
+                delete(gcamp_local_path);
+
+            elseif isremote == 0
+
+                behavior_h5 = h5read(beh_file_path, '/data');
+                gcamp_h5 = h5read(gcamp_file_path, '/data');
+                previous_beh_file_index = current_beh_file_index;
+                previous_gcamp_file_index = current_gcamp_file_index;
+            end
+
+        %% Load subsequent h5 files when necessary
         elseif i>1
             if current_beh_file_index ~= previous_beh_file_index
+                if isremote == 1
+                    [~, beh_name] = fileparts(beh_file_path);
+                    beh_local_path = ['C:\tmp\beh' beh_name];
+                    copyfile(beh_file_path, beh_local_path);
+                    disp(['loading local copy of: ' beh_file_path])
+                    behavior_h5 = h5read(beh_local_path, '/data');
+                    delete(beh_local_path)
+
+                elseif isremote == 0
                 disp(['loading ' beh_file_path])
                 behavior_h5 = h5read(beh_file_path, '/data');
+                end
             end
 
             if current_gcamp_file_index ~= previous_gcamp_file_index
-                disp(['loading ' gcamp_file_path])
-                gcamp_h5 = h5read(gcamp_file_path, '/data');
+                if isremote == 1
+                    [~, gcamp_name] = fileparts(gcamp_file_path);
+                    gcamp_local_path = ['C:\tmp\beh' gcamp_name];
+                    copyfile(gcamp_file_path, gcamp_local_path);
+                    disp(['loading local copy of: ' gcamp_file_path])
+                    gcamp_h5 = h5read(gcamp_local_path, '/data');
+                    delete(gcamp_local_path)
+
+                elseif isremote == 0
+                    disp(['loading ' gcamp_file_path])
+                    gcamp_h5 = h5read(gcamp_file_path, '/data');
+                end
             end
+
+
             previous_beh_file_index = current_beh_file_index;
             previous_gcamp_file_index = current_gcamp_file_index;
         end
@@ -1018,33 +1068,33 @@ for nf =startIndex:length(imgDir)
     %     SEsize szFilter
 
     %%
-    if isremote
-        logFiles = dir('C:\tmp\*log.txt');
-
-        for logIdx = 1:length(logFiles)
-            disp(['Deleting log file ' num2str(logIdx) ' of ' num2str(length(logFiles))])
-            logPath = fullfile(logFiles(logIdx).folder, logFiles(logIdx).name);
-            delete(logPath)
-        end
-
-        beh_dir = dir(beh_local_fp);
-        beh_dir = beh_dir(3:end);
-        for i = 1:length(beh_dir)
-            file2delete = fullfile(beh_dir(i).folder, beh_dir(i).name);
-            delete(file2delete);
-        end
-        rmdir(beh_local_fp);
-
-
-        gcamp_dir = dir(gcamp_local_fp);
-        gcamp_dir = gcamp_dir(3:end);
-        for i = 1:length(gcamp_dir)
-            file2delete = fullfile(gcamp_dir(i).folder, gcamp_dir(i).name);
-            delete(file2delete);
-        end
-        rmdir(gcamp_local_fp);
-
-    end
+    % if isremote
+    %     logFiles = dir('C:\tmp\*log.txt');
+    % 
+    %     for logIdx = 1:length(logFiles)
+    %         disp(['Deleting log file ' num2str(logIdx) ' of ' num2str(length(logFiles))])
+    %         logPath = fullfile(logFiles(logIdx).folder, logFiles(logIdx).name);
+    %         delete(logPath)
+    %     end
+    % 
+    %     beh_dir = dir(beh_local_fp);
+    %     beh_dir = beh_dir(3:end);
+    %     for i = 1:length(beh_dir)
+    %         file2delete = fullfile(beh_dir(i).folder, beh_dir(i).name);
+    %         delete(file2delete);
+    %     end
+    %     rmdir(beh_local_fp);
+    % 
+    % 
+    %     gcamp_dir = dir(gcamp_local_fp);
+    %     gcamp_dir = gcamp_dir(3:end);
+    %     for i = 1:length(gcamp_dir)
+    %         file2delete = fullfile(gcamp_dir(i).folder, gcamp_dir(i).name);
+    %         delete(file2delete);
+    %     end
+    %     rmdir(gcamp_local_fp);
+    % 
+    % end
 
     if exist('wormdata', 'var')
         clear('wormdata');
@@ -1057,6 +1107,11 @@ for nf =startIndex:length(imgDir)
 
     if exist('img', 'var')
         clear('img')
+    end
+
+    if isremote == 1
+        rmdir('C:\tmp\beh')
+        rmdir('C:\tmp\gcamp')
     end
 
 end
