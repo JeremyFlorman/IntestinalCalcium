@@ -14,7 +14,7 @@ else
 end
 
 
-averageProfiles = 0;
+averageProfiles = 1;
 
 traceylimits = settings.traceylimit;
 secondsPrePost = settings.spikeProfileWindow;

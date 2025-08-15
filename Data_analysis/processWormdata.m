@@ -146,11 +146,12 @@ wtdata = processSpikes(wtdata,settings);
 
 if saveWormdata2workspace == 1
     if isfield(mtdata, 'genotype')
-        dataName = strrep(mtdata(1).genotype,'-','Minus');
+        dataName = strrep(mtdata(1).genotype,'-','');
         dataName = strrep(dataName, '+', 'Plus');
         dataName = strrep(dataName, ' ', '');
         dataName = strrep(dataName, '(', '');
         dataName = strrep(dataName, ')', '');
+        dataName = strrep(dataName, ';', '');
 
         assignin("base", [dataName 'Data'], mtdata)
         % assignin("base", [dataName '_ControlData'], wtdata)
@@ -175,8 +176,10 @@ normAx = 0; % nomralize axial signal?
 
 for i = 1:length(inputData)
     % Subtract Background and fill missing datapoints in bulk signal
+    bkgSignal = smoothdata(inputData(i).backgroundSignal, 'movmedian',900);
+
     if ~strcmp(settings.normalize, 'Delta F/F0')
-        inputData(i).bulkSignal = fillmissing(inputData(i).bulkSignal-inputData(i).backgroundSignal, 'movmedian',100);
+        inputData(i).bulkSignal = fillmissing(inputData(i).bulkSignal-bkgSignal, 'movmedian',100);
     end
 
     % fill outliers more than 3 standard deviations outside moving mean
@@ -184,7 +187,7 @@ for i = 1:length(inputData)
     % inputData(i).bulkSignal = filloutliers(inputData(i).bulkSignal,"spline","movmean",25,ThresholdFactor=3);
 
     % Subtract Background  in axial signal
-    backgroundMatrix = repmat(inputData(i).backgroundSignal,1,size(inputData(i).autoAxialSignal,2));
+    backgroundMatrix = repmat(bkgSignal,1,size(inputData(i).autoAxialSignal,2));
     axsig = inputData(i).autoAxialSignal-backgroundMatrix;
 
     if settings.autoFixAxialSignal && ~isfield(inputData(i), 'noAutoFix')
@@ -651,6 +654,7 @@ for i = 1:length(inputData)
     inputData(i).peakAmplitude = tempamp;
     inputData(i).peakLoc = templocs;
     % inputData(i).propagationRate = propagationRate;
+    inputData(i).axialPeak = avgKymograph;
     inputData(i).avgKymograph = mean(avgKymograph,3,'omitmissing');
 
     if ~isempty(templocs)
@@ -727,7 +731,7 @@ if validateRiseFall == 1 && keepValidating == 1
 end
 
 end
-%% ToDO add to GUI!!!
+
 function [processedData] = trim2stim(inputData,settings)
 
 for i = 1:length(inputData)
