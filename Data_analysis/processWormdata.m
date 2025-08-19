@@ -218,6 +218,7 @@ sortType = settings.sortType;
 sortDir = settings.sortDir;
 secondsPrePost = settings.spikeProfileWindow;
 framerate = settings.framerate;
+analyzePropagationRate = settings.analyzePropagationRate;
 validatePropagationRate = settings.validatePropagationRate;
 validateRiseFall = settings.validateRiseFall;
 
@@ -262,7 +263,7 @@ for i = 1:length(inputData)
     tempint = [];
     bulkSignal = inputData(i).bulkSignal;
     axialSignal = inputData(i).autoAxialSignal;
-    % wormLength = inputData(i).wormLength;
+    wormLength = inputData(i).wormLength;
     % chunksize = floor(0.2*size(axialSignal,2));
 
     [tempamp, templocs] = findpeaks(bulkSignal, 'MinPeakProminence', peakthreshold, 'MinPeakDistance',peakdistance,'MinPeakWidth',peakwidth);
@@ -277,172 +278,34 @@ for i = 1:length(inputData)
         splitpoints = nan(length(templocs)+1,1);
         splitpoints(end) = length(bulkSignal);
         AUC = nan(length(templocs),1);
-        % propagationRate = nan(length(templocs),1);
-        avgKymograph = nan(size(axialSignal,2), floor(timePreSpike/3)*2+1, length(templocs));
+        propagationRate = nan(length(templocs),settings.numSegments);
+        rSquared = nan(length(templocs),settings.numSegments);
+        validFlags = nan(length(templocs),settings.numSegments);
+        axialPeak = nan(size(axialSignal,2), floor(timePreSpike/3)*2+1, length(templocs));
+
+
 
 
 
 
 
         for q = 1:length(templocs)
-
             axPre = templocs(q)-floor(timePreSpike/3);
             axPost = templocs(q)+floor(timePreSpike/3);
+            
+            %% Wave Propagation Rate
             if axPre>0 && axPost<= length(axialSignal)
-                axialPeak = smoothdata(axialSignal(axPre:axPost,:)',2, 'movmean', 60,'omitnan');
-                avgKymograph(:,:,q) = axialPeak;
+                axialPeak(:,:,q) = axialSignal(axPre:axPost,:)';
+                
+                if analyzePropagationRate == 1
+                    [propRate, r2, flags] = getWavePropagationRate(axialPeak(:,:,q), mean(wormLength(axPre:axPost),'omitnan'), settings);
+                    propagationRate(q, 1:length(propRate)) = propRate;
+                    rSquared(q, 1:length(r2)) = r2;
+                    validFlags(q, 1:length(flags)) = flags;
+                end
             end
 
-
-            % %% wave propagation rate
-            % axPre = templocs(q)-floor(timePreSpike/3);
-            % axPost = templocs(q)+floor(timePreSpike/3);
-            % if axPre>0 && axPost<= length(axialSignal)
-            %     axialPeak = smoothdata(axialSignal(axPre:axPost,:)',2, 'movmean', 60,'omitnan');
-            %     avgKymograph(:,:,q) = axialPeak;
-            %     avgWormLengthPx = mean(wormLength(axPre:axPost));
-            %     avgWormLengthUm = avgWormLengthPx*umPerPixel;
-            % 
-            %     gutStart = 25; % where to begin binning the intestine (in pixels)
-            %     numBins = settings.numBins; % how many bins to split the intestine into
-            %     binEdges = round(linspace(gutStart, size(axialPeak,1),numBins+1)); % position of bin edges
-            %     binCenters = (binEdges(1:end-1) + binEdges(2:end)) / 2; % position of bin centers
-            %     intestineLengthPx = avgWormLengthPx*(1-(gutStart/size(axialPeak,1))); % Determine # of pixels in the intestine based on how many we deemed part of the head/pharynx
-            %     intestineLengthUm = intestineLengthPx*umPerPixel; % convert pixels to micron scaling
-            %     propMethod =settings.propMethod; % method to define inflection point for propagation rate (1=derivative, 2=half maximum, 3=peak location)
-            %     binSizeUm = intestineLengthUm/numBins; % size of bins in microns
-            % 
-            % 
-            %     % preallocate variables
-            %     binSignal = nan(size(axialPeak,2),numBins);
-            %     pkLoc = nan(numBins,1);
-            %     pkAmp = nan(numBins, 1);
-            %     inflectPt = nan(numBins,1);
-            %     fwhm = nan(numBins,1);
-            % 
-            %     % x values for plotting binned signal with respect to time
-            %     binTime = repmat(linspace(0,size(axialPeak,2)/framerate,size(axialPeak,2))', 1, numBins);
-            % 
-            %     % get average signal in each bin to calculate peak locations and inflection points
-            %     for binIdx = 1:numBins
-            %         binSignal(:,binIdx) = mean(axialPeak(binEdges(binIdx):binEdges(binIdx+1),:), 1, 'omitmissing');
-            %         [pk,loc,w] = findpeaks(binSignal(:,binIdx),NPeaks=1, SortStr="descend");
-            % 
-            %         %% peak location inflection point
-            %         pkLoc(binIdx) = loc; % peak position
-            %         pkAmp(binIdx) = pk; % peak amplitude
-            % 
-            %         %% derivative inflection point
-            %         % [~, inflectPt(binIdx)] = max(diff(binSignal(:,binIdx))); % find position of the max rate of change in signal
-            %         risePhase = 1:loc;
-            %         dy = smoothdata(gradient(binSignal(risePhase,binIdx)), 'movmean', 5);
-            %         [~, inflectPt(binIdx)] = max(dy);
-            %         %% half maximum peak amplitude inflection point 
-            %         fwhm(binIdx) = round(loc-(w/2)); % inflection points defined as points at half-maximum based off half-width from findpeaks
-            %     end
-            % 
-            %     waveInit = []; % variable to hold selected inflection points based on what propagation method chosen
-            % 
-            %     if propMethod == 1 % derivative
-            %         waveInit = inflectPt;
-            %     elseif propMethod == 2 % full width @ half maximum
-            %         waveInit = fwhm;
-            %     elseif propMethod == 3 % peak location
-            %         waveInit = pkLoc;
-            %     end
-            % 
-            % 
-            %     %% Remove Outliers
-            %     [~, ~, outlier_loc] = rmoutliers(waveInit);
-            %     % dInit = gradient(waveInit);
-            %     % outlier_loc(abs(dInit)>4) = 1;
-            % 
-            %     % outlier_loc = zeros(size(waveInit));
-            % 
-            %     cleanedInit = waveInit(~outlier_loc);
-            %     cleanedCenters = binCenters(~outlier_loc);
-            % 
-            %     %% Calculate propagation rate
-            %     if ~isempty(waveInit)
-            %         %%
-            %         coeffs = polyfit(cleanedInit, cleanedCenters, 2); % first value is slope of line fit in pixels per frame
-            %         propagationRate(q) = coeffs(1)*umPerPixel*framerate;
-            % 
-            %         % propagationTime = -1*(diff(waveInit)/framerate); % time in seconds for signal to propagate from one bin to the next, anterior propagation is negative
-            %         % propagationRate(q) =intestineLengthUm/sum(abs(propagationTime),"omitmissing");
-            %     end
-            % 
-            % 
-            %     %% Plotting propagation rates
-            %     if validatePropagationRate == 1
-            %         if propagationRate(q)>5 || propagationRate(q) <1
-            %             Col = viridis(numBins);
-            %             colororder(Col);
-            % 
-            %             %% Trace plotting
-            %             plot(binTime, binSignal,'Parent',propAx)
-            %             hold(propAx, "on")
-            % 
-            %             for pltIdx =1:numBins
-            %                 currentColor = Col(pltIdx,:);
-            %                 % plot(pkLoc(pltIdx)/framerate,pkAmp(pltIdx)*1.05, 'v', 'MarkerFaceColor', currentColor, 'MarkerEdgeColor', currentColor, 'Parent', propAx);
-            %                 if ~isempty(waveInit(pltIdx)) && waveInit(pltIdx)>=1
-            %                     initPt = waveInit(pltIdx);
-            %                     plot(initPt/framerate,binSignal(initPt,pltIdx)*1.05, 'v', 'MarkerFaceColor', currentColor, 'MarkerEdgeColor', currentColor,'Parent',propAx)
-            %                 end
-            %             end
-            % 
-            %             hold(propAx, "off")
-            %             xlim(propAx, [0 binTime(end)])
-            % 
-            %             %% Kymograph plotting
-            %             imagesc(axialPeak,'Parent', axAx)
-            %             % colormap(axAx,'viridis');
-            % 
-            %             for pltIdx = 1:numBins
-            %                 rectX = 0;
-            %                 rectY = binEdges(pltIdx); % this should be pltIdx+1 for the lower left corner of rectangle, but Y axis is reversed!
-            %                 rectW = size(binSignal,1);
-            %                 rectH = binEdges(2)-binEdges(1);
-            % 
-            %                 currentColor = Col(pltIdx,:);
-            % 
-            %                 % plot rectangle around each bin
-            %                 rectangle('Position',[rectX, rectY,rectW, rectH],'linestyle', ':','EdgeColor', currentColor, 'linewidth', 1.5, 'Parent', axAx)
-            % 
-            %                 % plot a line at each inflection point
-            %                 if outlier_loc(pltIdx) == 0
-            %                     line([waveInit(pltIdx) waveInit(pltIdx)], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
-            %                 elseif outlier_loc(pltIdx) == 1
-            %                     line([waveInit(pltIdx) waveInit(pltIdx)], [rectY rectY+rectH], 'Color', [1 0 0], 'linewidth' ,1.5, 'Parent', axAx)
-            %                 end
-            %             end                      
-            % 
-            %             % plot the polynomial that is used to fit the inflection points
-            %             tFit = linspace(min(cleanedInit), max(cleanedInit), 500);
-            %             yFit = polyval(coeffs, tFit);
-            %             hold on
-            %             plot(tFit, yFit, 'r', 'LineWidth', 2);
-            %             hold off
-            % 
-            %             title(['Propagation rate: ' num2str(propagationRate(q)) ' \mum/sec'], 'Parent',axFig)
-            %             % drawnow()
-            %             % pause(0.5)
-            %             txt = input("Look ok? if not press letter key before hitting enter. Type 'exit' to quit","s");
-            % 
-            %             if ~isempty(txt)
-            %                 propagationRate(q) = NaN;
-            %             end
-            % 
-            %             if ~isempty(txt) && strcmp(txt,'exit')
-            %                 validatePropagationRate = 0;
-            %             end
-            %         end
-            %     end
-            % end
-
             %% Peak kinetics
-
             pre = templocs(q)-timePreSpike;
             post = templocs(q)+timePostSpike;
 
@@ -653,9 +516,14 @@ for i = 1:length(inputData)
     inputData(i).meanInterval = mean(tempint, 'omitmissing');
     inputData(i).peakAmplitude = tempamp;
     inputData(i).peakLoc = templocs;
-    % inputData(i).propagationRate = propagationRate;
-    inputData(i).axialPeak = avgKymograph;
-    inputData(i).avgKymograph = mean(avgKymograph,3,'omitmissing');
+    inputData(i).axialPeak = axialPeak;
+    inputData(i).avgKymograph = mean(axialPeak,3,'omitmissing');
+
+    if analyzePropagationRate == 1
+        inputData(i).propagationRate = propagationRate;
+        inputData(i).rSquared = rSquared;
+        inputData(i).validFlags = validFlags;
+    end
 
     if ~isempty(templocs)
         num(i) = length(templocs);
@@ -720,7 +588,7 @@ processedData(1).AUCVector = vertcat(inputData(:).AUC);
 processedData(1).amplitudeVector = vertcat(inputData(:).peakAmplitude);
 processedData(1).intervalVector = vertcat(inputData(:).peakIntervals);
 processedData(1).meanIntervalVector = vertcat(inputData(:).meanInterval);
-% processedData(1).propagationVector = vertcat(inputData(:).propagationRate);
+
 
 if validateRiseFall == 1 && keepValidating == 1
     [file,path] = uiputfile('*.xlsx');
@@ -729,6 +597,21 @@ if validateRiseFall == 1 && keepValidating == 1
     writematrix(processedData(1).fallVector, riseFallSaveName, 'Sheet', 'Fall Time');
     writematrix(processedData(1).tauVector, riseFallSaveName, 'Sheet', 'Decay Constant');
 end
+
+if analyzePropagationRate == 1
+    processedData(1).propagationVector = vertcat(inputData(:).propagationRate);
+    processedData(1).rSquaredVector = vertcat(inputData(:).rSquared);
+    processedData(1).validVector = vertcat(inputData(:).validFlags);
+
+    if validatePropagationRate == 1
+        assignin('base', 'propagationVector', processedData(1).propagationVector);
+        assignin('base', 'rSquaredVector', processedData(1).rSquaredVector);
+        assignin('base', 'validVector', processedData(1).validVector);
+    end
+end
+
+
+
 
 end
 

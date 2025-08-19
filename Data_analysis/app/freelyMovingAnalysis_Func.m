@@ -33,7 +33,7 @@ numSegments = 100; % number of segments to sample when measuring axial signal
 axSigLen = 200; % how many pixels to use for registering axial signal.(i.e. pixels from head to tail)
 axSigHeight = 10; % how many pixels to sample across the width of the worm (i.e. dorsal to ventral)
 
-SEclose = strel('diamond', 6);
+SEclose = strel('disk', 6);
 SEopen = strel('diamond', 3);
 
 
@@ -233,7 +233,7 @@ for nf =startIndex:length(tdir)
         BW = imdilate(BW,SEclose);
         BW = imerode(BW,SEclose);
         BW = imopen(BW, SEopen);
-
+        
 
         tempb2 = BW;
 

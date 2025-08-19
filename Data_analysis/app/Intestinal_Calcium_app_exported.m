@@ -2,172 +2,192 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
     % Properties that correspond to app components
     properties (Access = public)
-        IntestinalCalciumAppUIFigure   matlab.ui.Figure
-        FileMenu                       matlab.ui.container.Menu
-        saveSettings                   matlab.ui.container.Menu
-        savedefaultsettingsMenu        matlab.ui.container.Menu
-        loadSettings                   matlab.ui.container.Menu
-        TabGroup                       matlab.ui.container.TabGroup
-        TrackingTab                    matlab.ui.container.Tab
-        ReprocessmergedDataButton      matlab.ui.control.Button
-        StartFrameSpinner              matlab.ui.control.Spinner
-        StartFrameSpinnerLabel         matlab.ui.control.Label
-        RunAnalysisButton              matlab.ui.control.Button
-        StartFileSpinner               matlab.ui.control.Spinner
-        StartFileSpinnerLabel          matlab.ui.control.Label
-        AnalyzeOASdataCheckBox         matlab.ui.control.CheckBox
+        IntestinalCalciumAppUIFigure    matlab.ui.Figure
+        FileMenu                        matlab.ui.container.Menu
+        saveSettings                    matlab.ui.container.Menu
+        savedefaultsettingsMenu         matlab.ui.container.Menu
+        loadSettings                    matlab.ui.container.Menu
+        TabGroup                        matlab.ui.container.TabGroup
+        TrackingTab                     matlab.ui.container.Tab
+        StartFrameSpinner               matlab.ui.control.Spinner
+        StartFrameSpinnerLabel          matlab.ui.control.Label
+        RunAnalysisButton               matlab.ui.control.Button
+        StartFileSpinner                matlab.ui.control.Spinner
+        StartFileSpinnerLabel           matlab.ui.control.Label
+        AnalyzeOASdataCheckBox          matlab.ui.control.CheckBox
         FlatfieldCorrectionEditFieldLabel  matlab.ui.control.Label
-        FlatfieldCorrectionEditField   matlab.ui.control.NumericEditField
-        drawROIs                       matlab.ui.control.Button
-        InputFramerateEditFieldLabel   matlab.ui.control.Label
-        InputFramerateEditField        matlab.ui.control.NumericEditField
-        fixAxialSignalButton           matlab.ui.control.Button
-        CropPixelsEditFieldLabel       matlab.ui.control.Label
-        CropPixelsEditField            matlab.ui.control.NumericEditField
-        ThresholdingButtonGroup        matlab.ui.container.ButtonGroup
-        AdaptiveThresholdButton        matlab.ui.control.RadioButton
-        AutoThresholdButton            matlab.ui.control.RadioButton
-        DisplayOptionsPanel            matlab.ui.container.Panel
-        VideoFramerateEditFieldLabel   matlab.ui.control.Label
-        VideoFramerateEditField        matlab.ui.control.NumericEditField
-        RecordVideoCheckBox            matlab.ui.control.CheckBox
-        TroubleshootCheckBox           matlab.ui.control.CheckBox
-        ShowNormalsCheckBox            matlab.ui.control.CheckBox
-        ShowAxialSignalCheckBox        matlab.ui.control.CheckBox
-        PlotResultsCheckBox            matlab.ui.control.CheckBox
-        UploadResultsCheckBox          matlab.ui.control.CheckBox
-        remoteDir                      matlab.ui.control.EditField
-        setRemoteDirButton             matlab.ui.control.Button
-        LoadTiffCheckBox               matlab.ui.control.CheckBox
-        IsRemoteCheckBox               matlab.ui.control.CheckBox
-        tiffDir                        matlab.ui.control.EditField
-        setTiffDirButton               matlab.ui.control.Button
-        PlottingTab                    matlab.ui.container.Tab
-        ExtractControlDataButton       matlab.ui.control.Button
-        Panel                          matlab.ui.container.Panel
-        windowsizeEditField            matlab.ui.control.NumericEditField
-        windowsizeLabel                matlab.ui.control.Label
-        spikeEditField                 matlab.ui.control.NumericEditField
-        spikeEditFieldLabel            matlab.ui.control.Label
-        PlotSingleTraceButton          matlab.ui.control.Button
-        PlotMatchedControlButton       matlab.ui.control.Button
-        controlnameEditField           matlab.ui.control.EditField
-        controlnameEditFieldLabel      matlab.ui.control.Label
-        MergeControlButton             matlab.ui.control.Button
-        Panel_2                        matlab.ui.container.Panel
-        PrefixEditField                matlab.ui.control.EditField
-        PrefixEditFieldLabel           matlab.ui.control.Label
-        numColumns                     matlab.ui.control.NumericEditField
-        ColumnsEditFieldLabel          matlab.ui.control.Label
-        genotypesEditField             matlab.ui.control.EditField
-        genotypesEditFieldLabel        matlab.ui.control.Label
-        PlotMultipleGenotypesButton    matlab.ui.control.Button
-        PlotsPanel                     matlab.ui.container.Panel
-        IntervalHistogramCheckBox      matlab.ui.control.CheckBox
-        CorrelationCheckBox            matlab.ui.control.CheckBox
-        BulkAxialCheckBox              matlab.ui.control.CheckBox
-        PeakProfileCheckBox            matlab.ui.control.CheckBox
-        AxialSignalCheckBox            matlab.ui.control.CheckBox
-        CVCheckBox                     matlab.ui.control.CheckBox
-        BulkSignalCheckBox             matlab.ui.control.CheckBox
-        CombinewormDataButton          matlab.ui.control.Button
-        outputDir                      matlab.ui.control.EditField
-        setOutputDir                   matlab.ui.control.Button
-        DataDir                        matlab.ui.control.EditField
-        setDataDir                     matlab.ui.control.Button
-        PlotSettingsTab                matlab.ui.container.Tab
-        CloseAllButton                 matlab.ui.control.Button
-        SingleSpikeButton              matlab.ui.control.Button
+        FlatfieldCorrectionEditField    matlab.ui.control.NumericEditField
+        drawROIs                        matlab.ui.control.Button
+        InputFramerateEditFieldLabel    matlab.ui.control.Label
+        InputFramerateEditField         matlab.ui.control.NumericEditField
+        fixAxialSignalButton            matlab.ui.control.Button
+        CropPixelsEditFieldLabel        matlab.ui.control.Label
+        CropPixelsEditField             matlab.ui.control.NumericEditField
+        ReprocessmergedDataButton       matlab.ui.control.Button
+        ThresholdingButtonGroup         matlab.ui.container.ButtonGroup
+        AdaptiveThresholdButton         matlab.ui.control.RadioButton
+        AutoThresholdButton             matlab.ui.control.RadioButton
+        DisplayOptionsPanel             matlab.ui.container.Panel
+        VideoFramerateEditFieldLabel    matlab.ui.control.Label
+        VideoFramerateEditField         matlab.ui.control.NumericEditField
+        RecordVideoCheckBox             matlab.ui.control.CheckBox
+        TroubleshootCheckBox            matlab.ui.control.CheckBox
+        ShowNormalsCheckBox             matlab.ui.control.CheckBox
+        ShowAxialSignalCheckBox         matlab.ui.control.CheckBox
+        PlotResultsCheckBox             matlab.ui.control.CheckBox
+        UploadResultsCheckBox           matlab.ui.control.CheckBox
+        remoteDir                       matlab.ui.control.EditField
+        setRemoteDirButton              matlab.ui.control.Button
+        LoadTiffCheckBox                matlab.ui.control.CheckBox
+        IsRemoteCheckBox                matlab.ui.control.CheckBox
+        tiffDir                         matlab.ui.control.EditField
+        setTiffDirButton                matlab.ui.control.Button
+        PlottingTab                     matlab.ui.container.Tab
+        Panel                           matlab.ui.container.Panel
+        windowsizeEditField             matlab.ui.control.NumericEditField
+        windowsizeLabel                 matlab.ui.control.Label
+        spikeEditField                  matlab.ui.control.NumericEditField
+        spikeEditFieldLabel             matlab.ui.control.Label
+        PlotSingleTraceButton           matlab.ui.control.Button
+        PlotMatchedControlButton        matlab.ui.control.Button
+        controlnameEditField            matlab.ui.control.EditField
+        controlnameEditFieldLabel       matlab.ui.control.Label
+        ExtractControlDataButton        matlab.ui.control.Button
+        MergeControlButton              matlab.ui.control.Button
+        Panel_2                         matlab.ui.container.Panel
+        PrefixEditField                 matlab.ui.control.EditField
+        PrefixEditFieldLabel            matlab.ui.control.Label
+        numColumns                      matlab.ui.control.NumericEditField
+        ColumnsEditFieldLabel           matlab.ui.control.Label
+        genotypesEditField              matlab.ui.control.EditField
+        genotypesEditFieldLabel         matlab.ui.control.Label
+        PlotMultipleGenotypesButton     matlab.ui.control.Button
+        PlotsPanel                      matlab.ui.container.Panel
+        IntervalHistogramCheckBox       matlab.ui.control.CheckBox
+        CorrelationCheckBox             matlab.ui.control.CheckBox
+        BulkAxialCheckBox               matlab.ui.control.CheckBox
+        PeakProfileCheckBox             matlab.ui.control.CheckBox
+        AxialSignalCheckBox             matlab.ui.control.CheckBox
+        CVCheckBox                      matlab.ui.control.CheckBox
+        BulkSignalCheckBox              matlab.ui.control.CheckBox
+        CombinewormDataButton           matlab.ui.control.Button
+        outputDir                       matlab.ui.control.EditField
+        setOutputDir                    matlab.ui.control.Button
+        DataDir                         matlab.ui.control.EditField
+        setDataDir                      matlab.ui.control.Button
+        PlotSettingsTab                 matlab.ui.container.Tab
+        CloseAllButton                  matlab.ui.control.Button
+        SingleSpikeButton               matlab.ui.control.Button
         MultigenotypefigurepositionPanel  matlab.ui.container.Panel
-        setTracePos                    matlab.ui.control.Button
-        TracesEditField                matlab.ui.control.EditField
-        TracesEditFieldLabel           matlab.ui.control.Label
-        setGraphPos                    matlab.ui.control.Button
-        GraphsEditField                matlab.ui.control.EditField
-        GraphsEditFieldLabel           matlab.ui.control.Label
-        PlotMultipleGenotypesButton_2  matlab.ui.control.Button
-        FractiontoQuerrylengthLabel    matlab.ui.control.Label
-        toQuerry                       matlab.ui.control.NumericEditField
-        AxialSignalColormapDropDown    matlab.ui.control.DropDown
-        AutoFixAxialSignalCheckBox     matlab.ui.control.CheckBox
-        PlotMatchedControlButton_2     matlab.ui.control.Button
-        AxialSignalColorLabel          matlab.ui.control.Label
-        Panel_3                        matlab.ui.container.Panel
-        partEnd                        matlab.ui.control.NumericEditField
-        endEditFieldLabel              matlab.ui.control.Label
-        partStart                      matlab.ui.control.NumericEditField
-        startEditFieldLabel            matlab.ui.control.Label
+        setTracePos                     matlab.ui.control.Button
+        TracesEditField                 matlab.ui.control.EditField
+        TracesEditFieldLabel            matlab.ui.control.Label
+        setGraphPos                     matlab.ui.control.Button
+        GraphsEditField                 matlab.ui.control.EditField
+        GraphsEditFieldLabel            matlab.ui.control.Label
+        PlotMultipleGenotypesButton_2   matlab.ui.control.Button
+        FractiontoQuerrylengthLabel     matlab.ui.control.Label
+        toQuerry                        matlab.ui.control.NumericEditField
+        AxialSignalColormapDropDown     matlab.ui.control.DropDown
+        AutoFixAxialSignalCheckBox      matlab.ui.control.CheckBox
+        PlotMatchedControlButton_2      matlab.ui.control.Button
+        AxialSignalColorLabel           matlab.ui.control.Label
+        Panel_3                         matlab.ui.container.Panel
+        partEnd                         matlab.ui.control.NumericEditField
+        endEditFieldLabel               matlab.ui.control.Label
+        partStart                       matlab.ui.control.NumericEditField
+        startEditFieldLabel             matlab.ui.control.Label
         AnalyzePartialRecordingCheckBox  matlab.ui.control.CheckBox
-        numPlotsEditField              matlab.ui.control.NumericEditField
-        PlotsEditFieldLabel            matlab.ui.control.Label
-        EqualizeExpDurationCheckBox    matlab.ui.control.CheckBox
-        FrameRateEditField             matlab.ui.control.NumericEditField
-        FrameRateEditFieldLabel        matlab.ui.control.Label
-        AnalyzeOASdataCheckBox_2       matlab.ui.control.CheckBox
-        NormalizationDropDown          matlab.ui.control.DropDown
-        NormalizationDropDownLabel     matlab.ui.control.Label
-        PeakDetectionPanel             matlab.ui.container.Panel
-        spikeProfileWindow             matlab.ui.control.NumericEditField
-        PlotwindowsecLabel             matlab.ui.control.Label
-        peakwidth                      matlab.ui.control.NumericEditField
-        MinWidthframesEditFieldLabel   matlab.ui.control.Label
-        peakdistance                   matlab.ui.control.NumericEditField
+        numPlotsEditField               matlab.ui.control.NumericEditField
+        PlotsEditFieldLabel             matlab.ui.control.Label
+        EqualizeExpDurationCheckBox     matlab.ui.control.CheckBox
+        FrameRateEditField              matlab.ui.control.NumericEditField
+        FrameRateEditFieldLabel         matlab.ui.control.Label
+        AnalyzeOASdataCheckBox_2        matlab.ui.control.CheckBox
+        NormalizationDropDown           matlab.ui.control.DropDown
+        NormalizationDropDownLabel      matlab.ui.control.Label
+        PeakDetectionPanel              matlab.ui.container.Panel
+        spikeProfileWindow              matlab.ui.control.NumericEditField
+        PlotwindowsecLabel              matlab.ui.control.Label
+        peakwidth                       matlab.ui.control.NumericEditField
+        MinWidthframesEditFieldLabel    matlab.ui.control.Label
+        peakdistance                    matlab.ui.control.NumericEditField
         MinDistanceframesEditFieldLabel  matlab.ui.control.Label
-        peakthreshold                  matlab.ui.control.NumericEditField
-        PeakProminenceAULabel          matlab.ui.control.Label
-        BulkSignalPlotsButtonGroup     matlab.ui.container.ButtonGroup
-        OverlayButton                  matlab.ui.control.RadioButton
-        SeparateButton                 matlab.ui.control.RadioButton
-        SortDirectionButtonGroup       matlab.ui.container.ButtonGroup
-        shuffleButton                  matlab.ui.control.RadioButton
-        ascendButton                   matlab.ui.control.RadioButton
-        descendButton                  matlab.ui.control.RadioButton
-        XAxesPanel                     matlab.ui.container.Panel
-        axialXTickInt                  matlab.ui.control.EditField
-        BulkSignallimitsLabel_2        matlab.ui.control.Label
-        bulkXLim                       matlab.ui.control.EditField
-        BulkSignallimitsLabel          matlab.ui.control.Label
-        HistogramBinsPanel             matlab.ui.container.Panel
-        IncrementEditField             matlab.ui.control.NumericEditField
-        IncrementEditFieldLabel        matlab.ui.control.Label
-        MaxEditField                   matlab.ui.control.NumericEditField
-        MaxEditFieldLabel              matlab.ui.control.Label
-        MinEditField                   matlab.ui.control.NumericEditField
-        MinEditFieldLabel              matlab.ui.control.Label
-        SortTracesByButtonGroup        matlab.ui.container.ButtonGroup
-        sortMean                       matlab.ui.control.RadioButton
-        sortAmp                        matlab.ui.control.RadioButton
-        sortFreq                       matlab.ui.control.RadioButton
-        dontSort                       matlab.ui.control.RadioButton
-        YAxesPanel                     matlab.ui.container.Panel
-        bulkYLim                       matlab.ui.control.EditField
-        BulkSignallimsLabel            matlab.ui.control.Label
-        axialYLim                      matlab.ui.control.EditField
-        AxialSignallimLabel            matlab.ui.control.Label
-        miscsettingsTab                matlab.ui.container.Tab
-        trim2stim                      matlab.ui.control.CheckBox
-        saveWormDataToWorkspace        matlab.ui.control.CheckBox
-        WavePropagationSettingsPanel   matlab.ui.container.Panel
-        NumSegmentsEditField           matlab.ui.control.NumericEditField
-        NumSegmentsEditFieldLabel      matlab.ui.control.Label
-        NumberofBinsEditField          matlab.ui.control.NumericEditField
-        NumberofBinsEditFieldLabel     matlab.ui.control.Label
-        InflectionPointDetection       matlab.ui.container.ButtonGroup
-        PeakLocationButton             matlab.ui.control.RadioButton
-        HalfMaximumButton              matlab.ui.control.RadioButton
-        DerivativeButton               matlab.ui.control.RadioButton
-        validatePropagationRate        matlab.ui.control.CheckBox
-        validateRiseFallButton         matlab.ui.control.Button
-        ColorsPanel                    matlab.ui.container.Panel
-        wtColor                        matlab.ui.control.EditField
+        peakthreshold                   matlab.ui.control.NumericEditField
+        PeakProminenceAULabel           matlab.ui.control.Label
+        BulkSignalPlotsButtonGroup      matlab.ui.container.ButtonGroup
+        OverlayButton                   matlab.ui.control.RadioButton
+        SeparateButton                  matlab.ui.control.RadioButton
+        SortDirectionButtonGroup        matlab.ui.container.ButtonGroup
+        shuffleButton                   matlab.ui.control.RadioButton
+        ascendButton                    matlab.ui.control.RadioButton
+        descendButton                   matlab.ui.control.RadioButton
+        XAxesPanel                      matlab.ui.container.Panel
+        axialXTickInt                   matlab.ui.control.EditField
+        BulkSignallimitsLabel_2         matlab.ui.control.Label
+        bulkXLim                        matlab.ui.control.EditField
+        BulkSignallimitsLabel           matlab.ui.control.Label
+        HistogramBinsPanel              matlab.ui.container.Panel
+        IncrementEditField              matlab.ui.control.NumericEditField
+        IncrementEditFieldLabel         matlab.ui.control.Label
+        MaxEditField                    matlab.ui.control.NumericEditField
+        MaxEditFieldLabel               matlab.ui.control.Label
+        MinEditField                    matlab.ui.control.NumericEditField
+        MinEditFieldLabel               matlab.ui.control.Label
+        SortTracesByButtonGroup         matlab.ui.container.ButtonGroup
+        sortMean                        matlab.ui.control.RadioButton
+        sortAmp                         matlab.ui.control.RadioButton
+        sortFreq                        matlab.ui.control.RadioButton
+        dontSort                        matlab.ui.control.RadioButton
+        YAxesPanel                      matlab.ui.container.Panel
+        bulkYLim                        matlab.ui.control.EditField
+        BulkSignallimsLabel             matlab.ui.control.Label
+        axialYLim                       matlab.ui.control.EditField
+        AxialSignallimLabel             matlab.ui.control.Label
+        miscsettingsTab                 matlab.ui.container.Tab
+        WavePropagationSettingsPanel    matlab.ui.container.Panel
+        analyzePropagationCheckbox      matlab.ui.control.CheckBox
+        WorkspacevariableEditField      matlab.ui.control.EditField
+        WorkspacevariableEditFieldLabel  matlab.ui.control.Label
+        CalculateWavePropagationButton  matlab.ui.control.Button
+        MaxtimesEditField               matlab.ui.control.NumericEditField
+        MaxtimesEditFieldLabel          matlab.ui.control.Label
+        NumSegmentsEditField            matlab.ui.control.NumericEditField
+        NumSegmentsEditFieldLabel       matlab.ui.control.Label
+        MintimesEditField               matlab.ui.control.NumericEditField
+        MintimesEditFieldLabel          matlab.ui.control.Label
+        NumberofBinsEditField           matlab.ui.control.NumericEditField
+        NumberofBinsEditFieldLabel      matlab.ui.control.Label
+        MinrangeEditField               matlab.ui.control.NumericEditField
+        MinrangeEditFieldLabel          matlab.ui.control.Label
+        validatePropagationRate         matlab.ui.control.CheckBox
+        MinR2EditField                  matlab.ui.control.NumericEditField
+        MinR2EditFieldLabel             matlab.ui.control.Label
+        IntestinelocationPanel          matlab.ui.container.Panel
+        EndpxEditField                  matlab.ui.control.NumericEditField
+        EndpxEditFieldLabel             matlab.ui.control.Label
+        StartpxEditField                matlab.ui.control.NumericEditField
+        StartpxEditFieldLabel           matlab.ui.control.Label
+        InflectionPointDetection        matlab.ui.container.ButtonGroup
+        MaxEditField_2Label             matlab.ui.control.Label
+        threshValue                     matlab.ui.control.NumericEditField
+        ThresholdButton                 matlab.ui.control.RadioButton
+        PeakLocationButton              matlab.ui.control.RadioButton
+        HalfMaximumButton               matlab.ui.control.RadioButton
+        DerivativeButton                matlab.ui.control.RadioButton
+        trim2stim                       matlab.ui.control.CheckBox
+        saveWormDataToWorkspace         matlab.ui.control.CheckBox
+        ColorsPanel                     matlab.ui.container.Panel
+        wtColor                         matlab.ui.control.EditField
         wildtypeedgecolorEditFieldLabel  matlab.ui.control.Label
-        wtEdgeColor                    matlab.ui.control.EditField
-        wildtypecolorEditFieldLabel    matlab.ui.control.Label
-        mtColor                        matlab.ui.control.EditField
-        mutantcolorEditFieldLabel      matlab.ui.control.Label
-        SpikeKineticsPanel             matlab.ui.container.Panel
-        validateRiseFall               matlab.ui.control.CheckBox
-        showFitParams                  matlab.ui.control.CheckBox
+        wtEdgeColor                     matlab.ui.control.EditField
+        wildtypecolorEditFieldLabel     matlab.ui.control.Label
+        mtColor                         matlab.ui.control.EditField
+        mutantcolorEditFieldLabel       matlab.ui.control.Label
+        SpikeKineticsPanel              matlab.ui.container.Panel
+        validateRiseFallButton          matlab.ui.control.Button
+        validateRiseFall                matlab.ui.control.CheckBox
+        showFitParams                   matlab.ui.control.CheckBox
     end
 
     
@@ -322,15 +342,28 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.validateRiseFall = app.validateRiseFall.Value;
             plotSettings.showFitParams = app.showFitParams.Value;
             
+            plotSettings.analyzePropagationRate = app.analyzePropagationCheckbox.Value;
             plotSettings.validatePropagationRate = app.validatePropagationRate.Value;
             plotSettings.numBins = app.NumberofBinsEditField.Value;
             plotSettings.numSegments = app.NumSegmentsEditField.Value;
+            plotSettings.threshPercent = app.threshValue.Value;
+            plotSettings.intestineStart = app.StartpxEditField.Value;
+            plotSettings.intestineEnd = app.EndpxEditField.Value;
+            plotSettings.minR2 = app.MinR2EditField.Value;
+            plotSettings.minRange = app.MinrangeEditField.Value;
+            plotSettings.minTime = app.MintimesEditField.Value;
+            plotSettings.maxTime = app.MaxtimesEditField.Value;
+            
+
+
             if app.DerivativeButton.Value == 1
                 plotSettings.propMethod = 1;
             elseif app.HalfMaximumButton.Value == 1
                 plotSettings.propMethod = 2;
             elseif app.PeakLocationButton.Value == 1
                 plotSettings.propMethod = 3;
+            elseif app.ThresholdButton.Value == 1
+                plotSettings.propMethod = 4;
             end
 
 
@@ -431,16 +464,28 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
            app.CorrelationCheckBox.Value = plotSettings.plotCorr;
 
 
-            %% Spike Kinetics
+            %% Spike Kinetics & Wave Propagation Rate
+            app.analyzePropagationCheckbox.Value = plotSettings.analyzePropagationRate;
             app.validatePropagationRate.Value = plotSettings.validatePropagationRate;
             app.NumberofBinsEditField.Value = plotSettings.numBins;
             app.NumSegmentsEditField.Value = plotSettings.numSegments;
+            app.threshValue.Value = plotSettings.threshPercent;
+            app.StartpxEditField.Value = plotSettings.intestineStart;
+            app.EndpxEditField.Value = plotSettings.intestineEnd;
+            app.MinR2EditField.Value = plotSettings.minR2;
+            app.MinrangeEditField.Value = plotSettings.minRange;
+            app.MintimesEditField.Value = plotSettings.minTime;
+            app.MaxtimesEditField.Value = plotSettings.maxTime;
+            
+
             if plotSettings.propMethod == 1
                 app.DerivativeButton.Value = 1;
             elseif plotSettings.propMethod == 2 
                 app.HalfMaximumButton.Value = 1;
             elseif plotSettings.propMethod == 3
                 app.PeakLocationButton.Value = 1;
+            elseif plotSettings.propMethod == 4
+                app.ThresholdButton.Value = 1; 
             end
 
             app.saveWormDataToWorkspace.Value = plotSettings.saveWormdata2workspace;
@@ -838,6 +883,51 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             genotype = strrep(mergedDataFile, '_mergedData.mat', '');
             reCombine_Wormdata(files2process, mergedDataPath, genotype);
         end
+
+        % Button pushed function: CalculateWavePropagationButton
+        function CalculateWavePropagationButtonPushed(app, event)
+            inputDataName = app.WorkspacevariableEditField.Value;
+            inputData = evalin("base", inputDataName);
+
+            plotSettings = parsePlotSettings(app);
+
+            figure('WindowStyle','docked');
+            propRate = NaN;
+            R2 = NaN;
+            axPeakMat = [];
+            wormLength = [];
+
+            for i = 1:length(inputData)
+                tempMat = inputData(i).axialPeak;
+                axPeakMat = cat(3, axPeakMat,tempMat);
+
+                tempLength = repmat(median(inputData(i).wormLength,"all",'omitmissing'), size(tempMat,3),1);
+                wormLength = cat(1, wormLength, tempLength);
+            end
+
+            propagationRate = nan(size(axPeakMat,3), plotSettings.numSegments);
+            rSquared = nan(size(axPeakMat,3), plotSettings.numSegments);
+
+            for i = 1:size(axPeakMat,3)
+                if ~all(isnan(axPeakMat(:,:,i)))
+                    axialPeak = imgaussfilt(axPeakMat(:,:,i),2);
+                    [propRate, R2]  = getWavePropagationRate(axialPeak, wormLength(i), plotSettings)
+
+                    for k = 1:plotSettings.numSegments
+                        if ~isnan(R2(k)) && R2(k)>0.3
+                            propagationRate(i,k) = propRate(k);
+                        end
+                    end
+                    rSquared(i, 1:length(R2)) = R2;
+                end
+            end
+
+
+
+
+
+
+        end
     end
 
     % Component initialization
@@ -997,6 +1087,13 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.AdaptiveThresholdButton.Text = 'Adaptive Threshold';
             app.AdaptiveThresholdButton.Position = [11 4 125 22];
 
+            % Create ReprocessmergedDataButton
+            app.ReprocessmergedDataButton = uibutton(app.TrackingTab, 'push');
+            app.ReprocessmergedDataButton.ButtonPushedFcn = createCallbackFcn(app, @ReprocessmergedDataButtonPushed, true);
+            app.ReprocessmergedDataButton.WordWrap = 'on';
+            app.ReprocessmergedDataButton.Position = [312 242 115 34];
+            app.ReprocessmergedDataButton.Text = 'Reprocess mergedData';
+
             % Create CropPixelsEditField
             app.CropPixelsEditField = uieditfield(app.TrackingTab, 'numeric');
             app.CropPixelsEditField.Tooltip = {'Number of edge pixels to crop. This helps remove black edges from split channel recordings. '};
@@ -1082,13 +1179,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.StartFrameSpinner.Tooltip = {'which frame to start the analysis from.'};
             app.StartFrameSpinner.Position = [89 18 54 35];
             app.StartFrameSpinner.Value = 1;
-
-            % Create ReprocessmergedDataButton
-            app.ReprocessmergedDataButton = uibutton(app.TrackingTab, 'push');
-            app.ReprocessmergedDataButton.ButtonPushedFcn = createCallbackFcn(app, @ReprocessmergedDataButtonPushed, true);
-            app.ReprocessmergedDataButton.WordWrap = 'on';
-            app.ReprocessmergedDataButton.Position = [312 242 115 34];
-            app.ReprocessmergedDataButton.Text = 'Reprocess mergedData';
 
             % Create PlottingTab
             app.PlottingTab = uitab(app.TabGroup);
@@ -1226,6 +1316,14 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.MergeControlButton.Position = [29 253 187 32];
             app.MergeControlButton.Text = 'Merge Control';
 
+            % Create ExtractControlDataButton
+            app.ExtractControlDataButton = uibutton(app.PlottingTab, 'push');
+            app.ExtractControlDataButton.ButtonPushedFcn = createCallbackFcn(app, @ExtractControlDataButtonPushed, true);
+            app.ExtractControlDataButton.FontWeight = 'bold';
+            app.ExtractControlDataButton.Tooltip = {'Thihs will extract the controlData from all mergedData files in current OutputDir folder and save them as a sepatate mergedData.mat file'};
+            app.ExtractControlDataButton.Position = [29 208 187 32];
+            app.ExtractControlDataButton.Text = 'Extract Control Data';
+
             % Create controlnameEditFieldLabel
             app.controlnameEditFieldLabel = uilabel(app.PlottingTab);
             app.controlnameEditFieldLabel.HorizontalAlignment = 'right';
@@ -1277,14 +1375,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.windowsizeEditField = uieditfield(app.Panel, 'numeric');
             app.windowsizeEditField.Position = [166 14 27 22];
             app.windowsizeEditField.Value = 20;
-
-            % Create ExtractControlDataButton
-            app.ExtractControlDataButton = uibutton(app.PlottingTab, 'push');
-            app.ExtractControlDataButton.ButtonPushedFcn = createCallbackFcn(app, @ExtractControlDataButtonPushed, true);
-            app.ExtractControlDataButton.FontWeight = 'bold';
-            app.ExtractControlDataButton.Tooltip = {'Thihs will extract the controlData from all mergedData files in current OutputDir folder and save them as a sepatate mergedData.mat file'};
-            app.ExtractControlDataButton.Position = [29 208 187 32];
-            app.ExtractControlDataButton.Text = 'Extract Control Data';
 
             % Create PlotSettingsTab
             app.PlotSettingsTab = uitab(app.TabGroup);
@@ -1705,129 +1795,276 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.SpikeKineticsPanel = uipanel(app.miscsettingsTab);
             app.SpikeKineticsPanel.Title = 'Spike Kinetics ';
             app.SpikeKineticsPanel.FontWeight = 'bold';
-            app.SpikeKineticsPanel.Position = [50 357 143 64];
+            app.SpikeKineticsPanel.Position = [13 327 143 95];
 
             % Create showFitParams
             app.showFitParams = uicheckbox(app.SpikeKineticsPanel);
             app.showFitParams.Text = 'Show rise/fall time fit?';
-            app.showFitParams.Position = [4 21 139 22];
+            app.showFitParams.Position = [3 52 139 22];
 
             % Create validateRiseFall
             app.validateRiseFall = uicheckbox(app.SpikeKineticsPanel);
             app.validateRiseFall.Text = 'Validate rise/fall?';
-            app.validateRiseFall.Position = [4 2 138 24];
+            app.validateRiseFall.Position = [4 31 138 24];
+
+            % Create validateRiseFallButton
+            app.validateRiseFallButton = uibutton(app.SpikeKineticsPanel, 'push');
+            app.validateRiseFallButton.ButtonPushedFcn = createCallbackFcn(app, @validateRiseFallButtonPushed, true);
+            app.validateRiseFallButton.Position = [22 7 104 22];
+            app.validateRiseFallButton.Text = 'Validate Rise/Fall';
 
             % Create ColorsPanel
             app.ColorsPanel = uipanel(app.miscsettingsTab);
             app.ColorsPanel.Title = 'Colors';
             app.ColorsPanel.FontWeight = 'bold';
-            app.ColorsPanel.Position = [216 306 233 115];
+            app.ColorsPanel.Position = [301 307 162 115];
 
             % Create mutantcolorEditFieldLabel
             app.mutantcolorEditFieldLabel = uilabel(app.ColorsPanel);
             app.mutantcolorEditFieldLabel.HorizontalAlignment = 'right';
-            app.mutantcolorEditFieldLabel.Position = [43 67 71 22];
+            app.mutantcolorEditFieldLabel.FontSize = 10;
+            app.mutantcolorEditFieldLabel.Position = [9 67 60 22];
             app.mutantcolorEditFieldLabel.Text = 'mutant color';
 
             % Create mtColor
             app.mtColor = uieditfield(app.ColorsPanel, 'text');
-            app.mtColor.Position = [125 67 100 22];
+            app.mtColor.FontSize = 10;
+            app.mtColor.Position = [80 67 76 22];
             app.mtColor.Value = '0.66 0.74 0.91';
 
             % Create wildtypecolorEditFieldLabel
             app.wildtypecolorEditFieldLabel = uilabel(app.ColorsPanel);
             app.wildtypecolorEditFieldLabel.HorizontalAlignment = 'right';
-            app.wildtypecolorEditFieldLabel.Position = [34 36 81 22];
+            app.wildtypecolorEditFieldLabel.FontSize = 10;
+            app.wildtypecolorEditFieldLabel.Position = [1 36 68 22];
             app.wildtypecolorEditFieldLabel.Text = 'wild type color';
 
             % Create wtEdgeColor
             app.wtEdgeColor = uieditfield(app.ColorsPanel, 'text');
-            app.wtEdgeColor.Position = [125 36 100 22];
+            app.wtEdgeColor.FontSize = 10;
+            app.wtEdgeColor.Position = [79 36 77 22];
             app.wtEdgeColor.Value = '0.4 0.4 0.4';
 
             % Create wildtypeedgecolorEditFieldLabel
             app.wildtypeedgecolorEditFieldLabel = uilabel(app.ColorsPanel);
             app.wildtypeedgecolorEditFieldLabel.HorizontalAlignment = 'center';
             app.wildtypeedgecolorEditFieldLabel.WordWrap = 'on';
-            app.wildtypeedgecolorEditFieldLabel.Position = [6 3 114 30];
+            app.wildtypeedgecolorEditFieldLabel.FontSize = 10;
+            app.wildtypeedgecolorEditFieldLabel.Position = [-2 3 77 30];
             app.wildtypeedgecolorEditFieldLabel.Text = 'wild type edge color';
 
             % Create wtColor
             app.wtColor = uieditfield(app.ColorsPanel, 'text');
-            app.wtColor.Position = [126 7 100 22];
+            app.wtColor.FontSize = 10;
+            app.wtColor.Position = [81 7 75 22];
             app.wtColor.Value = '0.26 0.34 0.51';
 
-            % Create validateRiseFallButton
-            app.validateRiseFallButton = uibutton(app.miscsettingsTab, 'push');
-            app.validateRiseFallButton.ButtonPushedFcn = createCallbackFcn(app, @validateRiseFallButtonPushed, true);
-            app.validateRiseFallButton.Position = [67 291 104 36];
-            app.validateRiseFallButton.Text = 'Validate Rise/Fall';
+            % Create saveWormDataToWorkspace
+            app.saveWormDataToWorkspace = uicheckbox(app.miscsettingsTab);
+            app.saveWormDataToWorkspace.Text = 'Save processed data to workspace?';
+            app.saveWormDataToWorkspace.WordWrap = 'on';
+            app.saveWormDataToWorkspace.Position = [169 347 125 30];
+
+            % Create trim2stim
+            app.trim2stim = uicheckbox(app.miscsettingsTab);
+            app.trim2stim.Text = 'Trim experiment to first stimulus?';
+            app.trim2stim.WordWrap = 'on';
+            app.trim2stim.Position = [169 394 113 28];
 
             % Create WavePropagationSettingsPanel
             app.WavePropagationSettingsPanel = uipanel(app.miscsettingsTab);
             app.WavePropagationSettingsPanel.Title = 'Wave Propagation Settings';
             app.WavePropagationSettingsPanel.FontWeight = 'bold';
-            app.WavePropagationSettingsPanel.Position = [34 36 164 238];
-
-            % Create validatePropagationRate
-            app.validatePropagationRate = uicheckbox(app.WavePropagationSettingsPanel);
-            app.validatePropagationRate.Text = 'Validate propagation?';
-            app.validatePropagationRate.Position = [12 187 138 24];
+            app.WavePropagationSettingsPanel.Position = [11 14 261 297];
 
             % Create InflectionPointDetection
             app.InflectionPointDetection = uibuttongroup(app.WavePropagationSettingsPanel);
             app.InflectionPointDetection.Title = 'Inflection Point Detection';
-            app.InflectionPointDetection.Position = [12 78 147 101];
+            app.InflectionPointDetection.Position = [6 158 146 115];
 
             % Create DerivativeButton
             app.DerivativeButton = uiradiobutton(app.InflectionPointDetection);
+            app.DerivativeButton.Tooltip = {'The max of the 1st derivative of each bin'};
             app.DerivativeButton.Text = 'Derivative';
-            app.DerivativeButton.Position = [11 60 75 22];
+            app.DerivativeButton.Position = [3 74 79 22];
 
             % Create HalfMaximumButton
             app.HalfMaximumButton = uiradiobutton(app.InflectionPointDetection);
+            app.HalfMaximumButton.Tooltip = {'the width of the bulk signal peak at half-maximum'};
             app.HalfMaximumButton.Text = 'Half Maximum';
-            app.HalfMaximumButton.Position = [11 38 98 22];
-            app.HalfMaximumButton.Value = true;
-
+            app.HalfMaximumButton.Position = [3 52 102 22];
+            
             % Create PeakLocationButton
             app.PeakLocationButton = uiradiobutton(app.InflectionPointDetection);
+            app.PeakLocationButton.Tooltip = {'The maximum of the peak'};
             app.PeakLocationButton.Text = 'Peak Location';
-            app.PeakLocationButton.Position = [11 16 98 22];
+            app.PeakLocationButton.Position = [3 30 102 22];
+
+            % Create ThresholdButton
+            app.ThresholdButton = uiradiobutton(app.InflectionPointDetection);
+            app.ThresholdButton.Tooltip = {'The first point in each bin which is above the threshold (% of max) define to the right.'};
+            app.ThresholdButton.Text = 'Threshold';
+            app.ThresholdButton.Position = [3 5 79 22];
+            app.ThresholdButton.Value = true;
+
+            % Create threshValue
+            app.threshValue = uieditfield(app.InflectionPointDetection, 'numeric');
+            app.threshValue.FontSize = 10;
+            app.threshValue.Position = [81 6 24 22];
+            app.threshValue.Value = 0.3;
+
+            % Create MaxEditField_2Label
+            app.MaxEditField_2Label = uilabel(app.InflectionPointDetection);
+            app.MaxEditField_2Label.HorizontalAlignment = 'right';
+            app.MaxEditField_2Label.Position = [100 6 42 22];
+            app.MaxEditField_2Label.Text = '% Max';
+
+            % Create IntestinelocationPanel
+            app.IntestinelocationPanel = uipanel(app.WavePropagationSettingsPanel);
+            app.IntestinelocationPanel.Title = 'Intestine location';
+            app.IntestinelocationPanel.Position = [158 197 99 75];
+
+            % Create StartpxEditFieldLabel
+            app.StartpxEditFieldLabel = uilabel(app.IntestinelocationPanel);
+            app.StartpxEditFieldLabel.HorizontalAlignment = 'right';
+            app.StartpxEditFieldLabel.FontSize = 10;
+            app.StartpxEditFieldLabel.Position = [10 30 46 22];
+            app.StartpxEditFieldLabel.Text = 'Start (px)';
+
+            % Create StartpxEditField
+            app.StartpxEditField = uieditfield(app.IntestinelocationPanel, 'numeric');
+            app.StartpxEditField.FontSize = 10;
+            app.StartpxEditField.Tooltip = {'# of pixels away from the tip of the nose to define the anterior of the intestine. (typically 25-30)'};
+            app.StartpxEditField.Position = [61 30 32 22];
+            app.StartpxEditField.Value = 25;
+
+            % Create EndpxEditFieldLabel
+            app.EndpxEditFieldLabel = uilabel(app.IntestinelocationPanel);
+            app.EndpxEditFieldLabel.HorizontalAlignment = 'right';
+            app.EndpxEditFieldLabel.FontSize = 10;
+            app.EndpxEditFieldLabel.Position = [13 6 43 22];
+            app.EndpxEditFieldLabel.Text = 'End (px)';
+
+            % Create EndpxEditField
+            app.EndpxEditField = uieditfield(app.IntestinelocationPanel, 'numeric');
+            app.EndpxEditField.FontSize = 10;
+            app.EndpxEditField.Tooltip = {'# of pixels away from the end of the tail to define the posterior intestine (default 0)'};
+            app.EndpxEditField.Position = [61 6 32 22];
+
+            % Create MinR2EditFieldLabel
+            app.MinR2EditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
+            app.MinR2EditFieldLabel.HorizontalAlignment = 'right';
+            app.MinR2EditFieldLabel.FontSize = 10;
+            app.MinR2EditFieldLabel.Interpreter = 'tex';
+            app.MinR2EditFieldLabel.Position = [175 150 44 22];
+            app.MinR2EditFieldLabel.Text = 'Min R^2';
+
+            % Create MinR2EditField
+            app.MinR2EditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
+            app.MinR2EditField.FontName = 'Arial';
+            app.MinR2EditField.FontSize = 10;
+            app.MinR2EditField.Tooltip = {'Exclude propagation rates with an R squared  value below this limit.'};
+            app.MinR2EditField.Position = [223 150 32 22];
+            app.MinR2EditField.Value = 0.5;
+
+            % Create validatePropagationRate
+            app.validatePropagationRate = uicheckbox(app.WavePropagationSettingsPanel);
+            app.validatePropagationRate.Tooltip = {'If checked, a dialog will pop up to allow reviewing the fits for each wave'};
+            app.validatePropagationRate.Text = 'Validate propagation?';
+            app.validatePropagationRate.Position = [9 107 138 24];
+
+            % Create MinrangeEditFieldLabel
+            app.MinrangeEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
+            app.MinrangeEditFieldLabel.HorizontalAlignment = 'right';
+            app.MinrangeEditFieldLabel.FontSize = 10;
+            app.MinrangeEditFieldLabel.Position = [170 121 49 22];
+            app.MinrangeEditFieldLabel.Text = 'Min range';
+
+            % Create MinrangeEditField
+            app.MinrangeEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
+            app.MinrangeEditField.FontSize = 10;
+            app.MinrangeEditField.Tooltip = {'Exclude bins with less than this number of difference in the signal. (i.e. flat bins)'};
+            app.MinrangeEditField.Position = [223 121 32 22];
+            app.MinrangeEditField.Value = 1000;
 
             % Create NumberofBinsEditFieldLabel
             app.NumberofBinsEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
             app.NumberofBinsEditFieldLabel.HorizontalAlignment = 'right';
             app.NumberofBinsEditFieldLabel.Tooltip = {'How many segments should the intestine be divided into for measuring inflection point'};
-            app.NumberofBinsEditFieldLabel.Position = [18 48 88 22];
+            app.NumberofBinsEditFieldLabel.Position = [5 83 88 22];
             app.NumberofBinsEditFieldLabel.Text = 'Number of Bins';
 
             % Create NumberofBinsEditField
             app.NumberofBinsEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
-            app.NumberofBinsEditField.Position = [120 49 33 20];
-            app.NumberofBinsEditField.Value = 9;
+            app.NumberofBinsEditField.Tooltip = {'# of bins to divide the intestine into for detecting inflection points'};
+            app.NumberofBinsEditField.Position = [107 84 33 20];
+            app.NumberofBinsEditField.Value = 90;
+
+            % Create MintimesEditFieldLabel
+            app.MintimesEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
+            app.MintimesEditFieldLabel.HorizontalAlignment = 'right';
+            app.MintimesEditFieldLabel.FontSize = 10;
+            app.MintimesEditFieldLabel.Position = [156 92 63 22];
+            app.MintimesEditFieldLabel.Text = 'Min time (s)';
+
+            % Create MintimesEditField
+            app.MintimesEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
+            app.MintimesEditField.FontSize = 10;
+            app.MintimesEditField.Tooltip = {'Exclude inflection points detected prior to this time'};
+            app.MintimesEditField.Position = [223 92 32 22];
+            app.MintimesEditField.Value = 1;
 
             % Create NumSegmentsEditFieldLabel
             app.NumSegmentsEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
             app.NumSegmentsEditFieldLabel.HorizontalAlignment = 'right';
             app.NumSegmentsEditFieldLabel.Tooltip = {'How many segments should the intestine be divided into for measuring inflection point'};
-            app.NumSegmentsEditFieldLabel.Position = [12 16 95 23];
+            app.NumSegmentsEditFieldLabel.Position = [-1 57 95 23];
             app.NumSegmentsEditFieldLabel.Text = 'Num Segments';
 
             % Create NumSegmentsEditField
             app.NumSegmentsEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
-            app.NumSegmentsEditField.Position = [120 17 33 20];
+            app.NumSegmentsEditField.Tooltip = {'number of line segments to fit. How many directions is the wave propagating in?'};
+            app.NumSegmentsEditField.Position = [107 58 33 20];
             app.NumSegmentsEditField.Value = 2;
 
-            % Create saveWormDataToWorkspace
-            app.saveWormDataToWorkspace = uicheckbox(app.miscsettingsTab);
-            app.saveWormDataToWorkspace.Text = 'Save processed wormdata to workspace?';
-            app.saveWormDataToWorkspace.Position = [222 259 246 28];
+            % Create MaxtimesEditFieldLabel
+            app.MaxtimesEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
+            app.MaxtimesEditFieldLabel.HorizontalAlignment = 'right';
+            app.MaxtimesEditFieldLabel.FontSize = 10;
+            app.MaxtimesEditFieldLabel.Position = [156 63 63 22];
+            app.MaxtimesEditFieldLabel.Text = 'Max time (s)';
 
-            % Create trim2stim
-            app.trim2stim = uicheckbox(app.miscsettingsTab);
-            app.trim2stim.Text = 'Trim experiment to first stimulus?';
-            app.trim2stim.Position = [223 226 246 28];
+            % Create MaxtimesEditField
+            app.MaxtimesEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
+            app.MaxtimesEditField.FontSize = 10;
+            app.MaxtimesEditField.Tooltip = {'Exclude inflection points detected after this time.'};
+            app.MaxtimesEditField.Position = [223 63 32 22];
+            app.MaxtimesEditField.Value = 12;
+
+            % Create CalculateWavePropagationButton
+            app.CalculateWavePropagationButton = uibutton(app.WavePropagationSettingsPanel, 'push');
+            app.CalculateWavePropagationButton.ButtonPushedFcn = createCallbackFcn(app, @CalculateWavePropagationButtonPushed, true);
+            app.CalculateWavePropagationButton.WordWrap = 'on';
+            app.CalculateWavePropagationButton.Position = [7 5 112 49];
+            app.CalculateWavePropagationButton.Text = 'Calculate Wave Propagation';
+
+            % Create WorkspacevariableEditFieldLabel
+            app.WorkspacevariableEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
+            app.WorkspacevariableEditFieldLabel.HorizontalAlignment = 'right';
+            app.WorkspacevariableEditFieldLabel.Position = [134 32 110 22];
+            app.WorkspacevariableEditFieldLabel.Text = 'Workspace variable';
+
+            % Create WorkspacevariableEditField
+            app.WorkspacevariableEditField = uieditfield(app.WavePropagationSettingsPanel, 'text');
+            app.WorkspacevariableEditField.HorizontalAlignment = 'center';
+            app.WorkspacevariableEditField.Position = [122 6 134 22];
+            app.WorkspacevariableEditField.Value = 'wildtypeData';
+
+            % Create analyzePropagationCheckbox
+            app.analyzePropagationCheckbox = uicheckbox(app.WavePropagationSettingsPanel);
+            app.analyzePropagationCheckbox.Tooltip = {'If checked, a dialog will pop up to allow reviewing the fits for each wave'};
+            app.analyzePropagationCheckbox.Text = 'Analyze Propagation?';
+            app.analyzePropagationCheckbox.Position = [10 132 139 24];
 
             % Show the figure after all components are created
             app.IntestinalCalciumAppUIFigure.Visible = 'on';
