@@ -7,6 +7,10 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         saveSettings                    matlab.ui.container.Menu
         savedefaultsettingsMenu         matlab.ui.container.Menu
         loadSettings                    matlab.ui.container.Menu
+        Toolbar                         matlab.ui.container.Toolbar
+        PlotMatchedPushTool             matlab.ui.container.toolbar.PushTool
+        PlotMultiPushTool               matlab.ui.container.toolbar.PushTool
+        ClosePushTool                   matlab.ui.container.toolbar.PushTool
         TabGroup                        matlab.ui.container.TabGroup
         TrackingTab                     matlab.ui.container.Tab
         StartFrameSpinner               matlab.ui.control.Spinner
@@ -674,8 +678,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             mergeControl(outputdir, app.controlnameEditField.Value)
         end
 
-        % Button pushed function: PlotMatchedControlButton, 
-        % ...and 1 other component
+        % Callback function: PlotMatchedControlButton, 
+        % ...and 2 other components
         function PlotMatchedControlButtonPushed(app, event)
             outputdir = app.outputDir.Value;
             if ~isfolder(outputdir)
@@ -699,7 +703,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         end
 
-        % Button pushed function: PlotMultipleGenotypesButton, 
+        % Callback function: PlotMultiPushTool,
+        % PlotMultipleGenotypesButton, 
         % ...and 1 other component
         function PlotMultipleGenotypesButtonPushed(app, event)
             
@@ -845,7 +850,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             end
         end
 
-        % Button pushed function: CloseAllButton
+        % Callback function: CloseAllButton, ClosePushTool
         function CloseAllButtonPushed(app, event)
             close all
         end
@@ -977,6 +982,29 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.loadSettings.MenuSelectedFcn = createCallbackFcn(app, @loadSettingsMenuSelected, true);
             app.loadSettings.Separator = 'on';
             app.loadSettings.Text = 'load settings';
+
+            % Create Toolbar
+            app.Toolbar = uitoolbar(app.IntestinalCalciumAppUIFigure);
+
+            % Create PlotMatchedPushTool
+            app.PlotMatchedPushTool = uipushtool(app.Toolbar);
+            app.PlotMatchedPushTool.Tooltip = {'Plot Matched Control'};
+            app.PlotMatchedPushTool.ClickedCallback = createCallbackFcn(app, @PlotMatchedControlButtonPushed, true);
+            app.PlotMatchedPushTool.Icon = fullfile(pathToMLAPP, 'MatchedControl.png');
+
+            % Create PlotMultiPushTool
+            app.PlotMultiPushTool = uipushtool(app.Toolbar);
+            app.PlotMultiPushTool.Tooltip = {'Plot Multi-Genotype'};
+            app.PlotMultiPushTool.ClickedCallback = createCallbackFcn(app, @PlotMultipleGenotypesButtonPushed, true);
+            app.PlotMultiPushTool.Icon = fullfile(pathToMLAPP, 'multiGenotype.png');
+            app.PlotMultiPushTool.Separator = 'on';
+
+            % Create ClosePushTool
+            app.ClosePushTool = uipushtool(app.Toolbar);
+            app.ClosePushTool.Tooltip = {'Close all'};
+            app.ClosePushTool.ClickedCallback = createCallbackFcn(app, @CloseAllButtonPushed, true);
+            app.ClosePushTool.Icon = fullfile(pathToMLAPP, 'close all.png');
+            app.ClosePushTool.Separator = 'on';
 
             % Create TabGroup
             app.TabGroup = uitabgroup(app.IntestinalCalciumAppUIFigure);
@@ -1881,7 +1909,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.trim2stim = uicheckbox(app.miscsettingsTab);
             app.trim2stim.Text = 'Trim experiment to first stimulus?';
             app.trim2stim.WordWrap = 'on';
-            app.trim2stim.Position = [169 394 113 28];
+            app.trim2stim.Position = [169 390 113 28];
 
             % Create WavePropagationSettingsPanel
             app.WavePropagationSettingsPanel = uipanel(app.miscsettingsTab);
@@ -1905,7 +1933,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.HalfMaximumButton.Tooltip = {'the width of the bulk signal peak at half-maximum'};
             app.HalfMaximumButton.Text = 'Half Maximum';
             app.HalfMaximumButton.Position = [3 52 102 22];
-            app.HalfMaximumButton.Value = true;
 
             % Create PeakLocationButton
             app.PeakLocationButton = uiradiobutton(app.InflectionPointDetection);
@@ -1918,6 +1945,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.ThresholdButton.Tooltip = {'The first point in each bin which is above the threshold (% of max) define to the right.'};
             app.ThresholdButton.Text = 'Threshold';
             app.ThresholdButton.Position = [3 5 79 22];
+            app.ThresholdButton.Value = true;
 
             % Create threshValue
             app.threshValue = uieditfield(app.InflectionPointDetection, 'numeric');
