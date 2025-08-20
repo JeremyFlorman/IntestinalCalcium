@@ -71,11 +71,12 @@ for binIdx = 1:numBins
         [~, inflectPt(binIdx)] = max(dy);
         %% half maximum peak amplitude inflection point
         fwhm(binIdx) = round(loc-(w/2)); % inflection points defined as points at half-maximum based off half-width from findpeaks
-        %% relative threshold
+        %% relative threshold     
+        % thresh = settings.threshPercent*max(binSignal(risePhase,binIdx));
+        % relThresh(binIdx) = find(binSignal(risePhase,binIdx)>thresh, 1, "first");
+        scaledSignal = rescale(binSignal(:,binIdx));
+        relThresh(binIdx) = find(scaledSignal>settings.threshPercent, 1, "first");
 
-        rescale()
-        thresh = settings.threshPercent*max(binSignal(risePhase,binIdx));
-        relThresh(binIdx) = find(binSignal(risePhase,binIdx)>thresh, 1, "first");
 
         %% flag signal that doesnt have a peak or is too late
         signalRange = max(binSignal(:,binIdx))-min(binSignal(:,binIdx));
@@ -163,7 +164,7 @@ if length(cleanedInit)>numSegments*2
 
             fitError(i) = err.rsquared;
 
-            %Optional: Plot fit lines for each segment
+            %Plot fit lines for each segment
             yFit = linspace(min(ySegment)-fitPad, max(ySegment)+fitPad, 1000);
             tFit = polyval(coeffsSegment, yFit);
 

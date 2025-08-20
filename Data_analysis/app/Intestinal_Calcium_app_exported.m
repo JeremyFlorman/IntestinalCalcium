@@ -903,6 +903,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         % Button pushed function: CalculateWavePropagationButton
         function CalculateWavePropagationButtonPushed(app, event)
+            disp('Propagating...')
             inputDataName = app.WorkspacevariableEditField.Value;
             inputData = evalin("base", inputDataName);
 
@@ -928,22 +929,19 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             for i = 1:size(axPeakMat,3)
                 if ~all(isnan(axPeakMat(:,:,i)))
                     axialPeak = imgaussfilt(axPeakMat(:,:,i),2);
-                    [propRate, R2]  = getWavePropagationRate(axialPeak, wormLength(i), plotSettings)
+                    [propRate, R2, validFlags]  = getWavePropagationRate(axialPeak, wormLength(i), plotSettings);
 
                     for k = 1:plotSettings.numSegments
-                        if ~isnan(R2(k)) && R2(k)>0.3
+                        if ~isnan(R2(k)) && R2(k)>plotSettings.minR2
                             propagationRate(i,k) = propRate(k);
                         end
                     end
                     rSquared(i, 1:length(R2)) = R2;
                 end
             end
-
-
-
-
-
-
+            assignin('base', 'propagationRate', propagationRate)
+            assignin('base', 'rSquared', rSquared)
+            disp('Done')
         end
     end
 
