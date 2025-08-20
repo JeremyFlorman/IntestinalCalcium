@@ -3,6 +3,10 @@ function [remotedata] = copyLoadClear(file2load, tempdir)
 %deletes local file.
 %   Detailed explanation goes here
 
+if iscell(file2load)
+    file2load = file2load{:};
+end
+
 [~, name, ext] = fileparts(file2load);
 copyfile(file2load, tempdir)
 

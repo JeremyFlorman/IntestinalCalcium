@@ -1,4 +1,4 @@
-function reCombine_Wormdata(filenames, outputdir, genotype)
+function [structureSaveName] = reCombine_Wormdata(filenames, outputdir)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 pt = '';
@@ -21,7 +21,11 @@ for j = 1:length(filenames)
         mergedstructure(j).autoAxialSignal = autoFixSignal(wormdata.rawAxialSignal);
     end
 
-    mergedstructure(j).filename = filenames(j);
+    mergedstructure(j).filename = filenames{j};
+
+    spltstr = strsplit(filenames{j}, '_');
+
+    genotype = spltstr{end-2};
     mergedstructure(j).genotype = genotype;
 end
 

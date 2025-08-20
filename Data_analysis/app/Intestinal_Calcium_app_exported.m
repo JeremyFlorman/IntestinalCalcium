@@ -493,6 +493,40 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
 
         end
+        
+        function [structureSaveName] = reprocessMergedData(~, wormdata, settings, mergedDataPath)
+            files2process = cell(length(wormdata),1);
+            filepath = cell(length(wormdata),1);
+
+            for i = 1:length(wormdata)
+
+                tempfile = wormdata(i).filename;
+
+                if isfile(tempfile)
+                    files2process(i) = {tempfile};
+                    [fp, ~, ~] = fileparts(tempfile);
+                    filepath(i) = {fp};
+                elseif isfile(strrep(tempfile,'Y:\', 'Z:\'))
+                    tempfile = strrep(tempfile,'Y:\', 'Z:\');
+                    files2process(i) = {tempfile};
+                    [fp, ~, ~] = fileparts(tempfile);
+                    filepath(i) = {fp};
+                else
+                    files2process = [];
+                end
+            end
+
+            settings.isRemote = 1;
+
+            for i = 1:length(files2process)
+                disp(['Processing file ' num2str(i) ' of ' num2str(length(files2process)) ': ' files2process{i}])
+                settings.tiffDir = filepath{i};
+                freelyMovingAnalysis_Func(settings)
+            end
+            [structureSaveName] = reCombine_Wormdata(files2process, mergedDataPath);
+        end
+
+
     end
 
 
@@ -842,46 +876,24 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                 searchStart = app.defaultOutputDir;
             end
 
-
             [mergedDataFile, mergedDataPath] = uigetfile([searchStart '\*.mat']);
             app.outputDir.Value = mergedDataPath;
-
-
 
             load(fullfile(mergedDataPath, mergedDataFile));
             settings = parseInputs(app);
 
+            [mutantSaveName] =  reprocessMergedData(app, wormdata, settings, mergedDataPath);
 
-            files2process = cell(length(wormdata),1);
-            filepath = cell(length(wormdata),1);
-            for i = 1:length(wormdata)
-                tempfile = wormdata(i).filename;
-                if isfile(tempfile)
-                    files2process(i) = {tempfile};
-                    [fp, ~, ~] = fileparts(tempfile);
-                    filepath(i) = {fp};
-                elseif isfile(strrep(tempfile,'Y:\', 'Z:\'))
-                    tempfile = strrep(tempfile,'Y:\', 'Z:\');
-                    files2process(i) = {tempfile};
-                    [fp, ~, ~] = fileparts(tempfile);
-                    filepath(i) = fp;
-                else
-                    files2process = [];
-                end
+            if isfield(wormdata,'controlData')
+                controlData = wormdata(1).controlData;
+                [controlSaveName] = reprocessMergedData(app, controlData, settings, mergedDataPath);
+
+                load(controlSaveName);
+                ctrlData = wormdata;
+                load(mutantSaveName);
+                wormdata(1).controlData = ctrlData;
+                save(mutantSaveName, 'wormdata');
             end
-
-            settings.isRemote = 1;
-
-
-
-            for i = 1:length(files2process)
-                disp(['Processing file ' num2str(i) ' of ' num2str(length(files2process)) ': ' files2process{i}])
-                settings.tiffDir = filepath{i};
-                freelyMovingAnalysis_Func(settings)
-            end
-
-            genotype = strrep(mergedDataFile, '_mergedData.mat', '');
-            reCombine_Wormdata(files2process, mergedDataPath, genotype);
         end
 
         % Button pushed function: CalculateWavePropagationButton
@@ -1893,7 +1905,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.HalfMaximumButton.Tooltip = {'the width of the bulk signal peak at half-maximum'};
             app.HalfMaximumButton.Text = 'Half Maximum';
             app.HalfMaximumButton.Position = [3 52 102 22];
-            
+            app.HalfMaximumButton.Value = true;
+
             % Create PeakLocationButton
             app.PeakLocationButton = uiradiobutton(app.InflectionPointDetection);
             app.PeakLocationButton.Tooltip = {'The maximum of the peak'};
@@ -1905,7 +1918,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.ThresholdButton.Tooltip = {'The first point in each bin which is above the threshold (% of max) define to the right.'};
             app.ThresholdButton.Text = 'Threshold';
             app.ThresholdButton.Position = [3 5 79 22];
-            app.ThresholdButton.Value = true;
 
             % Create threshValue
             app.threshValue = uieditfield(app.InflectionPointDetection, 'numeric');
