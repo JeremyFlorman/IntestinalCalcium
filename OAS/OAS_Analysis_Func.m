@@ -89,15 +89,46 @@ for nf =startIndex:length(imgDir)
 
 
 
+    behIndPath = ['C:\tmp\' nm 'behInd.mat'];
+    gcampIndPath = ['C:\tmp\' nm 'gcampInd.mat'];
+    logEventPath = ['C:\tmp\' nm 'logEvents.mat'];
 
     %% get info from h5 files
-    disp('Synching Camera feeds...')
-    [behavior_indices, gcamp_indices] = syncDualCameras(path,isremote);
+    if isremote == 1 
+        if ~isfile(behIndPath) % check if we have any cached data, if not cache it
+            disp('Synching Camera feeds...')
+            [behavior_indices, gcamp_indices] = syncDualCameras(path,isremote);
+            save(behIndPath, 'behavior_indices');
+            save(gcampIndPath,'gcamp_indices')
+        elseif isfile(behIndPath)           % if we do have cached data, just load it
+            disp('loading camera timestamps')
+            load(behIndPath)
+            load(gcampIndPath)
+            load(logEventPath)
+        end
+    else
+        disp('Synching Camera feeds...')
+        [behavior_indices, gcamp_indices] = syncDualCameras(path,isremote);
+    end
 
+    
     %% get info from log files
-    disp('Processing Log Files...')
     timestamps = behavior_indices.timestamps;
-    log_events = processLogFile(path,timestamps, isremote);
+ 
+    if isremote == 1
+        if ~isfile(logEventPath)
+            disp('Processing Log Files...')
+            log_events = processLogFile(path,timestamps, isremote);
+            save(logEventPath, 'log_events')
+        elseif isfile(logEventPath)
+            disp('loading event log')
+            load(logEventPath)
+        end
+    else
+        disp('Processing Log Files...')
+        log_events = processLogFile(path,timestamps, isremote);
+    end
+
     stimTimes = log_events.stimTimes;
     velocity = log_events.velocity;
 
@@ -139,7 +170,12 @@ for nf =startIndex:length(imgDir)
                 close(v)
             end
             videopath = [fold '\' protopath{end} '_' num2str(nf) '_Tracking_Video.mp4'];
-            v = VideoWriter(videopath,'MPEG-4');
+            if isremote== 0
+                v = VideoWriter(videopath,'MPEG-4');
+            else
+                localVideoPath = [ 'C:\tmp\' protopath{end} '_' num2str(nf) '_Tracking_Video.mp4'];
+                v = VideoWriter(localVideoPath,'MPEG-4');
+            end
             v.FrameRate = 15;
             open(v)
         end
@@ -207,6 +243,7 @@ for nf =startIndex:length(imgDir)
     hAxStim = [];
     hBulkStim = [];
     hAreaStim = [];
+    frameError = 0;
 
     %% Tracking Block
     tic
@@ -229,8 +266,6 @@ for nf =startIndex:length(imgDir)
         %% load the first h5 file
         if i == startframe
             if isremote == 1
-                mkdir('C:\tmp\beh');
-                mkdir('C:\tmp\gcamp');
                 [~, beh_name] = fileparts(beh_file_path);
                 [~, gcamp_name] = fileparts(gcamp_file_path);
 
@@ -590,11 +625,9 @@ for nf =startIndex:length(imgDir)
                                     title(ax3,'GCaMP');
                                 end
                             catch
-                                imshow(imoverlay(imadjust(mCh, bfAdj), outskel, [1 0 0]), 'Parent', ax2)
-                                title(ax2,'Brightfield');
-
-                                imshow(imoverlay(imadjust(GFP,gfpAdj), outskel, [0 1 0]), 'Parent', ax3)
-                                title(ax3,'GCaMP');
+                                frameError = 1;
+                                backupmCh = imoverlay(imadjust(mCh, bfAdj), outskel, [1 0 0]);
+                                backupGFP = imoverlay(imadjust(GFP,gfpAdj), outskel, [0 1 0]);
                             end
 
                         elseif troubleshoot == 1
@@ -669,9 +702,9 @@ for nf =startIndex:length(imgDir)
                             ax7.TickLength = [0.005 0.005];
                             
                             %% Area
-                            hArea = plot(time(1:i),smoothdata(area(1:i),'gaussian', 30), 'Parent', velAx);
+                            hArea = plot(time(1:i),smoothdata(velocity(1:i),'gaussian', 30), 'Parent', velAx);
                             xlim([0 time(end)]);
-                            ylabel(velAx, 'Worm Area (pixels)');
+                            ylabel(velAx, 'Velocity (\mum / sec)');
                             xlabel(velAx,'Time (min)');
                             velAx.TickLength = [0.005 0.005];
                             box off
@@ -703,11 +736,17 @@ for nf =startIndex:length(imgDir)
                             set(hNormals(numSegs+1:end), {'XData'}, nanPairs, {'YData'}, nanPairs);
 
                             if troubleshoot == 0
+                                if frameError == 0
                                 % Brightfield
                                 hBF.CData = mmergedOverlay;
 
                                 % GCaMP
                                 hGFP.CData = gmergedOverlay;
+                                elseif frameError == 1
+                                    hBF.CData = backupmCh;
+                                    hGFP.CData = backupGFP;
+                                    frameError = 0;
+                                end
                             end
 
                             % Axial Signal
@@ -728,7 +767,7 @@ for nf =startIndex:length(imgDir)
 
                             % Area
                             hArea.XData = time(1:i);
-                            hArea.YData = smoothdata(area(1:i),'gaussian', 30);
+                            hArea.YData = smoothdata(velocity(1:i),'gaussian', 30);
 
                             if ~isempty(stimTimes) && i>stimTimes(1)
                                 hAxStim.XData = stimX;
@@ -1042,52 +1081,12 @@ for nf =startIndex:length(imgDir)
         elseif isremote == 1  % if working with remote files, moved analyzed results back to where we found them.
             clear('img')
 
-            % copy wormdata
-            [statuswormdata,~,~]=copyfile(datasavename, serverfolder);
-
             % copy summary plots
-            [statussummaryplot,~,~]=copyfile(summaryPlotName, serverfolder);
-
-            % copy summary plots
-            [statusvideoplot,~,~]=copyfile(videopath, serverfolder);
+            [statusvideoplot,~,~]=copyfile(localVideoPath, videopath);
+            delete(localVideoPath);
 
         end
     end
-
-    % clearvars -except inputs nf fld serverfolder startIndex startframe uploadresults...
-    %     isremote plotstuff videostuff framerate fps troubleshoot showNormals ...
-    %     showAxialSignal saveAxialMatrix crop useautothreshold useadaptivethreshold ...
-    %     removevignette minwormarea minwormarea maxwormarea numSegments axSigLen axSigHeight imgDir ...
-    %     SEsize szFilter
-
-    %%
-    % if isremote
-    %     logFiles = dir('C:\tmp\*log.txt');
-    % 
-    %     for logIdx = 1:length(logFiles)
-    %         disp(['Deleting log file ' num2str(logIdx) ' of ' num2str(length(logFiles))])
-    %         logPath = fullfile(logFiles(logIdx).folder, logFiles(logIdx).name);
-    %         delete(logPath)
-    %     end
-    % 
-    %     beh_dir = dir(beh_local_fp);
-    %     beh_dir = beh_dir(3:end);
-    %     for i = 1:length(beh_dir)
-    %         file2delete = fullfile(beh_dir(i).folder, beh_dir(i).name);
-    %         delete(file2delete);
-    %     end
-    %     rmdir(beh_local_fp);
-    % 
-    % 
-    %     gcamp_dir = dir(gcamp_local_fp);
-    %     gcamp_dir = gcamp_dir(3:end);
-    %     for i = 1:length(gcamp_dir)
-    %         file2delete = fullfile(gcamp_dir(i).folder, gcamp_dir(i).name);
-    %         delete(file2delete);
-    %     end
-    %     rmdir(gcamp_local_fp);
-    % 
-    % end
 
     if exist('wormdata', 'var')
         clear('wormdata');
@@ -1103,8 +1102,9 @@ for nf =startIndex:length(imgDir)
     end
 
     if isremote == 1
-        rmdir('C:\tmp\beh')
-        rmdir('C:\tmp\gcamp')
+        delete(behIndPath)
+        delete(gcampIndPath)
+        delete(logEventPath)
     end
 
 end

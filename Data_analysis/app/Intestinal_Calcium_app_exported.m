@@ -234,6 +234,11 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             parsedInputs.startFile = app.StartFileSpinner.Value;
             parsedInputs.isOAS = app.AnalyzeOASdataCheckBox.Value;
 
+            if parsedInputs.isRemote == 1
+                parsedInputs.uploadResults = 1;
+                parsedInputs.remoteDir = parsedInputs.tiffDir;
+            end
+
 
 
 
@@ -594,9 +599,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if parsedInputs.isOAS == 0
             freelyMovingAnalysis_Func(parsedInputs)
             elseif parsedInputs.isOAS==1
-                if parsedInputs.loadTiff == 1
                     OAS_Analysis_Func(parsedInputs)
-                end
             end
 
 

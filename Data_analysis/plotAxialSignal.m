@@ -6,6 +6,7 @@ axylimit = settings.axylimit;
 XTickInt = settings.axialXticint;
 plotlimit = settings.tolimit;
 axSigCMap = settings.axSigCMap;
+framerate = settings.framerate;
 
 if plotlimit == 0 || plotlimit>length(data) 
     num2plot = length(data);
@@ -32,6 +33,7 @@ end
 
 
 imagesc(smoothdata(axialMatrix,'movmedian',60)',axylimit)
+% imagesc(imgaussfilt(axialMatrix', 2), axylimit)
 colormap(axSigCMap);
 
 if isfield(data, 'stimTimes')
@@ -48,7 +50,7 @@ if isfield(data, 'genotype')
     title(['\it' data(1).genotype])
 end
 
-durationInMin = length(data(1).autoAxialSignal)/900;
+durationInMin = length(data(1).autoAxialSignal)/(framerate*60);
 framesInMin = length(data(1).autoAxialSignal)/durationInMin;
 
 xt = [1 framesInMin*XTickInt:framesInMin*XTickInt:length(data(1).autoAxialSignal)];

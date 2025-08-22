@@ -176,7 +176,7 @@ normAx = 0; % nomralize axial signal?
 
 for i = 1:length(inputData)
     % Subtract Background and fill missing datapoints in bulk signal
-    bkgSignal = smoothdata(inputData(i).backgroundSignal, 'movmedian',900);
+    bkgSignal = smoothdata(inputData(i).backgroundSignal, 'movmedian',60*settings.framerate);
 
     if ~strcmp(settings.normalize, 'Delta F/F0')
         inputData(i).bulkSignal = fillmissing(inputData(i).bulkSignal-bkgSignal, 'movmedian',100);
@@ -602,6 +602,14 @@ if analyzePropagationRate == 1
     processedData(1).propagationVector = vertcat(inputData(:).propagationRate);
     processedData(1).rSquaredVector = vertcat(inputData(:).rSquared);
     processedData(1).validVector = vertcat(inputData(:).validFlags);
+
+
+    belowThresh = processedData(1).rSquaredVector < settings.minR2;
+    aboveThresh = processedData(1).propagationVector;
+    aboveThresh(belowThresh) = nan;
+    processedData(1).propagationAboveThreshold = aboveThresh;
+
+    
 
     if validatePropagationRate == 1
         assignin('base', 'propagationVector', processedData(1).propagationVector);
