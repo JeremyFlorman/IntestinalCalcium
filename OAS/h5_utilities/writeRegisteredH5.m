@@ -1,7 +1,7 @@
 function [outputArg1,outputArg2] = writeRegisteredH5(behaviorFolder)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
-behaviorFolder = 'C:\Users\Jeremy\Dropbox\PHB Paper\Supplemental Movies\250522_zfis178_nuc-1-DA-Lactate_5\2025_05_22_14_31_59_flircamera_behavior';
+behaviorFolder = 'E:\Tap+Pumping\250909_zfis178_wildtype+Tap-Pumping-30fps\2025_09_09_15_35_23_flircamera_behavior';
 
 h5data = processH5(behaviorFolder);
 fparts = strsplit(behaviorFolder, '\');

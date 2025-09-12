@@ -220,19 +220,19 @@ if length(cleanedInit)>numSegments*2
             % rectangle('Position',[rectX, rectY,rectW, rectH],'linestyle', '-','EdgeColor', currentColor, 'linewidth', 1, 'Parent', axAx)
 
             % plot a line at each inflection point
-            if badBins(pltIdx) == 0
-                line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
-            elseif badBins(pltIdx) == 1
-                line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 0 0], 'linewidth' ,1.5, 'Parent', axAx)
-            end
-        end
+        %     if badBins(pltIdx) == 0
+        %         line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
+        %     elseif badBins(pltIdx) == 1
+        %         line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 0 0], 'linewidth' ,1.5, 'Parent', axAx)
+        %     end
+        % end
 
 
 
         %% Plot Lines Fit to Each Segment
 
         for i=1:length(timeValues)
-            line(timeValues{i}, distanceValues{i}, 'Color', 'r', 'Linestyle', ':', 'LineWidth', 1.5);
+            line(timeValues{i}-2, distanceValues{i}, 'Color', 'r', 'Linestyle', ':', 'LineWidth', 1.5);
         end
 
         %% Axis Labels and Formatting
@@ -274,6 +274,7 @@ if length(cleanedInit)>numSegments*2
 else
     rSquared = NaN(1, numSegments);
     propagationRate = NaN(1, numSegments);
+    validFlags = zeros(1, length(numSegments));
 end
 
 if validatePropagationRate == 0

@@ -41,10 +41,30 @@ if isfield(data, 'stimTimes')
     for i =1:num2plot
         stimtimes = data(i).stimTimes; 
         yvals = repmat(stimY(i), length(stimtimes),1);
-        plot(stimtimes,yvals,'v','color' ,[0 0 0],'MarkerFaceColor',[.8 .8 .8], 'MarkerSize',8)
+        plot(stimtimes,yvals,'v','color' ,[0 0 0],'MarkerFaceColor',[.8 .8 .8], 'MarkerSize',4)
     end
 end
 hold off
+
+
+
+for i =1:num2plot
+    if isfield(data(i), 'onFood')
+        for k = 1:length(data(i).onFood)
+            foodStart = data(i).onFood(k);
+
+            if k<=length(data(i).offFood)
+                foodEnd = data(i).offFood(k);
+            else
+                foodEnd = find(~isnan(data(i).bulkSignal),1,'last');
+            end
+            foodY = stimY(i)+5;
+            line([foodStart foodEnd], [foodY foodY], 'Color', [0.97 0.93 0.62], 'LineWidth', 1, 'LineStyle', ':')
+        end
+    end
+end
+
+
 
 if isfield(data, 'genotype')
     title(['\it' data(1).genotype])

@@ -251,7 +251,7 @@ for nf =startIndex:length(imgDir)
         % use synced video indices to check if we need to load the next h5
         % file. Every loop the file index is checked and updates the path
         % of the corresponding h5 file. the relative file index tells which
-        % slice to read from that file. When the file index changes the 
+        % slice to read from that file. When the file index changes, the 
         % appropriate h5 file is loaded, otherwise successive slices are
         % read.
 

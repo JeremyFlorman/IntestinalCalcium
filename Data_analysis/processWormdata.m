@@ -127,8 +127,10 @@ elseif strcmp(normalize, 'Control') == 1 % normalize bulk signal by dividing by 
     end
 end
 
-% crop to first experiment
 
+
+
+% crop to first experiment
 if trimstim == 1
     wtdata = trim2stim(wtdata,settings);
     mtdata = trim2stim(mtdata,settings);
@@ -137,7 +139,11 @@ end
 if trimExperimentLength == 1 || analyzePartial == 1
     mtdata = trimExp(mtdata,settings);
     wtdata = trimExp(wtdata, settings);
+else
+    mtdata = padTraces(mtdata, settings);
+    wtdata = padTraces(wtdata, settings);
 end
+
 
 
 
@@ -154,7 +160,7 @@ if saveWormdata2workspace == 1
         dataName = strrep(dataName, ';', '');
 
         assignin("base", [dataName 'Data'], mtdata)
-        % assignin("base", [dataName '_ControlData'], wtdata)
+        assignin("base", [dataName '_ControlData'], wtdata)
     else
         assignin("base", 'SingleSpikeData', mtdata);
     end
@@ -263,7 +269,11 @@ for i = 1:length(inputData)
     tempint = [];
     bulkSignal = inputData(i).bulkSignal;
     axialSignal = inputData(i).autoAxialSignal;
-    wormLength = inputData(i).wormLength;
+
+    if isfield(inputData, 'wormLength')
+        wormLength = inputData(i).wormLength;
+    end
+
     % chunksize = floor(0.2*size(axialSignal,2));
 
     [tempamp, templocs] = findpeaks(bulkSignal, 'MinPeakProminence', peakthreshold, 'MinPeakDistance',peakdistance,'MinPeakWidth',peakwidth);
@@ -498,6 +508,7 @@ for i = 1:length(inputData)
         fTime = nan;
         AUC = nan;
         % propagationRate = nan;
+        axialPeak = nan;
         tau = nan;
     end
 
@@ -516,6 +527,8 @@ for i = 1:length(inputData)
     inputData(i).meanInterval = mean(tempint, 'omitmissing');
     inputData(i).peakAmplitude = tempamp;
     inputData(i).peakLoc = templocs;
+
+
     inputData(i).axialPeak = axialPeak;
     inputData(i).avgKymograph = mean(axialPeak,3,'omitmissing');
 
@@ -630,10 +643,9 @@ for i = 1:length(inputData)
         if ~isempty(inputData(i).stimTimes)
             firstStim = inputData(i).stimTimes(1);
             prePadding = 30*settings.framerate;
+            
             expStart = firstStim-prePadding;
             expEnd = length(inputData(i).bulkSignal);
-            % figure()
-            % pretrim = inputData(i).bulkSignal;
 
             if expStart>0
                 inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(expStart:expEnd,:);
@@ -661,7 +673,20 @@ for i = 1:length(inputData)
                     inputData(i).velocity = vertcat(nanPadVector,inputData(i).velocity);
                 end
             end
-            inputData(i).stimTimes(1) = prePadding;
+            inputData(i).stimTimes = inputData(i).stimTimes - expStart;
+
+            if isfield(inputData, 'onFood')
+                if ~isempty(inputData(i).onFood)
+                    inputData(i).onFood = inputData(i).onFood - expStart;
+                end
+            end
+
+            if isfield(inputData, 'offFood')
+                if ~isempty(inputData(i).offFood)
+                    inputData(i).offFood = inputData(i).offFood - expStart;
+                end
+            end
+
             % posttrim = inputData(i).bulkSignal;
             
             % plot(1:length(pretrim), pretrim, 1:length(posttrim), posttrim)
@@ -702,12 +727,88 @@ for i = 1:length(inputData)
         validtimes = inputData(i).stimTimes<expEnd;
         inputData(i).stimTimes = inputData(i).stimTimes(validtimes);
     end
-    processedData = inputData;
-
+end
+processedData = inputData;
 end
 
 
+%% pad traces with NaN values to automatically equalize exp duration
+% will also trim or extend experiments based on the "end" value in analyze partial
+% recording (settings.partEnd).
+
+function [processedData] = padTraces(inputData, settings)
+lens = nan(length(inputData),1);
+
+for i = 1:length(inputData)
+    lens(i)=length(inputData(i).bulkSignal);
 end
+
+if settings.partEnd == 0
+    maxLen = max(lens);
+else 
+    maxLen = settings.partEnd;
+end
+
+
+for i = 1:length(inputData)
+    thisSize = size(inputData(i).autoAxialSignal);
+    thisLength = thisSize(1);
+    lenDiff = maxLen-thisLength;
+
+    if lenDiff > 0 % Extend traces by padding end with NaN
+        traceBuffer = nan(lenDiff,1);
+        axialBuffer = nan(lenDiff, thisSize(2));
+
+        inputData(i).autoAxialSignal = vertcat(inputData(i).autoAxialSignal, axialBuffer);
+        inputData(i).bulkSignal = vertcat(inputData(i).bulkSignal, traceBuffer);
+        inputData(i).backgroundSignal = vertcat(inputData(i).backgroundSignal, traceBuffer);
+        inputData(i).orientation = vertcat(inputData(i).orientation, traceBuffer);
+        inputData(i).area = vertcat(inputData(i).area, traceBuffer);
+        if isfield(inputData,'velocity')
+            inputData(i).velocity = vertcat(inputData(i).velocity, traceBuffer);
+        end
+
+        if isfield(inputData,'wormLength')
+            inputData(i).wormLength = vertcat(inputData(i).wormLength, traceBuffer);
+        end
+    elseif lenDiff < 0 
+        inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(1:maxLen,:);
+        inputData(i).bulkSignal = inputData(i).bulkSignal(1:maxLen);
+        inputData(i).backgroundSignal = inputData(i).backgroundSignal(1:maxLen);
+        inputData(i).orientation = inputData(i).orientation(1:maxLen);
+        inputData(i).area = inputData(i).area(1:maxLen);
+
+        if isfield(inputData,'velocity')
+            inputData(i).velocity = inputData(i).velocity(1:maxLen);
+        end
+
+        if isfield(inputData,'wormLength')
+            inputData(i).wormLength = inputData(i).wormLength(1:maxLen);
+        end
+
+        if isfield(inputData,'stimTimes')
+            validtimes = inputData(i).stimTimes<maxLen;
+            inputData(i).stimTimes = inputData(i).stimTimes(validtimes);
+        end
+
+
+        if isfield(inputData,'onFood')
+            validtimes = inputData(i).onFood<maxLen;
+            inputData(i).onFood = inputData(i).onFood(validtimes);
+        end
+
+        if isfield(inputData,'offFood')
+            validtimes = inputData(i).offFood<maxLen;
+            inputData(i).offFood = inputData(i).offFood(validtimes);
+        end
+
+    end
+end
+processedData = inputData;
+end
+
+
+
 
 function [processedData] = deltaF(inputData, settings)
 for i = 1:length(inputData)

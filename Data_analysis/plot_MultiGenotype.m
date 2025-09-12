@@ -116,11 +116,11 @@ for q = 1:length(genotypes)
     
     wormDataPath = fullfile(d(1).folder,d(1).name)
 
-    try
-        [mtdata, wtdata, settings] = processWormdata(wormDataPath, settings);
-    catch
-        warning(['Genotype: ' genotypes{q} ' could not be found! Check spelling and OutputDir path.'])
-    end
+    % try
+    [mtdata, wtdata, settings] = processWormdata(wormDataPath, settings);
+    % catch
+        % warning(['Genotype: ' genotypes{q} ' could not be found! Check spelling and OutputDir path.'])
+    % end
 %%
 % datafolder = 'C:\Users\Jeremy\Dropbox\ins-3 intestinal calcium fig\data\forExport';
 %     switch q
