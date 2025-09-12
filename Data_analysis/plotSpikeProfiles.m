@@ -98,12 +98,12 @@ end
 
 if ~isempty(mtpktimemat)
     plot(mtpktimemat, mtprofiles2plot, 'Color',mttracecol ,'LineWidth', singlewidth); % plot mutant individual traces
-    plot(mtpktime, mean(mtprofiles,2,'omitnan'), 'Color', mtcolor, 'LineWidth', tracewidth); % plot mutant trace mean
+    plot(mtpktime, mean(mtprofiles2plot,2,'omitnan'), 'Color', mtcolor, 'LineWidth', tracewidth); % plot mutant trace mean
 end
 
 if plotcontrol == 1
     if~isempty(wtprofiles)
-        plot(wtpktime, mean(wtprofiles,2,'omitnan'), 'Color', wtcolor, 'LineWidth', tracewidth); % plot wild type trace mean
+        plot(wtpktime, mean(wtprofiles2plot,2,'omitnan'), 'Color', wtcolor, 'LineWidth', tracewidth); % plot wild type trace mean
     end
 end
 
