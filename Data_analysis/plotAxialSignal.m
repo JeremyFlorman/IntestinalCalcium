@@ -46,24 +46,24 @@ if isfield(data, 'stimTimes')
 end
 hold off
 
+plotFood = 0;
+if plotFood == 1
+    for i =1:num2plot
+        if isfield(data(i), 'onFood')
+            for k = 1:length(data(i).onFood)
+                foodStart = data(i).onFood(k);
 
-
-for i =1:num2plot
-    if isfield(data(i), 'onFood')
-        for k = 1:length(data(i).onFood)
-            foodStart = data(i).onFood(k);
-
-            if k<=length(data(i).offFood)
-                foodEnd = data(i).offFood(k);
-            else
-                foodEnd = find(~isnan(data(i).bulkSignal),1,'last');
+                if k<=length(data(i).offFood)
+                    foodEnd = data(i).offFood(k);
+                else
+                    foodEnd = find(~isnan(data(i).bulkSignal),1,'last');
+                end
+                foodY = stimY(i)+5;
+                line([foodStart foodEnd], [foodY foodY], 'Color', [0.97 0.93 0.62], 'LineWidth', 0.5, 'LineStyle', '-')
             end
-            foodY = stimY(i)+5;
-            line([foodStart foodEnd], [foodY foodY], 'Color', [0.97 0.93 0.62], 'LineWidth', 1, 'LineStyle', ':')
         end
     end
 end
-
 
 
 if isfield(data, 'genotype')
@@ -81,6 +81,7 @@ ax = gca;
 ax.XTick = xt;
 ax.XTickLabel = xtl;
 ax.YTickLabel = [];
+% ax.YAxis.Visible = 'off'
 box off
 
 if labelXAxis ==1
