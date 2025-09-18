@@ -46,8 +46,8 @@ if isfield(data, 'stimTimes')
 end
 hold off
 
-plotFood = 0;
-if plotFood == 1
+
+if settings.annotateFood == 1
     for i =1:num2plot
         if isfield(data(i), 'onFood')
             for k = 1:length(data(i).onFood)
@@ -59,7 +59,7 @@ if plotFood == 1
                     foodEnd = find(~isnan(data(i).bulkSignal),1,'last');
                 end
                 foodY = stimY(i)+5;
-                line([foodStart foodEnd], [foodY foodY], 'Color', [0.97 0.93 0.62], 'LineWidth', 0.5, 'LineStyle', '-')
+                line([foodStart foodEnd], [foodY foodY], 'Color', [0.97 0.93 0.62], 'LineWidth', 0.5, 'LineStyle', '-', 'Marker', 'none')
             end
         end
     end

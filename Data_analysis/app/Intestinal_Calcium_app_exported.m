@@ -139,6 +139,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         MinEditField                    matlab.ui.control.NumericEditField
         MinEditFieldLabel               matlab.ui.control.Label
         SortTracesByButtonGroup         matlab.ui.container.ButtonGroup
+        sortFirstSpike                  matlab.ui.control.RadioButton
         sortMean                        matlab.ui.control.RadioButton
         sortAmp                         matlab.ui.control.RadioButton
         sortFreq                        matlab.ui.control.RadioButton
@@ -149,6 +150,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         axialYLim                       matlab.ui.control.EditField
         AxialSignallimLabel             matlab.ui.control.Label
         miscsettingsTab                 matlab.ui.container.Tab
+        annotateFood                    matlab.ui.control.CheckBox
+        ExportPlotSettingsButton        matlab.ui.control.Button
         WavePropagationSettingsPanel    matlab.ui.container.Panel
         analyzePropagationCheckbox      matlab.ui.control.CheckBox
         WorkspacevariableEditField      matlab.ui.control.EditField
@@ -233,15 +236,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             parsedInputs.startFrame = app.StartFrameSpinner.Value;
             parsedInputs.startFile = app.StartFileSpinner.Value;
             parsedInputs.isOAS = app.AnalyzeOASdataCheckBox.Value;
-
-            if parsedInputs.isRemote == 1
-                parsedInputs.uploadResults = 1;
-                parsedInputs.remoteDir = parsedInputs.tiffDir;
-            end
-
-
-
-
         end
     end
 
@@ -290,6 +284,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                 plotSettings.sortType = 2;
             elseif app.sortMean.Value
                 plotSettings.sortType = 3;
+            elseif app.sortFirstSpike.Value
+                plotSettings.sortType = 4;
             end
 
             if app.descendButton.Value
@@ -383,6 +379,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
 
             plotSettings.saveWormdata2workspace = app.saveWormDataToWorkspace.Value;
+            plotSettings.annotateFood = app.annotateFood.Value;
 
         end
 
@@ -428,6 +425,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                     app.sortAmp.Value = 1;
                 case 3
                     app.sortMean.Value = 1;
+                case 4
+                    app.sortFirstSpike.Value = 1;
             end
 
 
@@ -498,6 +497,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             end
 
             app.saveWormDataToWorkspace.Value = plotSettings.saveWormdata2workspace;
+            app.annotateFood.Value = plotSettings.annotateFood;
 
 
 
@@ -599,7 +599,9 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             if parsedInputs.isOAS == 0
             freelyMovingAnalysis_Func(parsedInputs)
             elseif parsedInputs.isOAS==1
+                if parsedInputs.loadTiff == 1
                     OAS_Analysis_Func(parsedInputs)
+                end
             end
 
 
@@ -906,7 +908,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         % Button pushed function: CalculateWavePropagationButton
         function CalculateWavePropagationButtonPushed(app, event)
-            disp('Propagating...')
             inputDataName = app.WorkspacevariableEditField.Value;
             inputData = evalin("base", inputDataName);
 
@@ -932,19 +933,28 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             for i = 1:size(axPeakMat,3)
                 if ~all(isnan(axPeakMat(:,:,i)))
                     axialPeak = imgaussfilt(axPeakMat(:,:,i),2);
-                    [propRate, R2, validFlags]  = getWavePropagationRate(axialPeak, wormLength(i), plotSettings);
+                    [propRate, R2]  = getWavePropagationRate(axialPeak, wormLength(i), plotSettings)
 
                     for k = 1:plotSettings.numSegments
-                        if ~isnan(R2(k)) && R2(k)>plotSettings.minR2
+                        if ~isnan(R2(k)) && R2(k)>0.3
                             propagationRate(i,k) = propRate(k);
                         end
                     end
                     rSquared(i, 1:length(R2)) = R2;
                 end
             end
-            assignin('base', 'propagationRate', propagationRate)
-            assignin('base', 'rSquared', rSquared)
-            disp('Done')
+
+
+
+
+
+
+        end
+
+        % Button pushed function: ExportPlotSettingsButton
+        function ExportPlotSettingsButtonPushed(app, event)
+            settings = parsePlotSettings(app);
+            assignin("base", "settings", settings)
         end
     end
 
@@ -1009,7 +1019,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             % Create TabGroup
             app.TabGroup = uitabgroup(app.IntestinalCalciumAppUIFigure);
-            app.TabGroup.Position = [2 11 469 461];
+            app.TabGroup.Position = [2 0 469 472];
 
             % Create TrackingTab
             app.TrackingTab = uitab(app.TabGroup);
@@ -1018,14 +1028,14 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create setTiffDirButton
             app.setTiffDirButton = uibutton(app.TrackingTab, 'push');
             app.setTiffDirButton.ButtonPushedFcn = createCallbackFcn(app, @setTiffDirButtonButtonPushed, true);
-            app.setTiffDirButton.Position = [13 392 97 30];
+            app.setTiffDirButton.Position = [13 403 97 30];
             app.setTiffDirButton.Text = 'Set Tiff Dir';
 
             % Create tiffDir
             app.tiffDir = uieditfield(app.TrackingTab, 'text');
             app.tiffDir.HorizontalAlignment = 'right';
             app.tiffDir.FontSize = 10;
-            app.tiffDir.Position = [119 394 252 28];
+            app.tiffDir.Position = [119 405 252 28];
             app.tiffDir.Value = 'Select Tiff Directory';
 
             % Create IsRemoteCheckBox
@@ -1033,39 +1043,39 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.IsRemoteCheckBox.Tooltip = {'Check this box if data is on a server. This will temporarily copy Tif to local drive to analyze '};
             app.IsRemoteCheckBox.Text = 'Is Remote?';
             app.IsRemoteCheckBox.WordWrap = 'on';
-            app.IsRemoteCheckBox.Position = [381 396 82 22];
+            app.IsRemoteCheckBox.Position = [381 407 82 22];
 
             % Create LoadTiffCheckBox
             app.LoadTiffCheckBox = uicheckbox(app.TrackingTab);
             app.LoadTiffCheckBox.Tooltip = {'When checked, loads tiff into memory which is faster overall but requires sufficient RAM'};
             app.LoadTiffCheckBox.Text = 'Load Tiff';
-            app.LoadTiffCheckBox.Position = [381 373 68 22];
+            app.LoadTiffCheckBox.Position = [381 384 68 22];
             app.LoadTiffCheckBox.Value = true;
 
             % Create setRemoteDirButton
             app.setRemoteDirButton = uibutton(app.TrackingTab, 'push');
             app.setRemoteDirButton.ButtonPushedFcn = createCallbackFcn(app, @setRemoteDirButtonButtonPushed, true);
-            app.setRemoteDirButton.Position = [13 338 97 30];
+            app.setRemoteDirButton.Position = [13 349 97 30];
             app.setRemoteDirButton.Text = 'Set Remote Dir';
 
             % Create remoteDir
             app.remoteDir = uieditfield(app.TrackingTab, 'text');
             app.remoteDir.HorizontalAlignment = 'right';
             app.remoteDir.FontSize = 10;
-            app.remoteDir.Position = [119 338 252 28];
+            app.remoteDir.Position = [119 349 252 28];
             app.remoteDir.Value = 'Select Remote Directory';
 
             % Create UploadResultsCheckBox
             app.UploadResultsCheckBox = uicheckbox(app.TrackingTab);
             app.UploadResultsCheckBox.Text = 'Upload Results';
             app.UploadResultsCheckBox.WordWrap = 'on';
-            app.UploadResultsCheckBox.Position = [380 335 87 30];
+            app.UploadResultsCheckBox.Position = [380 346 87 30];
             app.UploadResultsCheckBox.Value = true;
 
             % Create DisplayOptionsPanel
             app.DisplayOptionsPanel = uipanel(app.TrackingTab);
             app.DisplayOptionsPanel.Title = 'Display Options';
-            app.DisplayOptionsPanel.Position = [18 122 126 202];
+            app.DisplayOptionsPanel.Position = [18 133 126 202];
 
             % Create PlotResultsCheckBox
             app.PlotResultsCheckBox = uicheckbox(app.DisplayOptionsPanel);
@@ -1115,7 +1125,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create ThresholdingButtonGroup
             app.ThresholdingButtonGroup = uibuttongroup(app.TrackingTab);
             app.ThresholdingButtonGroup.Title = 'Thresholding';
-            app.ThresholdingButtonGroup.Position = [158 239 136 74];
+            app.ThresholdingButtonGroup.Position = [158 250 136 74];
 
             % Create AutoThresholdButton
             app.AutoThresholdButton = uiradiobutton(app.ThresholdingButtonGroup);
@@ -1132,54 +1142,54 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.ReprocessmergedDataButton = uibutton(app.TrackingTab, 'push');
             app.ReprocessmergedDataButton.ButtonPushedFcn = createCallbackFcn(app, @ReprocessmergedDataButtonPushed, true);
             app.ReprocessmergedDataButton.WordWrap = 'on';
-            app.ReprocessmergedDataButton.Position = [312 242 115 34];
+            app.ReprocessmergedDataButton.Position = [312 253 115 34];
             app.ReprocessmergedDataButton.Text = 'Reprocess mergedData';
 
             % Create CropPixelsEditField
             app.CropPixelsEditField = uieditfield(app.TrackingTab, 'numeric');
             app.CropPixelsEditField.Tooltip = {'Number of edge pixels to crop. This helps remove black edges from split channel recordings. '};
-            app.CropPixelsEditField.Position = [158 193 25 26];
+            app.CropPixelsEditField.Position = [158 204 25 26];
             app.CropPixelsEditField.Value = 5;
 
             % Create CropPixelsEditFieldLabel
             app.CropPixelsEditFieldLabel = uilabel(app.TrackingTab);
             app.CropPixelsEditFieldLabel.HorizontalAlignment = 'right';
-            app.CropPixelsEditFieldLabel.Position = [180 195 67 22];
+            app.CropPixelsEditFieldLabel.Position = [180 206 67 22];
             app.CropPixelsEditFieldLabel.Text = 'Crop Pixels';
 
             % Create fixAxialSignalButton
             app.fixAxialSignalButton = uibutton(app.TrackingTab, 'push');
             app.fixAxialSignalButton.ButtonPushedFcn = createCallbackFcn(app, @fixAxialSignalButtonButtonPushed, true);
-            app.fixAxialSignalButton.Position = [310 193 118 27];
+            app.fixAxialSignalButton.Position = [310 204 118 27];
             app.fixAxialSignalButton.Text = 'Fix Axial Signal';
 
             % Create InputFramerateEditField
             app.InputFramerateEditField = uieditfield(app.TrackingTab, 'numeric');
             app.InputFramerateEditField.Tooltip = {'Frame rate of the input tiff (frames per second)'};
-            app.InputFramerateEditField.Position = [158 160 25 26];
+            app.InputFramerateEditField.Position = [158 171 25 26];
             app.InputFramerateEditField.Value = 15;
 
             % Create InputFramerateEditFieldLabel
             app.InputFramerateEditFieldLabel = uilabel(app.TrackingTab);
             app.InputFramerateEditFieldLabel.HorizontalAlignment = 'right';
-            app.InputFramerateEditFieldLabel.Position = [181 162 91 22];
+            app.InputFramerateEditFieldLabel.Position = [181 173 91 22];
             app.InputFramerateEditFieldLabel.Text = 'Input Framerate';
 
             % Create drawROIs
             app.drawROIs = uibutton(app.TrackingTab, 'push');
             app.drawROIs.ButtonPushedFcn = createCallbackFcn(app, @drawROIsButtonPushed, true);
-            app.drawROIs.Position = [310 159 118 29];
+            app.drawROIs.Position = [310 170 118 29];
             app.drawROIs.Text = 'Draw Midline ROIs';
 
             % Create FlatfieldCorrectionEditField
             app.FlatfieldCorrectionEditField = uieditfield(app.TrackingTab, 'numeric');
             app.FlatfieldCorrectionEditField.Tooltip = {'Size of rolling ball used for flatfield correction (pixels)'};
-            app.FlatfieldCorrectionEditField.Position = [158 124 25 26];
+            app.FlatfieldCorrectionEditField.Position = [158 135 25 26];
 
             % Create FlatfieldCorrectionEditFieldLabel
             app.FlatfieldCorrectionEditFieldLabel = uilabel(app.TrackingTab);
             app.FlatfieldCorrectionEditFieldLabel.HorizontalAlignment = 'right';
-            app.FlatfieldCorrectionEditFieldLabel.Position = [180 126 106 22];
+            app.FlatfieldCorrectionEditFieldLabel.Position = [180 137 106 22];
             app.FlatfieldCorrectionEditFieldLabel.Text = 'Flatfield Correction';
 
             % Create AnalyzeOASdataCheckBox
@@ -1188,37 +1198,37 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.AnalyzeOASdataCheckBox.Tooltip = {'Check this box if you are analyzing OAS data to run the proper tracking function'};
             app.AnalyzeOASdataCheckBox.Text = 'Analyze OAS data?';
             app.AnalyzeOASdataCheckBox.WordWrap = 'on';
-            app.AnalyzeOASdataCheckBox.Position = [303 116 144 44];
+            app.AnalyzeOASdataCheckBox.Position = [303 127 144 44];
 
             % Create StartFileSpinnerLabel
             app.StartFileSpinnerLabel = uilabel(app.TrackingTab);
             app.StartFileSpinnerLabel.HorizontalAlignment = 'right';
-            app.StartFileSpinnerLabel.Position = [30 71 53 22];
+            app.StartFileSpinnerLabel.Position = [30 82 53 22];
             app.StartFileSpinnerLabel.Text = 'Start File';
 
             % Create StartFileSpinner
             app.StartFileSpinner = uispinner(app.TrackingTab);
             app.StartFileSpinner.Tooltip = {'Which tiff file in tiff Dir to begin analysis. '};
-            app.StartFileSpinner.Position = [89 64 54 35];
+            app.StartFileSpinner.Position = [89 75 54 35];
             app.StartFileSpinner.Value = 1;
 
             % Create RunAnalysisButton
             app.RunAnalysisButton = uibutton(app.TrackingTab, 'push');
             app.RunAnalysisButton.ButtonPushedFcn = createCallbackFcn(app, @RunAnalysisButtonPushed, true);
             app.RunAnalysisButton.FontWeight = 'bold';
-            app.RunAnalysisButton.Position = [156 17 271 82];
+            app.RunAnalysisButton.Position = [156 28 271 82];
             app.RunAnalysisButton.Text = 'Run Analysis';
 
             % Create StartFrameSpinnerLabel
             app.StartFrameSpinnerLabel = uilabel(app.TrackingTab);
             app.StartFrameSpinnerLabel.HorizontalAlignment = 'right';
-            app.StartFrameSpinnerLabel.Position = [17 25 68 22];
+            app.StartFrameSpinnerLabel.Position = [17 36 68 22];
             app.StartFrameSpinnerLabel.Text = 'Start Frame';
 
             % Create StartFrameSpinner
             app.StartFrameSpinner = uispinner(app.TrackingTab);
             app.StartFrameSpinner.Tooltip = {'which frame to start the analysis from.'};
-            app.StartFrameSpinner.Position = [89 18 54 35];
+            app.StartFrameSpinner.Position = [89 29 54 35];
             app.StartFrameSpinner.Value = 1;
 
             % Create PlottingTab
@@ -1228,27 +1238,27 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create setDataDir
             app.setDataDir = uibutton(app.PlottingTab, 'push');
             app.setDataDir.ButtonPushedFcn = createCallbackFcn(app, @setDataDirButtonPushed, true);
-            app.setDataDir.Position = [12 392 99 30];
+            app.setDataDir.Position = [12 403 99 30];
             app.setDataDir.Text = 'Set Data Dir';
 
             % Create DataDir
             app.DataDir = uieditfield(app.PlottingTab, 'text');
             app.DataDir.HorizontalAlignment = 'right';
             app.DataDir.FontSize = 10;
-            app.DataDir.Position = [119 394 252 28];
+            app.DataDir.Position = [119 405 252 28];
             app.DataDir.Value = 'Select directory containing wormdata.mat files';
 
             % Create setOutputDir
             app.setOutputDir = uibutton(app.PlottingTab, 'push');
             app.setOutputDir.ButtonPushedFcn = createCallbackFcn(app, @setOutputDirButtonPushed, true);
-            app.setOutputDir.Position = [13 348 99 30];
+            app.setOutputDir.Position = [13 359 99 30];
             app.setOutputDir.Text = 'Set Output Dir';
 
             % Create outputDir
             app.outputDir = uieditfield(app.PlottingTab, 'text');
             app.outputDir.HorizontalAlignment = 'right';
             app.outputDir.FontSize = 10;
-            app.outputDir.Position = [120 350 252 28];
+            app.outputDir.Position = [120 361 252 28];
             app.outputDir.Value = 'Select output directory if different from data dir';
 
             % Create CombinewormDataButton
@@ -1256,12 +1266,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.CombinewormDataButton.ButtonPushedFcn = createCallbackFcn(app, @CombinewormDataButtonPushed, true);
             app.CombinewormDataButton.FontWeight = 'bold';
             app.CombinewormDataButton.Tooltip = {'This will seach through folders and combine matching wormdata.mat files into a mergedData.mat file'};
-            app.CombinewormDataButton.Position = [29 298 187 32];
+            app.CombinewormDataButton.Position = [29 309 187 32];
             app.CombinewormDataButton.Text = 'Combine wormData';
 
             % Create Panel_2
             app.Panel_2 = uipanel(app.PlottingTab);
-            app.Panel_2.Position = [238 14 222 316];
+            app.Panel_2.Position = [238 25 222 316];
 
             % Create PlotsPanel
             app.PlotsPanel = uipanel(app.Panel_2);
@@ -1354,7 +1364,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.MergeControlButton.ButtonPushedFcn = createCallbackFcn(app, @MergeControlButtonPushed, true);
             app.MergeControlButton.FontWeight = 'bold';
             app.MergeControlButton.Tooltip = {'This will add any mergedData.mat file matching "control name" into the non-matching mutant merged data file. saving it in a field "ControlData"'};
-            app.MergeControlButton.Position = [29 253 187 32];
+            app.MergeControlButton.Position = [29 264 187 32];
             app.MergeControlButton.Text = 'Merge Control';
 
             % Create ExtractControlDataButton
@@ -1362,31 +1372,31 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.ExtractControlDataButton.ButtonPushedFcn = createCallbackFcn(app, @ExtractControlDataButtonPushed, true);
             app.ExtractControlDataButton.FontWeight = 'bold';
             app.ExtractControlDataButton.Tooltip = {'Thihs will extract the controlData from all mergedData files in current OutputDir folder and save them as a sepatate mergedData.mat file'};
-            app.ExtractControlDataButton.Position = [29 208 187 32];
+            app.ExtractControlDataButton.Position = [29 219 187 32];
             app.ExtractControlDataButton.Text = 'Extract Control Data';
 
             % Create controlnameEditFieldLabel
             app.controlnameEditFieldLabel = uilabel(app.PlottingTab);
             app.controlnameEditFieldLabel.HorizontalAlignment = 'right';
-            app.controlnameEditFieldLabel.Position = [45 170 75 22];
+            app.controlnameEditFieldLabel.Position = [45 181 75 22];
             app.controlnameEditFieldLabel.Text = 'control name';
 
             % Create controlnameEditField
             app.controlnameEditField = uieditfield(app.PlottingTab, 'text');
             app.controlnameEditField.Tooltip = {'Specify what wormdata files to combine with mutant data as matched controls. this will create a mergedData.mat file containing mutant and control datasets for plotting.'};
-            app.controlnameEditField.Position = [135 167 65 28];
+            app.controlnameEditField.Position = [135 178 65 28];
             app.controlnameEditField.Value = 'wildtype';
 
             % Create PlotMatchedControlButton
             app.PlotMatchedControlButton = uibutton(app.PlottingTab, 'push');
             app.PlotMatchedControlButton.ButtonPushedFcn = createCallbackFcn(app, @PlotMatchedControlButtonPushed, true);
             app.PlotMatchedControlButton.FontWeight = 'bold';
-            app.PlotMatchedControlButton.Position = [29 122 187 32];
+            app.PlotMatchedControlButton.Position = [29 133 187 32];
             app.PlotMatchedControlButton.Text = 'Plot Matched Control';
 
             % Create Panel
             app.Panel = uipanel(app.PlottingTab);
-            app.Panel.Position = [16 14 212 102];
+            app.Panel.Position = [16 25 212 102];
 
             % Create PlotSingleTraceButton
             app.PlotSingleTraceButton = uibutton(app.Panel, 'push');
@@ -1425,7 +1435,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.YAxesPanel = uipanel(app.PlotSettingsTab);
             app.YAxesPanel.Title = 'Y Axes';
             app.YAxesPanel.FontWeight = 'bold';
-            app.YAxesPanel.Position = [24 350 174 79];
+            app.YAxesPanel.Position = [24 361 174 79];
 
             % Create AxialSignallimLabel
             app.AxialSignallimLabel = uilabel(app.YAxesPanel);
@@ -1457,34 +1467,39 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.SortTracesByButtonGroup = uibuttongroup(app.PlotSettingsTab);
             app.SortTracesByButtonGroup.Title = 'Sort Traces By:';
             app.SortTracesByButtonGroup.FontWeight = 'bold';
-            app.SortTracesByButtonGroup.Position = [207 287 120 141];
+            app.SortTracesByButtonGroup.Position = [207 298 120 141];
 
             % Create dontSort
             app.dontSort = uiradiobutton(app.SortTracesByButtonGroup);
             app.dontSort.Text = 'Dont sort';
-            app.dontSort.Position = [9 101 71 22];
+            app.dontSort.Position = [7 101 71 22];
             app.dontSort.Value = true;
 
             % Create sortFreq
             app.sortFreq = uiradiobutton(app.SortTracesByButtonGroup);
             app.sortFreq.Text = 'Spike frequency';
-            app.sortFreq.Position = [9 79 108 22];
+            app.sortFreq.Position = [7 80 108 22];
 
             % Create sortAmp
             app.sortAmp = uiradiobutton(app.SortTracesByButtonGroup);
             app.sortAmp.Text = 'Spike amplitude';
-            app.sortAmp.Position = [9 57 107 22];
+            app.sortAmp.Position = [7 59 107 22];
 
             % Create sortMean
             app.sortMean = uiradiobutton(app.SortTracesByButtonGroup);
             app.sortMean.Text = 'Mean signal';
-            app.sortMean.Position = [9 35 87 22];
+            app.sortMean.Position = [7 37 87 22];
+
+            % Create sortFirstSpike
+            app.sortFirstSpike = uiradiobutton(app.SortTracesByButtonGroup);
+            app.sortFirstSpike.Text = 'Time of 1st Spike';
+            app.sortFirstSpike.Position = [7 15 114 22];
 
             % Create HistogramBinsPanel
             app.HistogramBinsPanel = uipanel(app.PlotSettingsTab);
             app.HistogramBinsPanel.Title = 'Histogram Bins';
             app.HistogramBinsPanel.FontWeight = 'bold';
-            app.HistogramBinsPanel.Position = [360 316 100 112];
+            app.HistogramBinsPanel.Position = [360 327 100 112];
 
             % Create MinEditFieldLabel
             app.MinEditFieldLabel = uilabel(app.HistogramBinsPanel);
@@ -1522,7 +1537,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.XAxesPanel = uipanel(app.PlotSettingsTab);
             app.XAxesPanel.Title = 'X Axes';
             app.XAxesPanel.FontWeight = 'bold';
-            app.XAxesPanel.Position = [24 269 174 70];
+            app.XAxesPanel.Position = [24 280 174 70];
 
             % Create BulkSignallimitsLabel
             app.BulkSignallimitsLabel = uilabel(app.XAxesPanel);
@@ -1554,24 +1569,24 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.SortDirectionButtonGroup = uibuttongroup(app.PlotSettingsTab);
             app.SortDirectionButtonGroup.Title = 'Sort Direction';
             app.SortDirectionButtonGroup.FontWeight = 'bold';
-            app.SortDirectionButtonGroup.Position = [207 245 120 79];
+            app.SortDirectionButtonGroup.Position = [208 235 120 79];
 
             % Create descendButton
             app.descendButton = uiradiobutton(app.SortDirectionButtonGroup);
             app.descendButton.Text = 'descend';
-            app.descendButton.Position = [10 38 67 22];
+            app.descendButton.Position = [8 38 67 22];
             app.descendButton.Value = true;
 
             % Create ascendButton
             app.ascendButton = uiradiobutton(app.SortDirectionButtonGroup);
             app.ascendButton.Text = 'ascend';
-            app.ascendButton.Position = [10 20 65 22];
+            app.ascendButton.Position = [8 20 65 22];
 
             % Create shuffleButton
             app.shuffleButton = uiradiobutton(app.SortDirectionButtonGroup);
             app.shuffleButton.Tooltip = {'Only works with "dont sort"'};
             app.shuffleButton.Text = 'shuffle';
-            app.shuffleButton.Position = [10 1 65 22];
+            app.shuffleButton.Position = [8 1 65 22];
 
             % Create BulkSignalPlotsButtonGroup
             app.BulkSignalPlotsButtonGroup = uibuttongroup(app.PlotSettingsTab);
@@ -1579,7 +1594,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.BulkSignalPlotsButtonGroup.Title = 'Bulk Signal Plots';
             app.BulkSignalPlotsButtonGroup.FontWeight = 'bold';
             app.BulkSignalPlotsButtonGroup.FontSize = 11;
-            app.BulkSignalPlotsButtonGroup.Position = [361 242 100 70];
+            app.BulkSignalPlotsButtonGroup.Position = [361 253 100 70];
 
             % Create SeparateButton
             app.SeparateButton = uiradiobutton(app.BulkSignalPlotsButtonGroup);
@@ -1596,7 +1611,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.PeakDetectionPanel = uipanel(app.PlotSettingsTab);
             app.PeakDetectionPanel.Title = 'Peak Detection';
             app.PeakDetectionPanel.FontWeight = 'bold';
-            app.PeakDetectionPanel.Position = [24 128 174 130];
+            app.PeakDetectionPanel.Position = [24 131 174 130];
 
             % Create PeakProminenceAULabel
             app.PeakProminenceAULabel = uilabel(app.PeakDetectionPanel);
@@ -1648,7 +1663,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create NormalizationDropDownLabel
             app.NormalizationDropDownLabel = uilabel(app.PlotSettingsTab);
             app.NormalizationDropDownLabel.HorizontalAlignment = 'right';
-            app.NormalizationDropDownLabel.Position = [202 214 78 22];
+            app.NormalizationDropDownLabel.Position = [202 210 78 22];
             app.NormalizationDropDownLabel.Text = 'Normalization';
 
             % Create NormalizationDropDown
@@ -1656,7 +1671,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.NormalizationDropDown.Items = {'None', 'Delta F/F0', 'Z-Score', 'Control'};
             app.NormalizationDropDown.DropDownOpeningFcn = createCallbackFcn(app, @NormalizationDropDownValueChanged, true);
             app.NormalizationDropDown.ValueChangedFcn = createCallbackFcn(app, @NormalizationDropDownValueChanged, true);
-            app.NormalizationDropDown.Position = [285 214 80 22];
+            app.NormalizationDropDown.Position = [285 214 80 14];
             app.NormalizationDropDown.Value = 'None';
 
             % Create AnalyzeOASdataCheckBox_2
@@ -1665,18 +1680,18 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.AnalyzeOASdataCheckBox_2.Tooltip = {'Check if working with OpenAutoScope data. This will toggle several required settings'};
             app.AnalyzeOASdataCheckBox_2.Text = 'Analyze OAS data?';
             app.AnalyzeOASdataCheckBox_2.WordWrap = 'on';
-            app.AnalyzeOASdataCheckBox_2.Position = [207 191 144 18];
+            app.AnalyzeOASdataCheckBox_2.Position = [207 193 144 18];
 
             % Create FrameRateEditFieldLabel
             app.FrameRateEditFieldLabel = uilabel(app.PlotSettingsTab);
             app.FrameRateEditFieldLabel.HorizontalAlignment = 'right';
-            app.FrameRateEditFieldLabel.Position = [360 190 68 22];
+            app.FrameRateEditFieldLabel.Position = [360 193 68 22];
             app.FrameRateEditFieldLabel.Text = 'Frame Rate';
 
             % Create FrameRateEditField
             app.FrameRateEditField = uieditfield(app.PlotSettingsTab, 'numeric');
             app.FrameRateEditField.Tooltip = {'Frames per second of recorded data'};
-            app.FrameRateEditField.Position = [431 192 29 19];
+            app.FrameRateEditField.Position = [431 195 29 19];
             app.FrameRateEditField.Value = 15;
 
             % Create EqualizeExpDurationCheckBox
@@ -1684,23 +1699,23 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.EqualizeExpDurationCheckBox.Tooltip = {'check to trim all experiments to the length of the shortest recording. Required for OAS.'};
             app.EqualizeExpDurationCheckBox.Text = 'Equalize Exp Duration?';
             app.EqualizeExpDurationCheckBox.WordWrap = 'on';
-            app.EqualizeExpDurationCheckBox.Position = [207 175 144 14];
+            app.EqualizeExpDurationCheckBox.Position = [207 177 144 14];
 
             % Create PlotsEditFieldLabel
             app.PlotsEditFieldLabel = uilabel(app.PlotSettingsTab);
             app.PlotsEditFieldLabel.HorizontalAlignment = 'right';
-            app.PlotsEditFieldLabel.Position = [383 166 42 22];
+            app.PlotsEditFieldLabel.Position = [383 169 42 22];
             app.PlotsEditFieldLabel.Text = '# Plots';
 
             % Create numPlotsEditField
             app.numPlotsEditField = uieditfield(app.PlotSettingsTab, 'numeric');
             app.numPlotsEditField.Tooltip = {'number of bulk/axial signal plots to display. does not affect other graphs. '};
-            app.numPlotsEditField.Position = [431 166 29 22];
+            app.numPlotsEditField.Position = [431 169 29 22];
             app.numPlotsEditField.Value = 7;
 
             % Create Panel_3
             app.Panel_3 = uipanel(app.PlotSettingsTab);
-            app.Panel_3.Position = [204 125 161 43];
+            app.Panel_3.Position = [204 128 161 43];
 
             % Create AnalyzePartialRecordingCheckBox
             app.AnalyzePartialRecordingCheckBox = uicheckbox(app.Panel_3);
@@ -1730,47 +1745,47 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create AxialSignalColorLabel
             app.AxialSignalColorLabel = uilabel(app.PlotSettingsTab);
             app.AxialSignalColorLabel.HorizontalAlignment = 'center';
-            app.AxialSignalColorLabel.Position = [381 129 71 30];
+            app.AxialSignalColorLabel.Position = [381 132 71 30];
             app.AxialSignalColorLabel.Text = {'Axial Signal '; 'Colormap'};
 
             % Create PlotMatchedControlButton_2
             app.PlotMatchedControlButton_2 = uibutton(app.PlotSettingsTab, 'push');
             app.PlotMatchedControlButton_2.ButtonPushedFcn = createCallbackFcn(app, @PlotMatchedControlButtonPushed, true);
             app.PlotMatchedControlButton_2.FontWeight = 'bold';
-            app.PlotMatchedControlButton_2.Position = [30 87 162 32];
+            app.PlotMatchedControlButton_2.Position = [30 90 162 32];
             app.PlotMatchedControlButton_2.Text = 'Plot Matched Control';
 
             % Create AutoFixAxialSignalCheckBox
             app.AutoFixAxialSignalCheckBox = uicheckbox(app.PlotSettingsTab);
             app.AutoFixAxialSignalCheckBox.Tooltip = {'Re-analyze axial signal to correct for head tail flips.'};
             app.AutoFixAxialSignalCheckBox.Text = 'Auto-Fix Axial Signal';
-            app.AutoFixAxialSignalCheckBox.Position = [207 102 132 24];
+            app.AutoFixAxialSignalCheckBox.Position = [207 105 132 24];
             app.AutoFixAxialSignalCheckBox.Value = true;
 
             % Create AxialSignalColormapDropDown
             app.AxialSignalColormapDropDown = uidropdown(app.PlotSettingsTab);
             app.AxialSignalColormapDropDown.Items = {'viridis', 'turbo', 'bone', 'jet', 'inferno', 'magma', 'plasma', 'twilight', 'cividis'};
-            app.AxialSignalColormapDropDown.Position = [376 99 81 28];
+            app.AxialSignalColormapDropDown.Position = [376 102 81 28];
             app.AxialSignalColormapDropDown.Value = 'viridis';
 
             % Create toQuerry
             app.toQuerry = uieditfield(app.PlotSettingsTab, 'numeric');
             app.toQuerry.Tooltip = {'fraction of axial signal to compare for head/tail reassignment'};
-            app.toQuerry.Position = [206 83 38 19];
+            app.toQuerry.Position = [206 86 38 19];
             app.toQuerry.Value = 0.1;
 
             % Create FractiontoQuerrylengthLabel
             app.FractiontoQuerrylengthLabel = uilabel(app.PlotSettingsTab);
             app.FractiontoQuerrylengthLabel.HorizontalAlignment = 'center';
             app.FractiontoQuerrylengthLabel.WordWrap = 'on';
-            app.FractiontoQuerrylengthLabel.Position = [241 83 118 19];
+            app.FractiontoQuerrylengthLabel.Position = [241 86 118 19];
             app.FractiontoQuerrylengthLabel.Text = '% of length to querry';
 
             % Create PlotMultipleGenotypesButton_2
             app.PlotMultipleGenotypesButton_2 = uibutton(app.PlotSettingsTab, 'push');
             app.PlotMultipleGenotypesButton_2.ButtonPushedFcn = createCallbackFcn(app, @PlotMultipleGenotypesButtonPushed, true);
             app.PlotMultipleGenotypesButton_2.FontWeight = 'bold';
-            app.PlotMultipleGenotypesButton_2.Position = [30 47 162 32];
+            app.PlotMultipleGenotypesButton_2.Position = [30 50 162 32];
             app.PlotMultipleGenotypesButton_2.Text = 'Plot Multiple Genotypes';
 
             % Create MultigenotypefigurepositionPanel
@@ -1778,7 +1793,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.MultigenotypefigurepositionPanel.TitlePosition = 'centertop';
             app.MultigenotypefigurepositionPanel.Title = 'Multi-genotype figure position';
             app.MultigenotypefigurepositionPanel.FontWeight = 'bold';
-            app.MultigenotypefigurepositionPanel.Position = [203 1 251 79];
+            app.MultigenotypefigurepositionPanel.Position = [203 4 251 79];
 
             % Create GraphsEditFieldLabel
             app.GraphsEditFieldLabel = uilabel(app.MultigenotypefigurepositionPanel);
@@ -1818,14 +1833,14 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.SingleSpikeButton = uibutton(app.PlotSettingsTab, 'push');
             app.SingleSpikeButton.ButtonPushedFcn = createCallbackFcn(app, @PlotSingleTraceButtonPushed, true);
             app.SingleSpikeButton.FontWeight = 'bold';
-            app.SingleSpikeButton.Position = [29 7 86 32];
+            app.SingleSpikeButton.Position = [29 10 86 32];
             app.SingleSpikeButton.Text = 'Single Spike';
 
             % Create CloseAllButton
             app.CloseAllButton = uibutton(app.PlotSettingsTab, 'push');
             app.CloseAllButton.ButtonPushedFcn = createCallbackFcn(app, @CloseAllButtonPushed, true);
             app.CloseAllButton.FontWeight = 'bold';
-            app.CloseAllButton.Position = [127 7 65 32];
+            app.CloseAllButton.Position = [127 10 65 32];
             app.CloseAllButton.Text = 'Close All';
 
             % Create miscsettingsTab
@@ -1836,7 +1851,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.SpikeKineticsPanel = uipanel(app.miscsettingsTab);
             app.SpikeKineticsPanel.Title = 'Spike Kinetics ';
             app.SpikeKineticsPanel.FontWeight = 'bold';
-            app.SpikeKineticsPanel.Position = [13 327 143 95];
+            app.SpikeKineticsPanel.Position = [13 338 143 95];
 
             % Create showFitParams
             app.showFitParams = uicheckbox(app.SpikeKineticsPanel);
@@ -1858,7 +1873,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.ColorsPanel = uipanel(app.miscsettingsTab);
             app.ColorsPanel.Title = 'Colors';
             app.ColorsPanel.FontWeight = 'bold';
-            app.ColorsPanel.Position = [301 307 162 115];
+            app.ColorsPanel.Position = [301 318 162 115];
 
             % Create mutantcolorEditFieldLabel
             app.mutantcolorEditFieldLabel = uilabel(app.ColorsPanel);
@@ -1904,19 +1919,19 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.saveWormDataToWorkspace = uicheckbox(app.miscsettingsTab);
             app.saveWormDataToWorkspace.Text = 'Save processed data to workspace?';
             app.saveWormDataToWorkspace.WordWrap = 'on';
-            app.saveWormDataToWorkspace.Position = [169 347 125 30];
+            app.saveWormDataToWorkspace.Position = [166 354 125 30];
 
             % Create trim2stim
             app.trim2stim = uicheckbox(app.miscsettingsTab);
             app.trim2stim.Text = 'Trim experiment to first stimulus?';
             app.trim2stim.WordWrap = 'on';
-            app.trim2stim.Position = [169 390 113 28];
+            app.trim2stim.Position = [313 273 113 28];
 
             % Create WavePropagationSettingsPanel
             app.WavePropagationSettingsPanel = uipanel(app.miscsettingsTab);
             app.WavePropagationSettingsPanel.Title = 'Wave Propagation Settings';
             app.WavePropagationSettingsPanel.FontWeight = 'bold';
-            app.WavePropagationSettingsPanel.Position = [11 14 261 297];
+            app.WavePropagationSettingsPanel.Position = [11 25 261 297];
 
             % Create InflectionPointDetection
             app.InflectionPointDetection = uibuttongroup(app.WavePropagationSettingsPanel);
@@ -2106,6 +2121,18 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.analyzePropagationCheckbox.Tooltip = {'If checked, a dialog will pop up to allow reviewing the fits for each wave'};
             app.analyzePropagationCheckbox.Text = 'Analyze Propagation?';
             app.analyzePropagationCheckbox.Position = [10 132 139 24];
+
+            % Create ExportPlotSettingsButton
+            app.ExportPlotSettingsButton = uibutton(app.miscsettingsTab, 'push');
+            app.ExportPlotSettingsButton.ButtonPushedFcn = createCallbackFcn(app, @ExportPlotSettingsButtonPushed, true);
+            app.ExportPlotSettingsButton.Position = [166 403 120 29];
+            app.ExportPlotSettingsButton.Text = 'Export Plot Settings';
+
+            % Create annotateFood
+            app.annotateFood = uicheckbox(app.miscsettingsTab);
+            app.annotateFood.Text = 'Annotate time on food patch?';
+            app.annotateFood.WordWrap = 'on';
+            app.annotateFood.Position = [310 231 113 30];
 
             % Show the figure after all components are created
             app.IntestinalCalciumAppUIFigure.Visible = 'on';

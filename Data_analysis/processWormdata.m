@@ -541,6 +541,7 @@ for i = 1:length(inputData)
     if ~isempty(templocs)
         num(i) = length(templocs);
         AvAmp(i) = mean(tempamp);
+        firstSpike(i) = templocs(1);
     else
         num(i) = 0;
         AvAmp(i) = 0;
@@ -582,6 +583,15 @@ elseif sortType == 3            % sort by spike amplitude
         sortDir = 'descend';
     end
     mtsorttype = meanSignal;
+    [~, sortOrder] = sort(mtsorttype,sortDir);
+
+elseif sortType == 4            % sort by time of first spike
+    if strcmpi(sortDir, 'shuffle')
+        disp('Shuffle only works with "dont sort" - using descending order')
+        sortDir = 'descend';
+    end
+    firstSpike(firstSpike == 0) = nan;
+    mtsorttype = firstSpike;
     [~, sortOrder] = sort(mtsorttype,sortDir);
 end
 
