@@ -69,6 +69,9 @@ trimExperimentLength = settings.trimExperimentLength;
 analyzePartial = settings.analyzePartial;
 saveWormdata2workspace = settings.saveWormdata2workspace;
 trimstim = settings.trim2stim;
+trimSpike = settings.trim2spike;
+trimOnFood = settings.trim2onFood;
+trimOffFood = settings.trim2offFood;
 
 
 if ischar(wormdata) || isstring(wormdata)
@@ -130,11 +133,26 @@ end
 
 
 
-% crop to first experiment
-if trimstim == 1
-    wtdata = trim2stim(wtdata,settings);
-    mtdata = trim2stim(mtdata,settings);
+%% Align experiments to event
+if trimstim || trimSpike || trimOnFood || trimOffFood 
+    wtdata = alignTraces(wtdata,settings);
+    mtdata = alignTraces(mtdata,settings);
 end
+
+% if trimstim == 1
+%     wtdata = trim2stim(wtdata,settings);
+%     mtdata = trim2stim(mtdata,settings);
+% elseif trimSpike == 1
+%     wtdata = trim2spike(wtdata,settings);
+%     mtdata = trim2spike(mtdata,settings);
+% elseif trimOnFood == 1
+%     wtdata = trim2onFood(wtdata,settings);
+%     mtdata = trim2onFood(mtdata,settings);
+% elseif trimOffFood == 1
+%     wtdata = trim2offFood(wtdata,settings);
+%     mtdata = trim2offFood(mtdata,settings);
+% end
+
 
 if trimExperimentLength == 1 || analyzePartial == 1
     mtdata = trimExp(mtdata,settings);
@@ -231,7 +249,7 @@ validateRiseFall = settings.validateRiseFall;
 % pixel Scaling
 if settings.isOAS == 1
     pxPerMM = 381; % pixel scaling for 4x objective in 2x2 binning on OAS
-elseif settings.isOAS == 0 
+elseif settings.isOAS == 0
     pxPerMM = 200.071; % pixel scaling for 5x objective in 4x4 binning on Zeiss inverted scope
 end
 
@@ -302,11 +320,11 @@ for i = 1:length(inputData)
         for q = 1:length(templocs)
             axPre = templocs(q)-floor(timePreSpike/3);
             axPost = templocs(q)+floor(timePreSpike/3);
-            
+
             %% Wave Propagation Rate
             if axPre>0 && axPost<= length(axialSignal)
                 axialPeak(:,:,q) = axialSignal(axPre:axPost,:)';
-                
+
                 if analyzePropagationRate == 1
                     [propRate, r2, flags] = getWavePropagationRate(axialPeak(:,:,q), mean(wormLength(axPre:axPost),'omitnan'), settings);
                     propagationRate(q, 1:length(propRate)) = propRate;
@@ -632,7 +650,7 @@ if analyzePropagationRate == 1
     aboveThresh(belowThresh) = nan;
     processedData(1).propagationAboveThreshold = aboveThresh;
 
-    
+
 
     if validatePropagationRate == 1
         assignin('base', 'propagationVector', processedData(1).propagationVector);
@@ -646,14 +664,14 @@ end
 
 end
 
+%% Align Traces to Events
 function [processedData] = trim2stim(inputData,settings)
-
 for i = 1:length(inputData)
     if isfield(inputData, 'stimTimes')
         if ~isempty(inputData(i).stimTimes)
             firstStim = inputData(i).stimTimes(1);
-            prePadding = 30*settings.framerate;
-            
+            prePadding = settings.timePreAlignment*settings.framerate;
+
             expStart = firstStim-prePadding;
             expEnd = length(inputData(i).bulkSignal);
 
@@ -668,7 +686,7 @@ for i = 1:length(inputData)
                     inputData(i).velocity = inputData(i).velocity(expStart:expEnd);
                 end
 
-                
+
 
             elseif expStart<1
                 nanPadVector = nan(abs(expStart),1);
@@ -696,11 +714,100 @@ for i = 1:length(inputData)
                     inputData(i).offFood = inputData(i).offFood - expStart;
                 end
             end
+        end
+    end
+end
+processedData = inputData;
+end
 
-            % posttrim = inputData(i).bulkSignal;
-            
-            % plot(1:length(pretrim), pretrim, 1:length(posttrim), posttrim)
+function [processedData] = alignTraces(inputData,settings)
 
+if settings.trim2stim == 1
+    alignmentField = 'stimTimes';
+elseif settings.trim2spike == 1
+    alignmentField = 'peakLoc';
+elseif settings.trim2onFood == 1
+    alignmentField = 'onFood';
+elseif settings.trim2offFood == 1
+    alignmentField = 'offFood';
+end
+
+
+for i = 1:length(inputData)
+    
+    if isfield(inputData, alignmentField) % make sure the field exists in each dataset
+        if settings.trim2stim == 1
+            alignmentData = inputData(i).stimTimes;
+        elseif settings.trim2spike == 1
+            alignmentData = inputData(i).peakLoc;
+        elseif settings.trim2onFood == 1
+            alignmentData = inputData(i).onFood;
+        elseif settings.trim2offFood == 1
+            alignmentData = inputData(i).offFood;
+            % leavingEvents = inputData(i).offFood;
+            % if ~isempty(leavingEvents)
+            % 
+            %     [priorSpikeIdx] = find(inputData(i).peakLoc < inputData(i).offFood(1), 1, "last");
+            % 
+            %     if isempty(priorSpikeIdx)
+            %         alignmentData = leavingEvents; % trim to leaving event
+            %     else
+            %         alignmentData = inputData(i).peakLoc(priorSpikeIdx); % trim to last spike before leaving
+            %     end
+            % end
+        end
+        
+        if ~isempty(alignmentData)
+            firstStim = alignmentData(1);
+            prePadding = settings.timePreAlignment*settings.framerate;
+
+            expStart = firstStim-prePadding;
+            expEnd = length(inputData(i).bulkSignal);
+
+            if expStart>0
+                inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(expStart:expEnd,:);
+
+                inputData(i).bulkSignal = inputData(i).bulkSignal(expStart:expEnd);
+                inputData(i).backgroundSignal = inputData(i).backgroundSignal(expStart:expEnd);
+                inputData(i).orientation = inputData(i).orientation(expStart:expEnd);
+                inputData(i).area = inputData(i).area(expStart:expEnd);
+                if isfield(inputData,'velocity')
+                    inputData(i).velocity = inputData(i).velocity(expStart:expEnd);
+                end
+
+
+
+            elseif expStart<1
+                nanPadVector = nan(abs(expStart),1);
+                nanPadMat = nan(abs(expStart),size(inputData(i).autoAxialSignal,2));
+
+                inputData(i).autoAxialSignal = vertcat(nanPadMat, inputData(i).autoAxialSignal);
+                inputData(i).bulkSignal = vertcat(nanPadVector, inputData(i).bulkSignal);
+                inputData(i).backgroundSignal = vertcat(nanPadVector,inputData(i).backgroundSignal);
+                inputData(i).orientation = vertcat(nanPadVector,inputData(i).orientation);
+                inputData(i).area = vertcat(nanPadVector,inputData(i).area);
+                if isfield(inputData,'velocity')
+                    inputData(i).velocity = vertcat(nanPadVector,inputData(i).velocity);
+                end
+            end
+
+            if isfield(inputData, 'stimTimes')
+                if ~isempty(inputData(i).stimTimes)
+                    inputData(i).stimTimes = inputData(i).stimTimes - expStart;
+                end
+            end
+
+            if isfield(inputData, 'onFood')
+                if ~isempty(inputData(i).onFood)
+                    inputData(i).onFood = inputData(i).onFood - expStart;
+                end
+            end
+
+            if isfield(inputData, 'offFood')
+                if ~isempty(inputData(i).offFood)
+                    inputData(i).offFood = inputData(i).offFood - expStart;
+                end
+            end
         end
     end
 end
@@ -755,7 +862,7 @@ end
 
 if settings.partEnd == 0
     maxLen = max(lens);
-else 
+else
     maxLen = settings.partEnd;
 end
 
@@ -781,7 +888,7 @@ for i = 1:length(inputData)
         if isfield(inputData,'wormLength')
             inputData(i).wormLength = vertcat(inputData(i).wormLength, traceBuffer);
         end
-    elseif lenDiff < 0 
+    elseif lenDiff < 0
         inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(1:maxLen,:);
         inputData(i).bulkSignal = inputData(i).bulkSignal(1:maxLen);
         inputData(i).backgroundSignal = inputData(i).backgroundSignal(1:maxLen);

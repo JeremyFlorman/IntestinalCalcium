@@ -36,22 +36,22 @@ axsig = smoothdata(wormdata.autoAxialSignal,1, 'gaussian', 65);
 bulkSignal = wormdata.bulkSignal;
 loc = wormdata.peakLoc;
 pk = wormdata.peakAmplitude;
-locinmin = loc/15/60;
+locinmin = loc/settings.framerate/60;
 
 
-if ~isempty(loc)
-    if loc(singlespike)-window >= 1
-        pre = loc(singlespike)-window;
-        post = loc(singlespike)+window;
-    elseif loc(singlespike)-window < 1
-        singlespike = singlespike+1;
-        pre = loc(singlespike)-window;
-        post = loc(singlespike)+window;
-    else
-        pre = 3150-window;
-        post = 3150+window;
-    end
-end
+% if ~isempty(loc)
+%     if loc(singlespike)-window >= 1
+%         pre = loc(singlespike)-window;
+%         post = loc(singlespike)+window;
+%     elseif loc(singlespike)-window < 1
+%         singlespike = singlespike+1;
+%         pre = loc(singlespike)-window;
+%         post = loc(singlespike)+window;
+%     end
+% else 
+    pre = window;
+    post = window*2;
+% end
 
 for idx = singlespike %:length(loc)
     singlespike = idx;

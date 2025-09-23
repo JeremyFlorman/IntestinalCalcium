@@ -702,9 +702,9 @@ for nf =startIndex:length(imgDir)
                             ax7.TickLength = [0.005 0.005];
                             
                             %% Area
-                            hArea = plot(time(1:i),smoothdata(velocity(1:i),'gaussian', 30), 'Parent', velAx);
+                            hArea = plot(time(1:i),smoothdata(area(1:i),'gaussian', 30), 'Parent', velAx);
                             xlim([0 time(end)]);
-                            ylabel(velAx, 'Velocity (\mum / sec)');
+                            ylabel(velAx, 'Worm Area (pixels)');
                             xlabel(velAx,'Time (min)');
                             velAx.TickLength = [0.005 0.005];
                             box off
@@ -767,7 +767,7 @@ for nf =startIndex:length(imgDir)
 
                             % Area
                             hArea.XData = time(1:i);
-                            hArea.YData = smoothdata(velocity(1:i),'gaussian', 30);
+                            hArea.YData = smoothdata(area(1:i),'gaussian', 30);
 
                             if ~isempty(stimTimes) && i>stimTimes(1)
                                 hAxStim.XData = stimX;

@@ -43,6 +43,31 @@ for i = 1:num2plot
     end
 
 
+
+    if settings.annotateFood == 1
+        if isfield(data(plotindex), 'onFood')
+            foodStart = data(plotindex).onFood;
+            if isempty(foodStart)
+                foodStart = 1;
+            end
+            foodEnd  = nan(length(foodStart),1);
+            for k = 1:length(foodStart)
+                if k<=length(data(plotindex).offFood)
+                    foodEnd(k) = data(plotindex).offFood(k);
+                else
+                    foodEnd(k) = find(~isnan(data(plotindex).bulkSignal),1,'last');
+                end
+            end
+            foodY = shift+tracediff*0.9;
+            foodX = [foodStart/fps/60 foodEnd/fps/60];
+            for j = 1:size(foodX,1)
+                line(foodX(j,:), [foodY foodY], 'Color', [0.93 0.69 0.13], 'LineWidth', 0.5, 'LineStyle', '-', 'Marker', 'o')
+            end
+        end
+    end
+
+
+
 end
 hold off;
 ax = gca;
@@ -54,7 +79,7 @@ title(['\it' data(1).genotype])
 box off
 
 if labelXAxis ==1
-xlabel('Time (min)')
+    xlabel('Time (min)')
 else
     ax.XTickLabel = [];
 end

@@ -150,6 +150,13 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         axialYLim                       matlab.ui.control.EditField
         AxialSignallimLabel             matlab.ui.control.Label
         miscsettingsTab                 matlab.ui.container.Tab
+        AlignTracesToPanel              matlab.ui.container.Panel
+        timePreAlignment                matlab.ui.control.NumericEditField
+        TimepreeventsEditFieldLabel     matlab.ui.control.Label
+        trim2foodExit                   matlab.ui.control.CheckBox
+        trim2foodEntry                  matlab.ui.control.CheckBox
+        trim2spike                      matlab.ui.control.CheckBox
+        trim2stim                       matlab.ui.control.CheckBox
         annotateFood                    matlab.ui.control.CheckBox
         ExportPlotSettingsButton        matlab.ui.control.Button
         WavePropagationSettingsPanel    matlab.ui.container.Panel
@@ -182,13 +189,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         PeakLocationButton              matlab.ui.control.RadioButton
         HalfMaximumButton               matlab.ui.control.RadioButton
         DerivativeButton                matlab.ui.control.RadioButton
-        trim2stim                       matlab.ui.control.CheckBox
         saveWormDataToWorkspace         matlab.ui.control.CheckBox
         ColorsPanel                     matlab.ui.container.Panel
         wtColor                         matlab.ui.control.EditField
-        wildtypeedgecolorEditFieldLabel  matlab.ui.control.Label
+        WTedgecolorLabel                matlab.ui.control.Label
         wtEdgeColor                     matlab.ui.control.EditField
-        wildtypecolorEditFieldLabel     matlab.ui.control.Label
+        WTcolorLabel                    matlab.ui.control.Label
         mtColor                         matlab.ui.control.EditField
         mutantcolorEditFieldLabel       matlab.ui.control.Label
         SpikeKineticsPanel              matlab.ui.container.Panel
@@ -197,9 +203,9 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         showFitParams                   matlab.ui.control.CheckBox
     end
 
-    
+
     properties (Access = private)
-        defaultTiffDir = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants'; 
+        defaultTiffDir = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
         defaultRemoteDir = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
         defaultDataDir='Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
         defaultOutputDir = 'C:\Users\Jeremy\Dropbox\combinedData';
@@ -255,7 +261,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.peakwidth = app.peakwidth.Value;
             plotSettings.spikeProfileWindow = app.spikeProfileWindow.Value;
 
-            
+
             normval = app.NormalizationDropDown.Value;
             plotSettings.normalize = normval;
 
@@ -264,13 +270,13 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             plotSettings.framerate = app.FrameRateEditField.Value;
 
-            %% plot color 
+            %% plot color
             plotSettings.wtcolor = str2num(app.wtColor.Value);
             plotSettings.mtcolor = str2num(app.mtColor.Value);
             plotSettings.mtedgecolor = str2num(app.wtEdgeColor.Value);
 
             plotSettings.axSigCMap = app.AxialSignalColormapDropDown.Value;
-            
+
 
 
             plotSettings.binedges = app.MinEditField.Value:app.IncrementEditField.Value:app.MaxEditField.Value;
@@ -304,7 +310,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             plotSettings.tolimit = app.numPlotsEditField.Value;
             plotSettings.controlname = app.controlnameEditField.Value;
-            
+
             %% plot_MultiGenotype settings
             gtyps = split(app.genotypesEditField.Value, {' ' , ','});
             gtyps = gtyps(~cellfun(@isempty,gtyps));
@@ -325,7 +331,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.plotCorr = app.CorrelationCheckBox.Value;
 
             %% Layout Settings for plot_MultiGenotype
-            if app.numColumns.Value == 0 
+            if app.numColumns.Value == 0
                 numcolumns = length(gtyps);
             else
                 numcolumns = app.numColumns.Value;
@@ -341,12 +347,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.analyzePartial = app.AnalyzePartialRecordingCheckBox.Value;
             plotSettings.partStart = app.partStart.Value;
             plotSettings.partEnd = app.partEnd.Value;
-            plotSettings.trim2stim = app.trim2stim.Value;
+
 
             %% Spike Kinetics and Validation Settings
             plotSettings.validateRiseFall = app.validateRiseFall.Value;
             plotSettings.showFitParams = app.showFitParams.Value;
-            
+
             plotSettings.analyzePropagationRate = app.analyzePropagationCheckbox.Value;
             plotSettings.validatePropagationRate = app.validatePropagationRate.Value;
             plotSettings.numBins = app.NumberofBinsEditField.Value;
@@ -358,7 +364,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.minRange = app.MinrangeEditField.Value;
             plotSettings.minTime = app.MintimesEditField.Value;
             plotSettings.maxTime = app.MaxtimesEditField.Value;
-            
+
 
 
             if app.DerivativeButton.Value == 1
@@ -377,13 +383,19 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.singleSpike = app.spikeEditField.Value;
             plotSettings.spikeWindow = app.windowsizeEditField.Value;
 
+            %% Trace Alignment
+            plotSettings.trim2stim = app.trim2stim.Value;
+            plotSettings.trim2spike = app.trim2spike.Value;
+            plotSettings.trim2onFood = app.trim2foodEntry.Value;
+            plotSettings.trim2offFood = app.trim2foodExit.Value;
+            plotSettings.timePreAlignment = app.timePreAlignment.Value;
 
             plotSettings.saveWormdata2workspace = app.saveWormDataToWorkspace.Value;
             plotSettings.annotateFood = app.annotateFood.Value;
 
         end
 
-            
+
         function applyPlotSettings(app,plotSettings)
             %% axis limits
             app.axialYLim.Value=  num2str(plotSettings.axylimit);
@@ -408,12 +420,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.wtEdgeColor.Value = num2str(plotSettings.mtedgecolor);
 
             app.AxialSignalColormapDropDown.Value = plotSettings.axSigCMap;
-            
+
             %% histogram Bins
             app.MinEditField.Value = plotSettings.binedges(1);
             app.MaxEditField.Value = plotSettings.binedges(end);
             app.IncrementEditField.Value = plotSettings.binedges(end)/(length(plotSettings.binedges)-1);
-            
+
             %% sorting
 
             switch plotSettings.sortType
@@ -437,7 +449,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             elseif strcmpi(plotSettings.sortDir,'shuffle')
                 app.shuffleButton.Value = 1;
             end
-            
+
             if plotSettings.overlayplots
                 app.OverlayButton.Value = 1;
             else
@@ -459,17 +471,14 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.partStart.Value = plotSettings.partStart;
             app.partEnd.Value = plotSettings.partEnd;
 
-            app.trim2stim.Value = plotSettings.trim2stim;
-            
-
             %% plot multigenotype settings
-           app.BulkAxialCheckBox.Value = plotSettings.plotOverlay;
-           app.BulkSignalCheckBox.Value = plotSettings.plotBulk;
-           app.AxialSignalCheckBox.Value = plotSettings.plotAxial;
-           app.CVCheckBox.Value = plotSettings.plotCV;
-           app.IntervalHistogramCheckBox.Value = plotSettings.plotHist;
-           app.PeakProfileCheckBox.Value = plotSettings.plotProfile;
-           app.CorrelationCheckBox.Value = plotSettings.plotCorr;
+            app.BulkAxialCheckBox.Value = plotSettings.plotOverlay;
+            app.BulkSignalCheckBox.Value = plotSettings.plotBulk;
+            app.AxialSignalCheckBox.Value = plotSettings.plotAxial;
+            app.CVCheckBox.Value = plotSettings.plotCV;
+            app.IntervalHistogramCheckBox.Value = plotSettings.plotHist;
+            app.PeakProfileCheckBox.Value = plotSettings.plotProfile;
+            app.CorrelationCheckBox.Value = plotSettings.plotCorr;
 
 
             %% Spike Kinetics & Wave Propagation Rate
@@ -484,25 +493,32 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.MinrangeEditField.Value = plotSettings.minRange;
             app.MintimesEditField.Value = plotSettings.minTime;
             app.MaxtimesEditField.Value = plotSettings.maxTime;
-            
+
 
             if plotSettings.propMethod == 1
                 app.DerivativeButton.Value = 1;
-            elseif plotSettings.propMethod == 2 
+            elseif plotSettings.propMethod == 2
                 app.HalfMaximumButton.Value = 1;
             elseif plotSettings.propMethod == 3
                 app.PeakLocationButton.Value = 1;
             elseif plotSettings.propMethod == 4
-                app.ThresholdButton.Value = 1; 
+                app.ThresholdButton.Value = 1;
             end
 
+            %% Trace Alignment
+            app.trim2stim.Value = plotSettings.trim2stim;
+            app.trim2spike.Value = plotSettings.trim2spike;
+            app.trim2foodEntry.Value = plotSettings.trim2onFood;
+            app.trim2foodExit.Value = plotSettings.trim2offFood;
+            app.timePreAlignment.Value = plotSettings.timePreAlignment;
+            
             app.saveWormDataToWorkspace.Value = plotSettings.saveWormdata2workspace;
             app.annotateFood.Value = plotSettings.annotateFood;
 
 
 
         end
-        
+
         function [structureSaveName] = reprocessMergedData(~, wormdata, settings, mergedDataPath)
             files2process = cell(length(wormdata),1);
             filepath = cell(length(wormdata),1);
@@ -546,9 +562,9 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         function startupFcn(app)
             [path, ~, ~] = fileparts(mfilename("fullpath"));
             defaultSettingsPath = fullfile(path, 'defaultPlotSettings.mat');
-            
+
             if ~isfile(defaultSettingsPath)
-            savedefaultsettingsMenuSelected(app, [])
+                savedefaultsettingsMenuSelected(app, [])
             end
 
             load(defaultSettingsPath, 'defaultPlotSettings');
@@ -597,7 +613,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             disp('Running')
             parsedInputs = parseInputs(app);
             if parsedInputs.isOAS == 0
-            freelyMovingAnalysis_Func(parsedInputs)
+                freelyMovingAnalysis_Func(parsedInputs)
             elseif parsedInputs.isOAS==1
                 if parsedInputs.loadTiff == 1
                     OAS_Analysis_Func(parsedInputs)
@@ -650,7 +666,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
                     'Oops! looks like you forgot to select your data directory!');
                 figure(app.IntestinalCalciumAppUIFigure)
             end
-            
+
 
             outputdir = app.outputDir.Value;
 
@@ -701,7 +717,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             disp('Plotting...')
             plot_MatchedControl(app.outputDir.Value,settings);
-            
+
             if app.saveWormDataToWorkspace.Value == 1
                 assignin("base", 'settings', settings)
             end
@@ -712,7 +728,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % PlotMultipleGenotypesButton, 
         % ...and 1 other component
         function PlotMultipleGenotypesButtonPushed(app, event)
-            
+
             outputdir = app.outputDir.Value;
             if ~isfolder(outputdir)
                 if isfolder(app.DataDir.Value)
@@ -738,9 +754,9 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % Button pushed function: validateRiseFallButton
         function validateRiseFallButtonPushed(app, event)
             app.validateRiseFall.Value = 1;
-            
+
             plotSettings = parsePlotSettings(app);
-            
+
             [file,path] = uigetfile([app.outputDir.Value '\*.mat']);
 
             [~,~,~] = processWormdata(fullfile(path,file), plotSettings);
@@ -752,13 +768,13 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         % Button pushed function: setTracePos
         function setTracePosButtonPushed(app, event)
-            f = gcf; 
+            f = gcf;
             app.TracesEditField.Value = num2str(f.Position);
         end
 
         % Button pushed function: setGraphPos
         function setGraphPosButtonPushed(app, event)
-            f = gcf; 
+            f = gcf;
             app.GraphsEditField.Value = num2str(f.Position);
         end
 
@@ -770,7 +786,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             else
                 searchStart = app.defaultDataDir;
             end
- 
+
             [file, path] = uigetfile([searchStart '\*.mat']);
             figure(app.IntestinalCalciumAppUIFigure)
             app.DataDir.Value = path;
@@ -795,7 +811,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             uiload()
             figure(app.IntestinalCalciumAppUIFigure)
             if exist('plotSettings', 'var') == 1
-            applyPlotSettings(app,plotSettings);
+                applyPlotSettings(app,plotSettings);
             elseif exist('defaultPlotSettings','var') == 1
                 applyPlotSettings(app, defaultPlotSettings)
             end
@@ -813,10 +829,10 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         % Callback function: AnalyzeOASdataCheckBox, 
         % ...and 3 other components
         function NormalizationDropDownValueChanged(app, event)
-          %% This function handles callbacks for OAS checkboxes and 
-          % normalization. It updates bulk signal limits and peak
-          % prominence values to fit with the data output
-            
+            %% This function handles callbacks for OAS checkboxes and
+            % normalization. It updates bulk signal limits and peak
+            % prominence values to fit with the data output
+
             normval = app.NormalizationDropDown.Value;
             OASvalue = app.AnalyzeOASdataCheckBox_2.Value;
             if OASvalue == 1
@@ -867,7 +883,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         % Button pushed function: fixAxialSignalButton
         function fixAxialSignalButtonButtonPushed(app, event)
-           fixAxialSignal(app.tiffDir.Value)
+            fixAxialSignal(app.tiffDir.Value)
         end
 
         % Button pushed function: ExtractControlDataButton
@@ -1873,65 +1889,59 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.ColorsPanel = uipanel(app.miscsettingsTab);
             app.ColorsPanel.Title = 'Colors';
             app.ColorsPanel.FontWeight = 'bold';
-            app.ColorsPanel.Position = [301 318 162 115];
+            app.ColorsPanel.Position = [163 340 162 93];
 
             % Create mutantcolorEditFieldLabel
             app.mutantcolorEditFieldLabel = uilabel(app.ColorsPanel);
             app.mutantcolorEditFieldLabel.HorizontalAlignment = 'right';
             app.mutantcolorEditFieldLabel.FontSize = 10;
-            app.mutantcolorEditFieldLabel.Position = [9 67 60 22];
+            app.mutantcolorEditFieldLabel.Position = [9 45 60 22];
             app.mutantcolorEditFieldLabel.Text = 'mutant color';
 
             % Create mtColor
             app.mtColor = uieditfield(app.ColorsPanel, 'text');
             app.mtColor.FontSize = 10;
-            app.mtColor.Position = [80 67 76 22];
+            app.mtColor.Position = [80 47 76 18];
             app.mtColor.Value = '0.66 0.74 0.91';
 
-            % Create wildtypecolorEditFieldLabel
-            app.wildtypecolorEditFieldLabel = uilabel(app.ColorsPanel);
-            app.wildtypecolorEditFieldLabel.HorizontalAlignment = 'right';
-            app.wildtypecolorEditFieldLabel.FontSize = 10;
-            app.wildtypecolorEditFieldLabel.Position = [1 36 68 22];
-            app.wildtypecolorEditFieldLabel.Text = 'wild type color';
+            % Create WTcolorLabel
+            app.WTcolorLabel = uilabel(app.ColorsPanel);
+            app.WTcolorLabel.HorizontalAlignment = 'right';
+            app.WTcolorLabel.FontSize = 10;
+            app.WTcolorLabel.Position = [24 25 45 22];
+            app.WTcolorLabel.Text = 'WT color';
 
             % Create wtEdgeColor
             app.wtEdgeColor = uieditfield(app.ColorsPanel, 'text');
             app.wtEdgeColor.FontSize = 10;
-            app.wtEdgeColor.Position = [79 36 77 22];
+            app.wtEdgeColor.Position = [79 28 77 16];
             app.wtEdgeColor.Value = '0.4 0.4 0.4';
 
-            % Create wildtypeedgecolorEditFieldLabel
-            app.wildtypeedgecolorEditFieldLabel = uilabel(app.ColorsPanel);
-            app.wildtypeedgecolorEditFieldLabel.HorizontalAlignment = 'center';
-            app.wildtypeedgecolorEditFieldLabel.WordWrap = 'on';
-            app.wildtypeedgecolorEditFieldLabel.FontSize = 10;
-            app.wildtypeedgecolorEditFieldLabel.Position = [-2 3 77 30];
-            app.wildtypeedgecolorEditFieldLabel.Text = 'wild type edge color';
+            % Create WTedgecolorLabel
+            app.WTedgecolorLabel = uilabel(app.ColorsPanel);
+            app.WTedgecolorLabel.HorizontalAlignment = 'center';
+            app.WTedgecolorLabel.WordWrap = 'on';
+            app.WTedgecolorLabel.FontSize = 10;
+            app.WTedgecolorLabel.Position = [-2 3 77 19];
+            app.WTedgecolorLabel.Text = 'WT edge color';
 
             % Create wtColor
             app.wtColor = uieditfield(app.ColorsPanel, 'text');
             app.wtColor.FontSize = 10;
-            app.wtColor.Position = [81 7 75 22];
+            app.wtColor.Position = [81 5 75 15];
             app.wtColor.Value = '0.26 0.34 0.51';
 
             % Create saveWormDataToWorkspace
             app.saveWormDataToWorkspace = uicheckbox(app.miscsettingsTab);
             app.saveWormDataToWorkspace.Text = 'Save processed data to workspace?';
             app.saveWormDataToWorkspace.WordWrap = 'on';
-            app.saveWormDataToWorkspace.Position = [166 354 125 30];
-
-            % Create trim2stim
-            app.trim2stim = uicheckbox(app.miscsettingsTab);
-            app.trim2stim.Text = 'Trim experiment to first stimulus?';
-            app.trim2stim.WordWrap = 'on';
-            app.trim2stim.Position = [313 273 113 28];
+            app.saveWormDataToWorkspace.Position = [341 368 125 30];
 
             % Create WavePropagationSettingsPanel
             app.WavePropagationSettingsPanel = uipanel(app.miscsettingsTab);
             app.WavePropagationSettingsPanel.Title = 'Wave Propagation Settings';
             app.WavePropagationSettingsPanel.FontWeight = 'bold';
-            app.WavePropagationSettingsPanel.Position = [11 25 261 297];
+            app.WavePropagationSettingsPanel.Position = [11 27 261 297];
 
             % Create InflectionPointDetection
             app.InflectionPointDetection = uibuttongroup(app.WavePropagationSettingsPanel);
@@ -2125,14 +2135,57 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create ExportPlotSettingsButton
             app.ExportPlotSettingsButton = uibutton(app.miscsettingsTab, 'push');
             app.ExportPlotSettingsButton.ButtonPushedFcn = createCallbackFcn(app, @ExportPlotSettingsButtonPushed, true);
-            app.ExportPlotSettingsButton.Position = [166 403 120 29];
+            app.ExportPlotSettingsButton.FontWeight = 'bold';
+            app.ExportPlotSettingsButton.Position = [337 407 129 26];
             app.ExportPlotSettingsButton.Text = 'Export Plot Settings';
 
             % Create annotateFood
             app.annotateFood = uicheckbox(app.miscsettingsTab);
             app.annotateFood.Text = 'Annotate time on food patch?';
             app.annotateFood.WordWrap = 'on';
-            app.annotateFood.Position = [310 231 113 30];
+            app.annotateFood.Position = [342 332 113 30];
+
+            % Create AlignTracesToPanel
+            app.AlignTracesToPanel = uipanel(app.miscsettingsTab);
+            app.AlignTracesToPanel.Title = 'Align Traces To:';
+            app.AlignTracesToPanel.FontWeight = 'bold';
+            app.AlignTracesToPanel.Position = [288 190 177 134];
+
+            % Create trim2stim
+            app.trim2stim = uicheckbox(app.AlignTracesToPanel);
+            app.trim2stim.Text = 'First Stimulus';
+            app.trim2stim.WordWrap = 'on';
+            app.trim2stim.Position = [4 82 113 22];
+
+            % Create trim2spike
+            app.trim2spike = uicheckbox(app.AlignTracesToPanel);
+            app.trim2spike.Text = 'First Ca2+ Spike';
+            app.trim2spike.WordWrap = 'on';
+            app.trim2spike.Position = [5 56 113 22];
+
+            % Create trim2foodEntry
+            app.trim2foodEntry = uicheckbox(app.AlignTracesToPanel);
+            app.trim2foodEntry.Text = 'Food Entry';
+            app.trim2foodEntry.WordWrap = 'on';
+            app.trim2foodEntry.Position = [5 29 113 22];
+
+            % Create trim2foodExit
+            app.trim2foodExit = uicheckbox(app.AlignTracesToPanel);
+            app.trim2foodExit.Text = 'Food Exit';
+            app.trim2foodExit.WordWrap = 'on';
+            app.trim2foodExit.Position = [5 2 113 22];
+
+            % Create TimepreeventsEditFieldLabel
+            app.TimepreeventsEditFieldLabel = uilabel(app.AlignTracesToPanel);
+            app.TimepreeventsEditFieldLabel.HorizontalAlignment = 'center';
+            app.TimepreeventsEditFieldLabel.WordWrap = 'on';
+            app.TimepreeventsEditFieldLabel.Position = [109 21 65 32];
+            app.TimepreeventsEditFieldLabel.Text = 'Time pre event  (s)';
+
+            % Create timePreAlignment
+            app.timePreAlignment = uieditfield(app.AlignTracesToPanel, 'numeric');
+            app.timePreAlignment.Position = [129 3 26 18];
+            app.timePreAlignment.Value = 30;
 
             % Show the figure after all components are created
             app.IntestinalCalciumAppUIFigure.Visible = 'on';

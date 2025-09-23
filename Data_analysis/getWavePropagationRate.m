@@ -71,7 +71,7 @@ for binIdx = 1:numBins
         [~, inflectPt(binIdx)] = max(dy);
         %% half maximum peak amplitude inflection point
         fwhm(binIdx) = round(loc-(w/2)); % inflection points defined as points at half-maximum based off half-width from findpeaks
-        %% relative threshold     
+        %% relative threshold
         % thresh = settings.threshPercent*max(binSignal(risePhase,binIdx));
         % relThresh(binIdx) = find(binSignal(risePhase,binIdx)>thresh, 1, "first");
         scaledSignal = rescale(binSignal(:,binIdx));
@@ -220,66 +220,66 @@ if length(cleanedInit)>numSegments*2
             % rectangle('Position',[rectX, rectY,rectW, rectH],'linestyle', '-','EdgeColor', currentColor, 'linewidth', 1, 'Parent', axAx)
 
             % plot a line at each inflection point
-        %     if badBins(pltIdx) == 0
-        %         line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
-        %     elseif badBins(pltIdx) == 1
-        %         line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 0 0], 'linewidth' ,1.5, 'Parent', axAx)
-        %     end
+            %     if badBins(pltIdx) == 0
+            %         line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
+            %     elseif badBins(pltIdx) == 1
+            %         line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 0 0], 'linewidth' ,1.5, 'Parent', axAx)
+            %     end
+            % end
+
+
+
+            %% Plot Lines Fit to Each Segment
+
+            for i=1:length(timeValues)
+                line(timeValues{i}-2, distanceValues{i}, 'Color', 'r', 'Linestyle', ':', 'LineWidth', 1.5);
+            end
+
+            %% Axis Labels and Formatting
+            ylabel(propAx, 'GCaMP Signal (a.u)')
+            xlabel(propAx, 'Time (sec)')
+            box(propAx, 'off')
+
+            propAx.YAxis.Exponent = 4;
+
+            ylabel(axAx, 'Distance (\it{\mum})')
+            xlabel(axAx, 'Time (sec)')
+            box(axAx, 'off')
+
+            cb = colorbar(axAx);
+            cb.Ruler.Exponent = 4;
+
+
+
+            title(['Slope: ' num2str(round(propagationRate,1)) ' \mum/sec'] ,  ['R^2 ' num2str(fitError)], 'Parent',axFig)
+            txt = input("Look ok? hit enter... if not, type 0 to clear a segment, 1 to keep","s");
+
+            if ~isempty(txt)
+                responses =  logical(str2num(txt));
+                if ~isempty(responses)
+                    propagationRate(~responses) = nan;
+                    validFlags = responses;
+                end
+            else
+                validFlags = ones(1, numSegments);
+            end
+            drawnow()
+
+        end
+        % catch
+        %     disp('Error!')
+        %     imagesc(axialPeak, 'Parent', axAx)
         % end
 
-
-
-        %% Plot Lines Fit to Each Segment
-
-        for i=1:length(timeValues)
-            line(timeValues{i}-2, distanceValues{i}, 'Color', 'r', 'Linestyle', ':', 'LineWidth', 1.5);
-        end
-
-        %% Axis Labels and Formatting
-        ylabel(propAx, 'GCaMP Signal (a.u)')
-        xlabel(propAx, 'Time (sec)')
-        box(propAx, 'off')
-
-        propAx.YAxis.Exponent = 4;
-
-        ylabel(axAx, 'Distance (\it{\mum})')
-        xlabel(axAx, 'Time (sec)')
-        box(axAx, 'off')
-
-        cb = colorbar(axAx);
-        cb.Ruler.Exponent = 4;
-
-
-
-        title(['Slope: ' num2str(round(propagationRate,1)) ' \mum/sec'] ,  ['R^2 ' num2str(fitError)], 'Parent',axFig)
-        txt = input("Look ok? hit enter... if not, type 0 to clear a segment, 1 to keep","s");
-
-        if ~isempty(txt)
-            responses =  logical(str2num(txt));
-            if ~isempty(responses)
-                propagationRate(~responses) = nan;
-                validFlags = responses;
-            end
-        else
-            validFlags = ones(1, numSegments);
-        end
-        drawnow()
-
+    else
+        rSquared = NaN(1, numSegments);
+        propagationRate = NaN(1, numSegments);
+        validFlags = zeros(1, length(numSegments));
     end
-    % catch
-    %     disp('Error!')
-    %     imagesc(axialPeak, 'Parent', axAx)
-    % end
 
-else
-    rSquared = NaN(1, numSegments);
-    propagationRate = NaN(1, numSegments);
-    validFlags = zeros(1, length(numSegments));
-end
-
-if validatePropagationRate == 0
-    validFlags = ones(1, length(numSegments));
-end
+    if validatePropagationRate == 0
+        validFlags = ones(1, length(numSegments));
+    end
 
 end
 
