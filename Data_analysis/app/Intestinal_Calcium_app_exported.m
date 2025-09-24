@@ -219,12 +219,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             parsedInputs.uploadResults = app.UploadResultsCheckBox.Value;
 
-            if ~isfolder(app.remoteDir.Value)
-                parsedInputs.uploadResults = 0;
-                parsedInputs.remoteDir = [];
-            else
-                parsedInputs.remoteDir = app.remoteDir.Value;
-            end
+
 
             parsedInputs.loadTiff = app.LoadTiffCheckBox.Value;
             parsedInputs.isRemote = app.IsRemoteCheckBox.Value;
@@ -242,6 +237,19 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             parsedInputs.startFrame = app.StartFrameSpinner.Value;
             parsedInputs.startFile = app.StartFileSpinner.Value;
             parsedInputs.isOAS = app.AnalyzeOASdataCheckBox.Value;
+
+            if ~isfolder(app.remoteDir.Value)
+                parsedInputs.uploadResults = 0;
+                parsedInputs.remoteDir = [];
+            else
+                parsedInputs.remoteDir = app.remoteDir.Value;
+            end
+
+            if app.IsRemoteCheckBox.Value == 1 % always upload to the original path if working with remote files
+                parsedInputs.uploadResults = 1;
+                parsedInputs.remoteDir = app.tiffDir.Value;
+            end
+
         end
     end
 

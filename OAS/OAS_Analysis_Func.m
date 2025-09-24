@@ -51,7 +51,13 @@ for nf =startIndex:length(imgDir)
 
     [fold, nm, ~] = fileparts(path);
     protopath = regexp(fold,'\', 'split');
-    expSuffix = [protopath{end} '_' num2str(nf)];
+
+    if ~isempty(regexp(protopath{end}, '\w+_\d{1,2}$', 'once')) % does the filename already contain an experiment number?
+        expSuffix = protopath{end};
+    else
+        expSuffix = [protopath{end} '_' num2str(nf)];
+    end
+
     protosavename = [fold '\' expSuffix];
 
 
@@ -169,11 +175,11 @@ for nf =startIndex:length(imgDir)
             if exist('v','var') == 1
                 close(v)
             end
-            videopath = [fold '\' protopath{end} '_' num2str(nf) '_Tracking_Video.mp4'];
+            videopath = [protosavename '_Tracking_Video.mp4'];
             if isremote== 0
                 v = VideoWriter(videopath,'MPEG-4');
             else
-                localVideoPath = [ 'C:\tmp\' protopath{end} '_' num2str(nf) '_Tracking_Video.mp4'];
+                localVideoPath = [ 'C:\tmp\' expSuffix '_Tracking_Video.mp4'];
                 v = VideoWriter(localVideoPath,'MPEG-4');
             end
             v.FrameRate = 15;
@@ -1025,14 +1031,7 @@ for nf =startIndex:length(imgDir)
     %     ylabel(gca, 'Time (min)')
 
 
-    if isremote == 1
-        reg = regexp(beh_file_path, '\', 'split');
-    else
-        reg = regexp(path, '\', 'split');
-    end
-
-    reg = [reg{end-1} ' | ' reg{end}];
-    title(t, strrep(strrep(reg,'_', ' ' ), 'flircamera behavior', ''));
+    title(t, strrep(expSuffix, '_', ' '));
 
     summaryPlotName = [protosavename '_Summary_Plots.png'];
 
@@ -1080,11 +1079,8 @@ for nf =startIndex:length(imgDir)
 
         elseif isremote == 1  % if working with remote files, moved analyzed results back to where we found them.
             clear('img')
-
-            % copy summary plots
             [statusvideoplot,~,~]=copyfile(localVideoPath, videopath);
             delete(localVideoPath);
-
         end
     end
 
