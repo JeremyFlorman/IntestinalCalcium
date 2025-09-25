@@ -1,4 +1,4 @@
-folder  = 'X:\NSB_2025\04_Celegans\OAS_Data\Jeremy\250723_zfis178_wildtype-multipatch\2025_07_23_21_57_49_flircamera_behavior';
+folder  = 'C:\Users\Jeremy\Desktop\250723_zfis178_wildtype-multipatch\2025_07_23_21_57_49_flircamera_behavior';
 
 d = dir([folder '\*videoEvents.mat']);
 h5 = dir([folder '\*.h5']);
@@ -140,6 +140,6 @@ timepoint = hz(minIdx);
 
 txt = input(['Save video at time: ' num2str(timepoint/15/60) ' min? (y/n)...'],"s");
 if strcmp(txt,'y')
-    makeVideoFromTimepoints(folder, timepoint, 30) % behavior
-    makeVideoFromTimepoints(strrep(folder, 'behavior', 'gcamp'), timepoint, 30) % gcamp
+    makeVideoFromTimepoints(folder, timepoint, 60) % behavior
+    makeVideoFromTimepoints(strrep(folder, 'behavior', 'gcamp'), timepoint, 60) % gcamp
 end
