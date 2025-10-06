@@ -86,11 +86,11 @@ toc
 figure();
 ax = gca;
 inc = 1:length(x_steps);
-% cdata= videoEvents.velocity(inc); % cdata is speed
-cdata= inc'; % cdata is frame number, use this for making videos
+cdata= videoEvents.velocity(inc); % cdata is speed
+% cdata= inc'; % cdata is frame number, use this for making videos
 
-scatter3(x_steps(inc),y_steps(inc),1:length(x_steps(inc)),2,cdata);
-colormap turbo
+scatter3(x_steps(inc),y_steps(inc),1:length(x_steps(inc)),1,cdata);
+colormap viridis
 view(2);
 grid off
 freezeColors(ax)
@@ -136,10 +136,11 @@ d = sqrt((xPt-hx).^2 + (yPt-hy).^2);
 
 timepoint = hz(minIdx);
 
+% timepoint = 4501;
 
 
 txt = input(['Save video at time: ' num2str(timepoint/15/60) ' min? (y/n)...'],"s");
 if strcmp(txt,'y')
-    makeVideoFromTimepoints(folder, timepoint, 60) % behavior
-    makeVideoFromTimepoints(strrep(folder, 'behavior', 'gcamp'), timepoint, 60) % gcamp
+    makeVideoFromTimepoints(folder, timepoint, 450) % behavior
+    makeVideoFromTimepoints(strrep(folder, 'behavior', 'gcamp'), timepoint, 450) % gcamp
 end

@@ -1,5 +1,5 @@
 
- filename = 'C:\Users\Jeremy\Dropbox\NS&B2025\ventral bias alberto.mp4';
+ filename = "C:\Users\Jeremy\Desktop\250723_zfis178_wildtype-multipatch\250723_zfis178_wildtype-multipatch_0-8min_composite.tif";
 
 [fp, name, ext] = fileparts(filename);
 info = imfinfo(filename);
@@ -8,7 +8,7 @@ fr = 15;    % frame rate of original video
 playrate = 2; % multiplier for playback framerate
 
 startidx = 1 %460;
-endidx =450 % 3638 %startidx+(30*fr);
+endidx =7200% 3638 %startidx+(30*fr);
 
 
 

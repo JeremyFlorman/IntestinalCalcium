@@ -3,7 +3,7 @@ function [h5data] = returnRegisteredH5(path, isremote)
 %timestamps and return the registered images as a structure
 %   Path = path to behavior recording folder
 if nargin < 1
-    path = 'Z:\OAS\unc-31_AID\Defecation\pha-4prom-2_TIR\zfex1268(pha-4prom2-TIR)+4mMAuxPlates\250407_zfis178_UNC-31AID;zfex1268(pha-4-TIR)+4mMAuxPlates_1\2025_04_07_13_57_39_flircamera_behavior';
+    path = 'Z:\OAS\5-HT\-Food\tph-1;unc-31_Figure\-Food\unc-31-noFood\250523_zfis178_unc-31-noFood_1\2025_05_23_15_47_23_flircamera_behavior';
     isremote = 1;
 end
 tic 
