@@ -110,7 +110,7 @@ for i = 1:size(catvid,3)
     position = [5 5; 5 20];
     text_str = {['Time: ' num2str(round(time(i),2)) ' min'], ['Frame: ' num2str(frm(i))]};
     img = rgb2gray(insertText(rot90(catvid(:, :, i),3),position, text_str));
-    imwrite(img, outputFileName, 'WriteMode', 'append','Compression','none');
+    imwrite(img, outputFileName, 'WriteMode', 'append','Compression','lzw');
 end
 % 
 % figure();
