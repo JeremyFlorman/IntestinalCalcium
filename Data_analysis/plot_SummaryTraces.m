@@ -18,6 +18,9 @@ pktraces = wormdata.peakTraces;
 onFood = wormdata.onFood;
 offFood = wormdata.offFood;
 foodTrace = false(length(bulkSignal), 1);
+patchAlpha = 0.25;
+
+
 if length(offFood)<length(onFood)
     offFood(end+1) = length(bulkSignal);
 end
@@ -33,18 +36,16 @@ end
         time = linspace(0,round((nFrames)/fps/60,2),nFrames); %minutes per frame
     end
     if ~exist('pk','var')
-        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',3, 'MinPeakDistance',150);
+        [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',5, 'MinPeakDistance',150);
         peakpad = fps*15;
         pktime = linspace(-15,15, peakpad*2)';
         pkmean = mean(pktraces,2,'omitnan');
     end
 
-
-
     figure('Position', [936 72 903 586],Color=[1 1 1])
     t = tiledlayout(4,4,'TileSpacing','compact','Padding','tight');
 
-    % % % Bulk Signal % % %
+    %% Bulk Signal % % %
     nexttile([1 3])
     if ~isnan(loc)
         plot(time,bulkSignal,time(loc),pk*1.01, 'rv')
@@ -56,14 +57,10 @@ end
         ax = gca;
         plot(time(stimTimes),ax.YLim(2)*.98,'Marker', 'v', 'MarkerSize', 9, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
     end
-    ax = gca;
-    plottingFoodTrace = nan(length(bulkSignal),1);
-    plottingFoodTrace(foodTrace) = ax.YLim(2)*0.99;
-    plot(time, plottingFoodTrace, 'Color', [0.93 0.69 0.13], 'LineWidth', 2, 'LineStyle', '-', 'Marker', 'none')
     hold off
 
+    ax = gca;
     xlim([0 time(end)])
-    %     xlabel(gca, 'Time (min)')
     ylabel(gca,'Fluorescence (a.u.)');
     title(gca, 'Whole Animal Calcium Trace')
     ax = gca;
@@ -72,7 +69,13 @@ end
     ax.TickLength =[0.005 0.005];
     box off
 
-    % % % Peak Profile % % %
+    % Food Patches 
+    [patchX, patchY] = shadedFoodPatches(wormdata,ax.YLim);
+    p = patch(patchX/fps/60, patchY,  [0.93 0.69 0.13], 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
+    uistack(p, 'bottom');
+
+
+    %% Peak Profile % % %
     nexttile([1 1])
     plot(pktime, pktraces, 'Color', [0.7 0.7 0.7])
     hold on
@@ -83,7 +86,7 @@ end
     colormap bone
     box off
 
-    % % % Axial Signal % % %
+    %% Axial Signal % % %
     ax = nexttile([1 3]);
     imagesc(smoothdata(autoAxialSignal,1,'gaussian',60)'-median(backgroundSignal,'omitnan'))
     title(gca, 'Axial Calcium Trace')
@@ -93,21 +96,19 @@ end
     %     plot(stimTimes,1,'Marker', 'diamond', 'Marker', 'v', 'MarkerSize', 9, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
     % end
     ax = gca;
-    plottingFoodTrace(foodTrace) = 1;
-    plot(plottingFoodTrace, 'Color', [0.93 0.69 0.13], 'LineWidth', 2, 'LineStyle', '-', 'Marker', 'none')
+    foodYVals(foodTrace) = 1;
+    plot(foodYVals, 'Color', [0.93 0.69 0.13], 'LineWidth', 2, 'LineStyle', '-', 'Marker', 'none')
  
     hold off
     box off
 
-    %     xlabel('Time (min)')
-    ax.XTick = xt*60*fps; %linspace(0,length(autoAxialSignal),length(xtl));
+    ax.XTick = xt*60*fps;
     ax.XTickLabels = xtl;
     ax.YTick = [20 size(autoAxialSignal,2)-20];
     ax.YTickLabel = {'Head', 'Tail'};
     ax.CLim =[0 50];
     colormap turbo
     ax.TickLength = [0.001 0.001];
-
 
     % % % Interval Histogram % % %
     nexttile([1 1])
@@ -120,7 +121,7 @@ end
     ylabel(gca,'Count');
     box off
 
-    % % % Velocity  % % %
+    %% Velocity  % % %
     nexttile([1 3]);
     plot(time,smoothdata(velocity,'gaussian',30))
     ax = gca;
@@ -128,16 +129,22 @@ end
     if ~isempty(stimTimes)
         plot(time(stimTimes),ax.YLim(2)*.98,'Marker', 'v', 'MarkerSize', 9, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
     end
+
     hold off
     xlim([0 time(end)])
     title(gca, 'Velocity')
     ylabel(gca,'Steps/sec')
-    %     xlabel(gca,'Time (min)')
     ax.TickLength = [0.005 0.005];
-    
     box off
 
-    % % % Peak Widths % % %
+    % Food Patches 
+    [~, patchY] = shadedFoodPatches(wormdata,ax.YLim);
+    p = patch(patchX/fps/60, patchY,  [0.93 0.69 0.13], 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
+    uistack(p, 'bottom');
+
+
+
+    %% Peak Widths % % %
     nexttile([1 1])
     histogram(w./fps,'BinEdges', 1:15);
     ylim([0 10])
@@ -146,7 +153,8 @@ end
     ylabel(gca,'Count');
     xlabel(gca,'Time (s)');
     box off
-    % % % Worm Area % % %
+
+    %% Worm Area % % %
     nexttile([1 3]);
     plot(time,smoothdata(area,'gaussian', 30))
     xlim([0 time(end)])
@@ -157,19 +165,10 @@ end
     ax.TickLength = [0.005 0.005];
     box off
 
+    % Food Patches 
+    [~, patchY] = shadedFoodPatches(wormdata,ax.YLim);
+    p = patch(patchX/fps/60, patchY,  [0.93 0.69 0.13], 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
+    uistack(p, 'bottom');
 
-    % function annotateFood(data,ax)
-    %      for k = 1:length(data.onFood)
-    %             foodStart = data.onFood(k);
-    % 
-    %             if k<=length(data.offFood)
-    %                 foodEnd = data.offFood(k);
-    %             else
-    %                 foodEnd = find(~isnan(data.bulkSignal),1,'last');
-    %             end
-    %             foodY = ax.YLim; 
-    %             line([foodStart foodEnd], [foodY(2) foodY(2)], 'Color', [0.97 0.93 0.62], 'LineWidth', 0.5, 'LineStyle', '-', 'Marker', 'none')
-    %      end
-    % end
 
 end
