@@ -979,7 +979,7 @@ for nf =startIndex:length(imgDir)
     edges = 0:2:120;
     histogram(diff(loc)./fps,'BinEdges',edges);
     title(gca,'Inter-Peak Interval');
-    ylim([0 10])
+    % ylim([0 10])
     xlim([0 120])
     xlabel(gca,'Time (s)');
     ylabel(gca,'Count');
