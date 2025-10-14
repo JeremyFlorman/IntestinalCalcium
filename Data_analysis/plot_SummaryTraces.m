@@ -38,18 +38,26 @@ if isfield(wormdata, 'velocity')
 end
 
 
-
+%% Work with food patch data
+trimOffFood = [];
 if isfield(wormdata, 'onFood')
     onFood = wormdata.onFood;
     offFood = wormdata.offFood;
+    % nFrames = length(wormdata.bulkSignal); % Need this for function
     foodTrace = false(length(bulkSignal), 1);
+
 
     if length(offFood)<length(onFood)
         offFood(end+1) = length(bulkSignal);
+        trimOffFood = 1;
     end
 
     for i = 1:length(onFood)
         foodTrace(onFood(i):offFood(i),1) = 1;
+    end
+
+    if trimOffFood ==1
+        offFood = offFood(1:end-1);
     end
 end
 
@@ -93,10 +101,17 @@ ax.TickLength =[0.005 0.005];
 box off
 
 % Food Patches
-if isfield(wormdata, 'onFood')
-    [patchX, patchY] = shadedFoodPatches(wormdata,ax.YLim);
-    p = patch(patchX/fps/60, patchY,  [0.93 0.69 0.13], 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
-    uistack(p, 'bottom');
+if isfield(wormdata, 'onFood') && ~isempty(wormdata.onFood)
+
+            boutData = computeFoodBouts(wormdata.onFood, wormdata.offFood, nFrames, ax.YLim);
+            % [patchX, patchY] = shadedFoodPatches(foodBouts, [patchYVals(i)+(tracediff*0.05), patchYVals(i+1)-(tracediff*0.05)]);
+            patchXinMinutes = boutData.patchX/fps/60;
+            p = patch(patchXinMinutes, boutData.patchY,  [0.93 0.69 0.13], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
+            uistack(p, 'bottom');
+
+    % [patchX, patchY] = shadedFoodPatches(wormdata,ax.YLim);
+    % p = patch(patchX/fps/60, patchY,  [0.93 0.69 0.13], 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
+    % uistack(p, 'bottom');
 end
 
 
@@ -163,23 +178,30 @@ if isfield(wormdata, 'velocity')
 
     % Food Patches
     if isfield(wormdata, 'onFood')
-        [~, patchY] = shadedFoodPatches(wormdata,ax.YLim);
-        p = patch(patchX/fps/60, patchY,  [0.93 0.69 0.13], 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
+        boutData = computeFoodBouts(wormdata.onFood, wormdata.offFood, nFrames, ax.YLim);
+        % [patchX, patchY] = shadedFoodPatches(foodBouts, [patchYVals(i)+(tracediff*0.05), patchYVals(i+1)-(tracediff*0.05)]);
+        patchXinMinutes = boutData.patchX/fps/60;
+        p = patch(patchXinMinutes, boutData.patchY,  [0.93 0.69 0.13], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
         uistack(p, 'bottom');
     end
 end
 
-if isfield(wormdata, 'onFood')
-    timeOffFood = [];
-    timeOnFood = [];
+if isfield(wormdata, 'onFood') && ~isempty(wormdata.onFood)
+    nexttile([1 1])
 
-    if onFood(1) ~= 1 % if the animal doesn't start on food find time till food entry
-        timeOffFood(1) = onFood(1);
-    end
+    ondur = boutData.onDur/fps/60;
+    offdur = boutData.offDur/fps/60;
+    binEdges = 0:2:20;
+    h1 = histogram(ondur,'BinEdges',binEdges,'FaceColor',[0.93 0.69 0.13], Normalization='count');
+    hold on
+    h1 = histogram(offdur,'BinEdges',binEdges,'FaceColor',[0.6 0.6 0.6], Normalization='count');
 
-    for onIdx = 1:length(onFood)-1
-        % timeOnFood()
-    end
+ title('Time On/Off Food')
+    xlabel('Bout Duration (min)')
+    ylabel('Count')
+    legend({'On Food', 'Off Food'})
+
+
     
 else
     %% Peak Widths % % %
@@ -206,9 +228,11 @@ box off
 
 % Food Patches
 if isfield(wormdata, 'onFood')
-[~, patchY] = shadedFoodPatches(wormdata,ax.YLim);
-p = patch(patchX/fps/60, patchY,  [0.93 0.69 0.13], 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
-uistack(p, 'bottom');
+    boutData = computeFoodBouts(wormdata.onFood, wormdata.offFood, nFrames, ax.YLim);
+    % [patchX, patchY] = shadedFoodPatches(foodBouts, [patchYVals(i)+(tracediff*0.05), patchYVals(i+1)-(tracediff*0.05)]);
+    patchXinMinutes = boutData.patchX/fps/60;
+    p = patch(patchXinMinutes, boutData.patchY,  [0.93 0.69 0.13], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
+    uistack(p, 'bottom');
 end
 
 if saveSummaryplot == 1
