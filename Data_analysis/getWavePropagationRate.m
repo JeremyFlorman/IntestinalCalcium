@@ -37,7 +37,7 @@ validatePropagationRate = settings.validatePropagationRate;
 binSizeUm = intestineLengthUm/numBins; % size of bins in microns
 
 numSegments = settings.numSegments; % if not fitting global equation, how many segments do we want to fit.
-fitPad = 0.4; % how much longer to draw fit line
+fitPad = 2; % how much longer to draw fit line
 
 % preallocate variables
 binSignal = nan(size(axialPeak,2),numBins);
@@ -115,7 +115,7 @@ binCentersUm = binCenters/size(axialPeak,1)*WormLengthUm;
 initSeconds = waveInit/framerate; % convert frame to seconds
 
 %% Remove Outliers
-[~, ~, outlierLoc] = rmoutliers(initSeconds,ThresholdFactor=5);
+[~, ~, outlierLoc] = rmoutliers(initSeconds,'percentiles', [1 99]);
 lateFlags = initSeconds>settings.maxTime;
 earlyFlags = initSeconds<settings.minTime;
 
@@ -123,12 +123,19 @@ badBins = outlierLoc | excludeBin | lateFlags | earlyFlags;
 
 % outlierLoc = zeros(size(outlierLoc))+excludeBin; % uncomment to turn off outlier removal
 
+%% only consider first and last intestinal cells
+onlyInt1and9 = 1;
+if onlyInt1and9 == 1
+    badBins = zeros(size(outlierLoc));
+    badBins(2:end-1) = 1;
+end
+
 cleanedInit = initSeconds(~badBins);
 cleanedCenters = binCentersUm(~badBins);
 %%
 
 
-if length(cleanedInit)>numSegments*2
+if length(cleanedInit)>=numSegments*2
     %% Calculate Global Propagation Rate
     if numSegments == 1
         [coeffs, err]= polyfit(cleanedCenters, cleanedInit, 1); % first value is slope of line fit um/sec
@@ -220,66 +227,67 @@ if length(cleanedInit)>numSegments*2
             % rectangle('Position',[rectX, rectY,rectW, rectH],'linestyle', '-','EdgeColor', currentColor, 'linewidth', 1, 'Parent', axAx)
 
             % plot a line at each inflection point
-            %     if badBins(pltIdx) == 0
-            %         line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
-            %     elseif badBins(pltIdx) == 1
-            %         line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 0 0], 'linewidth' ,1.5, 'Parent', axAx)
-            %     end
-            % end
-
-
-
-            %% Plot Lines Fit to Each Segment
-
-            for i=1:length(timeValues)
-                line(timeValues{i}-2, distanceValues{i}, 'Color', 'r', 'Linestyle', ':', 'LineWidth', 1.5);
+            if badBins(pltIdx) == 0
+                line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
+            elseif badBins(pltIdx) == 1
+                line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 0 0], 'linewidth' ,1.5, 'Parent', axAx)
             end
-
-            %% Axis Labels and Formatting
-            ylabel(propAx, 'GCaMP Signal (a.u)')
-            xlabel(propAx, 'Time (sec)')
-            box(propAx, 'off')
-
-            propAx.YAxis.Exponent = 4;
-
-            ylabel(axAx, 'Distance (\it{\mum})')
-            xlabel(axAx, 'Time (sec)')
-            box(axAx, 'off')
-
-            cb = colorbar(axAx);
-            cb.Ruler.Exponent = 4;
-
-
-
-            title(['Slope: ' num2str(round(propagationRate,1)) ' \mum/sec'] ,  ['R^2 ' num2str(fitError)], 'Parent',axFig)
-            txt = input("Look ok? hit enter... if not, type 0 to clear a segment, 1 to keep","s");
-
-            if ~isempty(txt)
-                responses =  logical(str2num(txt));
-                if ~isempty(responses)
-                    propagationRate(~responses) = nan;
-                    validFlags = responses;
-                end
-            else
-                validFlags = ones(1, numSegments);
-            end
-            drawnow()
-
         end
-        % catch
-        %     disp('Error!')
-        %     imagesc(axialPeak, 'Parent', axAx)
-        % end
 
-    else
-        rSquared = NaN(1, numSegments);
-        propagationRate = NaN(1, numSegments);
-        validFlags = zeros(1, length(numSegments));
-    end
 
-    if validatePropagationRate == 0
-        validFlags = ones(1, length(numSegments));
+
+        %% Plot Lines Fit to Each Segment
+
+        for i=1:length(timeValues)
+            line(timeValues{i}, distanceValues{i}, 'Color', 'r', 'Linestyle', ':', 'LineWidth', 1.5);
+        end
+
+        %% Axis Labels and Formatting
+        ylabel(propAx, 'GCaMP Signal (a.u)')
+        xlabel(propAx, 'Time (sec)')
+        box(propAx, 'off')
+
+        propAx.YAxis.Exponent = 4;
+
+        ylabel(axAx, 'Distance (\it{\mum})')
+        xlabel(axAx, 'Time (sec)')
+        box(axAx, 'off')
+
+        cb = colorbar(axAx);
+        cb.Ruler.Exponent = 4;
+
+
+
+        title(['Slope: ' num2str(round(propagationRate,1)) ' \mum/sec'] ,  ['R^2 ' num2str(fitError)], 'Parent',axFig)
+        txt = input("Look ok? hit enter... if not, type 0 to clear a segment, 1 to keep","s");
+
+        if ~isempty(txt)
+            responses =  logical(str2num(txt));
+            if ~isempty(responses)
+                propagationRate(~responses) = nan;
+                validFlags = responses;
+            end
+        else
+            validFlags = ones(1, numSegments);
+        end
+        drawnow()
+        % frame = getFrame(gcf)
+
     end
+    % catch
+    %     disp('Error!')
+    %     imagesc(axialPeak, 'Parent', axAx)
+    % end
+
+else
+    rSquared = NaN(1, numSegments);
+    propagationRate = NaN(1, numSegments);
+    validFlags = zeros(1, length(numSegments));
+end
+
+if validatePropagationRate == 0
+    validFlags = ones(1, length(numSegments));
+end
 
 end
 
