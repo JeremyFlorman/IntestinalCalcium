@@ -163,7 +163,8 @@ else
 end
 
 
-
+mtdata = processFood(mtdata, settings);
+wtdata = processFood(wtdata, settings);
 
 mtdata = processSpikes(mtdata,settings);
 wtdata = processSpikes(wtdata,settings);
@@ -246,6 +247,8 @@ analyzePropagationRate = settings.analyzePropagationRate;
 validatePropagationRate = settings.validatePropagationRate;
 validateRiseFall = settings.validateRiseFall;
 
+get_Individual_Spike_PropagationRate = 1;
+
 % pixel Scaling
 if settings.isOAS == 1
     pxPerMM = 381; % pixel scaling for 4x objective in 2x2 binning on OAS
@@ -306,10 +309,13 @@ for i = 1:length(inputData)
         splitpoints = nan(length(templocs)+1,1);
         splitpoints(end) = length(bulkSignal);
         AUC = nan(length(templocs),1);
+        axialPeak = nan(size(axialSignal,2), floor(timePreSpike/3)*2+1, length(templocs));
+
+        if get_Individual_Spike_PropagationRate == 1
         propagationRate = nan(length(templocs),settings.numSegments);
         rSquared = nan(length(templocs),settings.numSegments);
         validFlags = nan(length(templocs),settings.numSegments);
-        axialPeak = nan(size(axialSignal,2), floor(timePreSpike/3)*2+1, length(templocs));
+        end
 
 
 
@@ -322,10 +328,11 @@ for i = 1:length(inputData)
             axPost = templocs(q)+floor(timePreSpike/3);
 
             %% Wave Propagation Rate
+
             if axPre>0 && axPost<= length(axialSignal)
                 axialPeak(:,:,q) = axialSignal(axPre:axPost,:)';
 
-                if analyzePropagationRate == 1
+                if analyzePropagationRate == 1 &&  get_Individual_Spike_PropagationRate == 1
                     [propRate, r2, flags] = getWavePropagationRate(axialPeak(:,:,q), mean(wormLength(axPre:axPost),'omitnan'), settings);
                     propagationRate(q, 1:length(propRate)) = propRate;
                     rSquared(q, 1:length(r2)) = r2;
@@ -550,10 +557,18 @@ for i = 1:length(inputData)
     inputData(i).axialPeak = axialPeak;
     inputData(i).avgKymograph = mean(axialPeak,3,'omitmissing');
 
+    %% calculate average propagation rate of spikes in a recording instead of individual spikes
+    if analyzePropagationRate == 1 &&  get_Individual_Spike_PropagationRate == 0
+        if isfield(inputData, 'wormLength') && ~isempty(inputData(i).wormLength)
+            [propagationRate, rSquared, validFlags] = getWavePropagationRate(inputData(i).avgKymograph, mean(wormLength,'omitnan'), settings);
+        end
+    end
+
     if analyzePropagationRate == 1
         inputData(i).propagationRate = propagationRate;
         inputData(i).rSquared = rSquared;
         inputData(i).validFlags = validFlags;
+        inputData(i).medianAbsPropRate = median(abs(propagationRate), 'omitmissing');
     end
 
     if ~isempty(templocs)
@@ -566,6 +581,7 @@ for i = 1:length(inputData)
     end
 
     meanSignal(i) = mean(inputData(i).bulkSignal,"all", "omitmissing");
+
 
 end
 
@@ -661,7 +677,7 @@ end
 
 
 
-
+    disp('Spike Processing Complete')
 end
 
 %% Align Traces to Events
@@ -715,6 +731,23 @@ for i = 1:length(inputData)
                 end
             end
         end
+    end
+end
+processedData = inputData;
+end
+
+%% Process food entrty and exit
+function [processedData] = processFood(inputData, settings)
+for i = 1:length(inputData)
+    if isfield(inputData, 'onFood') && ~isempty(inputData(i).onFood)
+        numFrames = find(~isnan(inputData(i).bulkSignal), 1, "last");
+        yRange = settings.traceylimit;
+        boutData = computeFoodBouts(inputData(i).onFood, inputData(i).offFood, numFrames, yRange);
+        inputData(i).onFoodDuration = boutData.onDur/settings.framerate/60;
+        inputData(i).offFoodDuration = boutData.offDur/settings.framerate/60;
+
+        inputData(1).onFoodDurationVector = vertcat(inputData(:).onFoodDuration);
+        inputData(1).offFoodDurationVector = vertcat(inputData(:).offFoodDuration);
     end
 end
 processedData = inputData;
