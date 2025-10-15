@@ -1,4 +1,4 @@
-function [propagationRate, rSquared, validFlags] = getWavePropagationRate(axialPeak, wormLength, settings)
+function [propagationRate, rSquared, validFlags, img] = getWavePropagationRate(axialPeak, wormLength, settings, figTitle)
 
 
 % inputData = itr1Data; % numBins: 90, numSegments: 2, propMethod: 4 (relThresh, 50%), min/max time: [1 12], min range: 1000, intestineStart: 30, rSquared cutoff: 0.5.
@@ -38,6 +38,7 @@ binSizeUm = intestineLengthUm/numBins; % size of bins in microns
 
 numSegments = settings.numSegments; % if not fitting global equation, how many segments do we want to fit.
 fitPad = 2; % how much longer to draw fit line
+int1and9only = settings.int1and9only;
 
 % preallocate variables
 binSignal = nan(size(axialPeak,2),numBins);
@@ -124,8 +125,8 @@ badBins = outlierLoc | excludeBin | lateFlags | earlyFlags;
 % outlierLoc = zeros(size(outlierLoc))+excludeBin; % uncomment to turn off outlier removal
 
 %% only consider first and last intestinal cells
-onlyInt1and9 = 1;
-if onlyInt1and9 == 1
+
+if int1and9only == 1
     badBins = zeros(size(outlierLoc));
     badBins(2:end-1) = 1;
 end
@@ -256,9 +257,9 @@ if length(cleanedInit)>=numSegments*2
         cb = colorbar(axAx);
         cb.Ruler.Exponent = 4;
 
+        title(figTitle, 'Parent', propAx)
 
-
-        title(['Slope: ' num2str(round(propagationRate,1)) ' \mum/sec'] ,  ['R^2 ' num2str(fitError)], 'Parent',axFig)
+        title(['Slope: ' num2str(round(propagationRate,1)) ' \mum/sec'] ,  ['R^2 ' num2str(fitError)], 'Parent',axAx)
         txt = input("Look ok? hit enter... if not, type 0 to clear a segment, 1 to keep","s");
 
         if ~isempty(txt)
@@ -274,10 +275,7 @@ if length(cleanedInit)>=numSegments*2
         % frame = getFrame(gcf)
 
     end
-    % catch
-    %     disp('Error!')
-    %     imagesc(axialPeak, 'Parent', axAx)
-    % end
+
 
 else
     rSquared = NaN(1, numSegments);
@@ -289,6 +287,12 @@ if validatePropagationRate == 0
     validFlags = ones(1, length(numSegments));
 end
 
+axAx.Units = 'pixels';
+pos = axAx.Position;
+ti = axAx.TightInset;
+rect = [-ti(1), -ti(2), pos(3)+ti(1)+ti(3), pos(4)+ti(2)+ti(4)];
+frame = getframe(axAx,rect);
+img = frame2im(frame);
 end
 
 

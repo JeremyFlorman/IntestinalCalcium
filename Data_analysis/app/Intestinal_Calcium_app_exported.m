@@ -160,6 +160,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         annotateFood                    matlab.ui.control.CheckBox
         ExportPlotSettingsButton        matlab.ui.control.Button
         WavePropagationSettingsPanel    matlab.ui.container.Panel
+        WaveAverageCheckBox             matlab.ui.control.CheckBox
+        Int1and9onlyCheckBox            matlab.ui.control.CheckBox
         analyzePropagationCheckbox      matlab.ui.control.CheckBox
         WorkspacevariableEditField      matlab.ui.control.EditField
         WorkspacevariableEditFieldLabel  matlab.ui.control.Label
@@ -219,7 +221,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             parsedInputs.uploadResults = app.UploadResultsCheckBox.Value;
 
-
+            if ~isfolder(app.remoteDir.Value)
+                parsedInputs.uploadResults = 0;
+                parsedInputs.remoteDir = [];
+            else
+                parsedInputs.remoteDir = app.remoteDir.Value;
+            end
 
             parsedInputs.loadTiff = app.LoadTiffCheckBox.Value;
             parsedInputs.isRemote = app.IsRemoteCheckBox.Value;
@@ -237,19 +244,6 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             parsedInputs.startFrame = app.StartFrameSpinner.Value;
             parsedInputs.startFile = app.StartFileSpinner.Value;
             parsedInputs.isOAS = app.AnalyzeOASdataCheckBox.Value;
-
-            if ~isfolder(app.remoteDir.Value)
-                parsedInputs.uploadResults = 0;
-                parsedInputs.remoteDir = [];
-            else
-                parsedInputs.remoteDir = app.remoteDir.Value;
-            end
-
-            if app.IsRemoteCheckBox.Value == 1 % always upload to the original path if working with remote files
-                parsedInputs.uploadResults = 1;
-                parsedInputs.remoteDir = app.tiffDir.Value;
-            end
-
         end
     end
 
@@ -360,7 +354,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             %% Spike Kinetics and Validation Settings
             plotSettings.validateRiseFall = app.validateRiseFall.Value;
             plotSettings.showFitParams = app.showFitParams.Value;
-
+            
+            %% Wave Propagation
             plotSettings.analyzePropagationRate = app.analyzePropagationCheckbox.Value;
             plotSettings.validatePropagationRate = app.validatePropagationRate.Value;
             plotSettings.numBins = app.NumberofBinsEditField.Value;
@@ -372,7 +367,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.minRange = app.MinrangeEditField.Value;
             plotSettings.minTime = app.MintimesEditField.Value;
             plotSettings.maxTime = app.MaxtimesEditField.Value;
-
+            plotSettings.int1and9only = app.Int1and9onlyCheckBox.Value;
+            plotSettings.waveAverage = app.WaveAverageCheckBox.Value;
 
 
             if app.DerivativeButton.Value == 1
@@ -501,6 +497,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.MinrangeEditField.Value = plotSettings.minRange;
             app.MintimesEditField.Value = plotSettings.minTime;
             app.MaxtimesEditField.Value = plotSettings.maxTime;
+            app.Int1and9onlyCheckBox.Value =  plotSettings.int1and9only;
+            app.WaveAverageCheckBox.Value = plotSettings.waveAverage;
 
 
             if plotSettings.propMethod == 1
@@ -957,10 +955,10 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             for i = 1:size(axPeakMat,3)
                 if ~all(isnan(axPeakMat(:,:,i)))
                     axialPeak = imgaussfilt(axPeakMat(:,:,i),2);
-                    [propRate, R2]  = getWavePropagationRate(axialPeak, wormLength(i), plotSettings)
+                    [propRate, R2]  = getWavePropagationRate(axialPeak, wormLength(i), plotSettings);
 
                     for k = 1:plotSettings.numSegments
-                        if ~isnan(R2(k)) && R2(k)>0.3
+                        if ~isnan(R2(k)) && R2(k)>plotSettings.minR2
                             propagationRate(i,k) = propRate(k);
                         end
                     end
@@ -1949,12 +1947,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.WavePropagationSettingsPanel = uipanel(app.miscsettingsTab);
             app.WavePropagationSettingsPanel.Title = 'Wave Propagation Settings';
             app.WavePropagationSettingsPanel.FontWeight = 'bold';
-            app.WavePropagationSettingsPanel.Position = [11 27 261 297];
+            app.WavePropagationSettingsPanel.Position = [11 10 261 314];
 
             % Create InflectionPointDetection
             app.InflectionPointDetection = uibuttongroup(app.WavePropagationSettingsPanel);
             app.InflectionPointDetection.Title = 'Inflection Point Detection';
-            app.InflectionPointDetection.Position = [6 158 146 115];
+            app.InflectionPointDetection.Position = [6 175 146 115];
 
             % Create DerivativeButton
             app.DerivativeButton = uiradiobutton(app.InflectionPointDetection);
@@ -1973,19 +1971,19 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.PeakLocationButton.Tooltip = {'The maximum of the peak'};
             app.PeakLocationButton.Text = 'Peak Location';
             app.PeakLocationButton.Position = [3 30 102 22];
+            app.PeakLocationButton.Value = true;
 
             % Create ThresholdButton
             app.ThresholdButton = uiradiobutton(app.InflectionPointDetection);
             app.ThresholdButton.Tooltip = {'The first point in each bin which is above the threshold (% of max) define to the right.'};
             app.ThresholdButton.Text = 'Threshold';
             app.ThresholdButton.Position = [3 5 79 22];
-            app.ThresholdButton.Value = true;
 
             % Create threshValue
             app.threshValue = uieditfield(app.InflectionPointDetection, 'numeric');
             app.threshValue.FontSize = 10;
             app.threshValue.Position = [81 6 24 22];
-            app.threshValue.Value = 0.3;
+            app.threshValue.Value = 0.5;
 
             % Create MaxEditField_2Label
             app.MaxEditField_2Label = uilabel(app.InflectionPointDetection);
@@ -1996,7 +1994,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create IntestinelocationPanel
             app.IntestinelocationPanel = uipanel(app.WavePropagationSettingsPanel);
             app.IntestinelocationPanel.Title = 'Intestine location';
-            app.IntestinelocationPanel.Position = [158 197 99 75];
+            app.IntestinelocationPanel.Position = [158 214 99 75];
 
             % Create StartpxEditFieldLabel
             app.StartpxEditFieldLabel = uilabel(app.IntestinelocationPanel);
@@ -2030,7 +2028,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.MinR2EditFieldLabel.HorizontalAlignment = 'right';
             app.MinR2EditFieldLabel.FontSize = 10;
             app.MinR2EditFieldLabel.Interpreter = 'tex';
-            app.MinR2EditFieldLabel.Position = [175 150 44 22];
+            app.MinR2EditFieldLabel.Position = [175 167 44 22];
             app.MinR2EditFieldLabel.Text = 'Min R^2';
 
             % Create MinR2EditField
@@ -2038,107 +2036,117 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.MinR2EditField.FontName = 'Arial';
             app.MinR2EditField.FontSize = 10;
             app.MinR2EditField.Tooltip = {'Exclude propagation rates with an R squared  value below this limit.'};
-            app.MinR2EditField.Position = [223 150 32 22];
+            app.MinR2EditField.Position = [223 167 32 22];
             app.MinR2EditField.Value = 0.5;
 
             % Create validatePropagationRate
             app.validatePropagationRate = uicheckbox(app.WavePropagationSettingsPanel);
             app.validatePropagationRate.Tooltip = {'If checked, a dialog will pop up to allow reviewing the fits for each wave'};
             app.validatePropagationRate.Text = 'Validate propagation?';
-            app.validatePropagationRate.Position = [9 107 138 24];
+            app.validatePropagationRate.Position = [9 124 138 24];
 
             % Create MinrangeEditFieldLabel
             app.MinrangeEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
             app.MinrangeEditFieldLabel.HorizontalAlignment = 'right';
             app.MinrangeEditFieldLabel.FontSize = 10;
-            app.MinrangeEditFieldLabel.Position = [170 121 49 22];
+            app.MinrangeEditFieldLabel.Position = [170 138 49 22];
             app.MinrangeEditFieldLabel.Text = 'Min range';
 
             % Create MinrangeEditField
             app.MinrangeEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
             app.MinrangeEditField.FontSize = 10;
             app.MinrangeEditField.Tooltip = {'Exclude bins with less than this number of difference in the signal. (i.e. flat bins)'};
-            app.MinrangeEditField.Position = [223 121 32 22];
+            app.MinrangeEditField.Position = [223 138 32 22];
             app.MinrangeEditField.Value = 1000;
 
             % Create NumberofBinsEditFieldLabel
             app.NumberofBinsEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
             app.NumberofBinsEditFieldLabel.HorizontalAlignment = 'right';
             app.NumberofBinsEditFieldLabel.Tooltip = {'How many segments should the intestine be divided into for measuring inflection point'};
-            app.NumberofBinsEditFieldLabel.Position = [5 83 88 22];
+            app.NumberofBinsEditFieldLabel.Position = [5 78 88 22];
             app.NumberofBinsEditFieldLabel.Text = 'Number of Bins';
 
             % Create NumberofBinsEditField
             app.NumberofBinsEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
             app.NumberofBinsEditField.Tooltip = {'# of bins to divide the intestine into for detecting inflection points'};
-            app.NumberofBinsEditField.Position = [107 84 33 20];
-            app.NumberofBinsEditField.Value = 90;
+            app.NumberofBinsEditField.Position = [107 79 33 20];
+            app.NumberofBinsEditField.Value = 10;
 
             % Create MintimesEditFieldLabel
             app.MintimesEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
             app.MintimesEditFieldLabel.HorizontalAlignment = 'right';
             app.MintimesEditFieldLabel.FontSize = 10;
-            app.MintimesEditFieldLabel.Position = [156 92 63 22];
+            app.MintimesEditFieldLabel.Position = [156 109 63 22];
             app.MintimesEditFieldLabel.Text = 'Min time (s)';
 
             % Create MintimesEditField
             app.MintimesEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
             app.MintimesEditField.FontSize = 10;
             app.MintimesEditField.Tooltip = {'Exclude inflection points detected prior to this time'};
-            app.MintimesEditField.Position = [223 92 32 22];
+            app.MintimesEditField.Position = [223 109 32 22];
             app.MintimesEditField.Value = 1;
 
             % Create NumSegmentsEditFieldLabel
             app.NumSegmentsEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
             app.NumSegmentsEditFieldLabel.HorizontalAlignment = 'right';
             app.NumSegmentsEditFieldLabel.Tooltip = {'How many segments should the intestine be divided into for measuring inflection point'};
-            app.NumSegmentsEditFieldLabel.Position = [-1 57 95 23];
+            app.NumSegmentsEditFieldLabel.Position = [-1 52 95 23];
             app.NumSegmentsEditFieldLabel.Text = 'Num Segments';
 
             % Create NumSegmentsEditField
             app.NumSegmentsEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
             app.NumSegmentsEditField.Tooltip = {'number of line segments to fit. How many directions is the wave propagating in?'};
-            app.NumSegmentsEditField.Position = [107 58 33 20];
-            app.NumSegmentsEditField.Value = 2;
+            app.NumSegmentsEditField.Position = [107 53 33 20];
+            app.NumSegmentsEditField.Value = 1;
 
             % Create MaxtimesEditFieldLabel
             app.MaxtimesEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
             app.MaxtimesEditFieldLabel.HorizontalAlignment = 'right';
             app.MaxtimesEditFieldLabel.FontSize = 10;
-            app.MaxtimesEditFieldLabel.Position = [156 63 63 22];
+            app.MaxtimesEditFieldLabel.Position = [156 80 63 22];
             app.MaxtimesEditFieldLabel.Text = 'Max time (s)';
 
             % Create MaxtimesEditField
             app.MaxtimesEditField = uieditfield(app.WavePropagationSettingsPanel, 'numeric');
             app.MaxtimesEditField.FontSize = 10;
             app.MaxtimesEditField.Tooltip = {'Exclude inflection points detected after this time.'};
-            app.MaxtimesEditField.Position = [223 63 32 22];
+            app.MaxtimesEditField.Position = [223 80 32 22];
             app.MaxtimesEditField.Value = 12;
 
             % Create CalculateWavePropagationButton
             app.CalculateWavePropagationButton = uibutton(app.WavePropagationSettingsPanel, 'push');
             app.CalculateWavePropagationButton.ButtonPushedFcn = createCallbackFcn(app, @CalculateWavePropagationButtonPushed, true);
             app.CalculateWavePropagationButton.WordWrap = 'on';
-            app.CalculateWavePropagationButton.Position = [7 5 112 49];
+            app.CalculateWavePropagationButton.Position = [7 2 112 49];
             app.CalculateWavePropagationButton.Text = 'Calculate Wave Propagation';
 
             % Create WorkspacevariableEditFieldLabel
             app.WorkspacevariableEditFieldLabel = uilabel(app.WavePropagationSettingsPanel);
             app.WorkspacevariableEditFieldLabel.HorizontalAlignment = 'right';
-            app.WorkspacevariableEditFieldLabel.Position = [134 32 110 22];
+            app.WorkspacevariableEditFieldLabel.Position = [134 29 110 22];
             app.WorkspacevariableEditFieldLabel.Text = 'Workspace variable';
 
             % Create WorkspacevariableEditField
             app.WorkspacevariableEditField = uieditfield(app.WavePropagationSettingsPanel, 'text');
             app.WorkspacevariableEditField.HorizontalAlignment = 'center';
-            app.WorkspacevariableEditField.Position = [122 6 134 22];
+            app.WorkspacevariableEditField.Position = [122 3 134 22];
             app.WorkspacevariableEditField.Value = 'wildtypeData';
 
             % Create analyzePropagationCheckbox
             app.analyzePropagationCheckbox = uicheckbox(app.WavePropagationSettingsPanel);
             app.analyzePropagationCheckbox.Tooltip = {'If checked, a dialog will pop up to allow reviewing the fits for each wave'};
             app.analyzePropagationCheckbox.Text = 'Analyze Propagation?';
-            app.analyzePropagationCheckbox.Position = [10 132 139 24];
+            app.analyzePropagationCheckbox.Position = [8 149 139 24];
+
+            % Create Int1and9onlyCheckBox
+            app.Int1and9onlyCheckBox = uicheckbox(app.WavePropagationSettingsPanel);
+            app.Int1and9onlyCheckBox.Text = 'Int1 and Int9 only';
+            app.Int1and9onlyCheckBox.Position = [8 101 139 22];
+
+            % Create WaveAverageCheckBox
+            app.WaveAverageCheckBox = uicheckbox(app.WavePropagationSettingsPanel);
+            app.WaveAverageCheckBox.Text = 'Wave Average';
+            app.WaveAverageCheckBox.Position = [160 53 99 22];
 
             % Create ExportPlotSettingsButton
             app.ExportPlotSettingsButton = uibutton(app.miscsettingsTab, 'push');
