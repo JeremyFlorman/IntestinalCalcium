@@ -250,7 +250,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
     methods (Access = private)
 
         function plotSettings = parsePlotSettings(app)
-
+            
+            plotSettings.workingDir = app.outputDir.Value;
             plotSettings.axylimit = str2num(app.axialYLim.Value);
             plotSettings.traceylimit = str2num(app.bulkYLim.Value);
 

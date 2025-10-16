@@ -39,6 +39,7 @@ binSizeUm = intestineLengthUm/numBins; % size of bins in microns
 numSegments = settings.numSegments; % if not fitting global equation, how many segments do we want to fit.
 fitPad = 2; % how much longer to draw fit line
 int1and9only = settings.int1and9only;
+minFramesBetweenEndpoints = 3;
 
 % preallocate variables
 binSignal = nan(size(axialPeak,2),numBins);
@@ -150,6 +151,13 @@ if length(cleanedInit)>=numSegments*2
         distanceValues(1) = {yFit};
         fitError = err.rsquared;
 
+        % Exclude segments with endpoints with separation too close to framerate
+        % we realistically can't measure propagation at this timescale
+        if abs(cleanedInit(1)-cleanedInit(end)) <= minFramesBetweenEndpoints*framerate 
+            propagationRate = nan;                             
+        end
+                  
+
     elseif numSegments  > 1
         %% Calculate Regional Propagation Rate
         instestineStartUm =intestineStart*umPerPixel;
@@ -178,6 +186,12 @@ if length(cleanedInit)>=numSegments*2
 
             timeValues(i) = {tFit};
             distanceValues(i) = {yFit};
+            
+            % Exclude segments with endpoints with separation too close to framerate
+            % we realistically can't measure propagation at this timescale
+            if abs(xSegment(1)-xSegment(end)) <= minFramesBetweenEndpoints*framerate 
+                propagationRate(i) = nan;                             
+            end
         end
 
     end
@@ -230,8 +244,9 @@ if length(cleanedInit)>=numSegments*2
             % plot a line at each inflection point
             if badBins(pltIdx) == 0
                 line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
-            elseif badBins(pltIdx) == 1
-                line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 0 0], 'linewidth' ,1.5, 'Parent', axAx)
+            %% uncomment to plot lines at excluded bins    
+            % elseif badBins(pltIdx) == 1                                                                                                               
+            %     line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 0 0], 'linewidth' ,1.5, 'Parent', axAx)
             end
         end
 
@@ -260,8 +275,8 @@ if length(cleanedInit)>=numSegments*2
         title(figTitle, 'Parent', propAx)
 
         title(['Slope: ' num2str(round(propagationRate,1)) ' \mum/sec'] ,  ['R^2 ' num2str(fitError)], 'Parent',axAx)
-        txt = input("Look ok? hit enter... if not, type 0 to clear a segment, 1 to keep","s");
-
+        % txt = input("Look ok? hit enter... if not, type 0 to clear a segment, 1 to keep","s");
+        txt = [];
         if ~isempty(txt)
             responses =  logical(str2num(txt));
             if ~isempty(responses)
@@ -287,11 +302,14 @@ if validatePropagationRate == 0
     validFlags = ones(1, length(numSegments));
 end
 
-axAx.Units = 'pixels';
-pos = axAx.Position;
-ti = axAx.TightInset;
-rect = [-ti(1), -ti(2), pos(3)+ti(1)+ti(3), pos(4)+ti(2)+ti(4)];
-frame = getframe(axAx,rect);
+% axAx.Units = 'pixels';
+% pos = axAx.Position;
+% ti = axAx.TightInset;
+% rect = [-ti(1), -ti(2), pos(3)+ti(1)+ti(3), pos(4)+ti(2)+ti(4)];
+% frame = getframe(axAx,rect);
+% img = frame2im(frame);
+
+frame = getframe(gcf);
 img = frame2im(frame);
 end
 

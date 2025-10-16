@@ -166,8 +166,8 @@ end
 mtdata = processFood(mtdata, settings);
 wtdata = processFood(wtdata, settings);
 
-mtdata = processSpikes(mtdata,settings);
-wtdata = processSpikes(wtdata,settings);
+mtdata = processSpikes(mtdata,settings, 0);
+wtdata = processSpikes(wtdata,settings, 1);
 
 if saveWormdata2workspace == 1
     if isfield(mtdata, 'genotype')
@@ -233,7 +233,7 @@ processedData = inputData;
 end
 
 %% Spike processing
-function [processedData] = processSpikes(inputData, settings)
+function [processedData] = processSpikes(inputData, settings, isControlData)
 
 
 peakdistance = settings.peakdistance;
@@ -246,8 +246,12 @@ framerate = settings.framerate;
 analyzePropagationRate = settings.analyzePropagationRate;
 validatePropagationRate = settings.validatePropagationRate;
 validateRiseFall = settings.validateRiseFall;
+waveAverage = settings.waveAverage;
 
-get_Individual_Spike_PropagationRate = 1;
+if isControlData == 1 
+    analyzePropagationRate = 0; % don't run wave propagation analysis on control datasets
+end
+
 
 % pixel Scaling
 if settings.isOAS == 1
@@ -268,6 +272,11 @@ sortOrder = nan(length(inputData),1);
 if settings.showFitParams == 1
     figure()
     t = tiledlayout(ceil(length(inputData)/2),2,Padding='tight',TileSpacing='tight');
+end
+
+
+if analyzePropagationRate == 1 && validatePropagationRate == 1
+    figure(Position=[888.2000 200.2000 435.2000 504.8000], Color=[1 1 1]);
 end
 
 
@@ -311,7 +320,7 @@ for i = 1:length(inputData)
         AUC = nan(length(templocs),1);
         axialPeak = nan(size(axialSignal,2), floor(timePreSpike/3)*2+1, length(templocs));
 
-        if get_Individual_Spike_PropagationRate == 1
+        if waveAverage == 0
         propagationRate = nan(length(templocs),settings.numSegments);
         rSquared = nan(length(templocs),settings.numSegments);
         validFlags = nan(length(templocs),settings.numSegments);
@@ -332,8 +341,10 @@ for i = 1:length(inputData)
             if axPre>0 && axPost<= length(axialSignal)
                 axialPeak(:,:,q) = axialSignal(axPre:axPost,:)';
 
-                if analyzePropagationRate == 1 &&  get_Individual_Spike_PropagationRate == 1
-                    [propRate, r2, flags] = getWavePropagationRate(axialPeak(:,:,q), mean(wormLength(axPre:axPost),'omitnan'), settings);
+                if analyzePropagationRate == 1 &&  waveAverage == 0
+                    filename = strrep(stripPath(inputData(i)), '_', ' ');
+                    figTitle = [filename{:} ' spike # ' num2str(q)];
+                    [propRate, r2, flags] = getWavePropagationRate(axialPeak(:,:,q), mean(wormLength(axPre:axPost),'omitnan'), settings, figTitle);
                     propagationRate(q, 1:length(propRate)) = propRate;
                     rSquared(q, 1:length(r2)) = r2;
                     validFlags(q, 1:length(flags)) = flags;
@@ -558,11 +569,21 @@ for i = 1:length(inputData)
     inputData(i).avgKymograph = mean(axialPeak,3,'omitmissing');
 
     %% calculate average propagation rate of spikes in a recording instead of individual spikes
-    if analyzePropagationRate == 1 &&  get_Individual_Spike_PropagationRate == 0
+    if analyzePropagationRate == 1 &&  waveAverage == 1
         if isfield(inputData, 'wormLength') && ~isempty(inputData(i).wormLength)
-            [propagationRate, rSquared, validFlags] = getWavePropagationRate(inputData(i).avgKymograph, mean(wormLength,'omitnan'), settings);
+            filename = strrep(stripPath(inputData(i)), '_', ' ');
+            figTitle = [filename{:} ' spike average'];
+            [propagationRate, rSquared, validFlags, fitImage] = getWavePropagationRate(inputData(i).avgKymograph, mean(wormLength,'omitnan'), settings,figTitle);
+
+            if i == 1
+                fitMontage = fitImage;
+            else
+                fitMontage = horzcat(fitMontage, fitImage);
+            end
+       
         end
     end
+
 
     if analyzePropagationRate == 1
         inputData(i).propagationRate = propagationRate;
@@ -672,6 +693,9 @@ if analyzePropagationRate == 1
         assignin('base', 'propagationVector', processedData(1).propagationVector);
         assignin('base', 'rSquaredVector', processedData(1).rSquaredVector);
         assignin('base', 'validVector', processedData(1).validVector);
+
+        outputPath = [settings.workingDir '\' processedData(1).genotype '_propagationFit.png'];
+        imwrite(fitMontage, outputPath)
     end
 end
 
