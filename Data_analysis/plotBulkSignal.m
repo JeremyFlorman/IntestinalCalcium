@@ -18,7 +18,7 @@ else
 end
 
 
-
+patchYVals = traceylimit(1):traceylimit(2):traceylimit(2)*num2plot+1;
 for i = 1:num2plot
     plotindex = num2plot-i+1; % use this to make sure the first plot is on top of axes.
     signal = data(plotindex).bulkSignal;
@@ -33,7 +33,7 @@ for i = 1:num2plot
 
     plot(time, shiftedSignal, 'k')
     baseLine = repmat(baseline, [length(time),1]);
-    % line(time,baseLine, 'Color', [0.6 0.6 0.6])
+    line(time,baseLine, 'Color', [0.6 0.6 0.6])
     hold on
     plot(templocs/fps/60,shiftedamp+0.05*tracediff,'v','color' ,[0.7 0.2 0.4], 'MarkerSize',3)
     if isfield(data, 'stimTimes')
@@ -43,26 +43,35 @@ for i = 1:num2plot
     end
 
 
-
+    
     if settings.annotateFood == 1
-        if isfield(data(plotindex), 'onFood')
-            foodStart = data(plotindex).onFood;
-            if isempty(foodStart)
-                foodStart = 1;
-            end
-            foodEnd  = nan(length(foodStart),1);
-            for k = 1:length(foodStart)
-                if k<=length(data(plotindex).offFood)
-                    foodEnd(k) = data(plotindex).offFood(k);
-                else
-                    foodEnd(k) = find(~isnan(data(plotindex).bulkSignal),1,'last');
-                end
-            end
-            foodY = shift+tracediff*0.9;
-            foodX = [foodStart/fps/60 foodEnd/fps/60];
-            for j = 1:size(foodX,1)
-                line(foodX(j,:), [foodY foodY], 'Color', [0.93 0.69 0.13], 'LineWidth', 0.5, 'LineStyle', '-', 'Marker', 'o')
-            end
+        if isfield(data(plotindex), 'onFood') && ~isempty(data(plotindex).onFood)
+            yRange =  [patchYVals(i)+(tracediff*0.05), patchYVals(i+1)-(tracediff*0.05)];
+            numFrames = find(~isnan(signal), 1, "last");
+
+            boutData = computeFoodBouts(data(plotindex).onFood, data(plotindex).offFood, numFrames, yRange);
+            % [patchX, patchY] = shadedFoodPatches(foodBouts, [patchYVals(i)+(tracediff*0.05), patchYVals(i+1)-(tracediff*0.05)]);
+            patchXinMinutes = boutData.patchX/fps/60;
+            p = patch(patchXinMinutes, boutData.patchY,  [0.93 0.69 0.13], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
+            uistack(p, 'bottom');
+
+            % foodStart = data(plotindex).onFood;
+            % if isempty(foodStart)
+            %     foodStart = 1;
+            % end
+            % foodEnd  = nan(length(foodStart),1);
+            % for k = 1:length(foodStart)
+            %     if k<=length(data(plotindex).offFood)
+            %         foodEnd(k) = data(plotindex).offFood(k);
+            %     else
+            %         foodEnd(k) = find(~isnan(data(plotindex).bulkSignal),1,'last');
+            %     end
+            % end
+            % foodY = shift+tracediff*0.9;
+            % foodX = [foodStart/fps/60 foodEnd/fps/60];
+            % for j = 1:size(foodX,1)
+            %     line(foodX(j,:), [foodY foodY], 'Color', [0.93 0.69 0.13], 'LineWidth', 0.5, 'LineStyle', '-', 'Marker', 'o')
+            % end
         end
     end
 
