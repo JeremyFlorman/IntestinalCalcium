@@ -344,10 +344,16 @@ for i = 1:length(inputData)
                 if analyzePropagationRate == 1 &&  waveAverage == 0
                     filename = strrep(stripPath(inputData(i)), '_', ' ');
                     figTitle = [filename{:} ' spike # ' num2str(q)];
-                    [propRate, r2, flags] = getWavePropagationRate(axialPeak(:,:,q), mean(wormLength(axPre:axPost),'omitnan'), settings, figTitle);
+                    [propRate, r2, flags, fitImage] = getWavePropagationRate(axialPeak(:,:,q), mean(wormLength(axPre:axPost),'omitnan'), settings, figTitle);
                     propagationRate(q, 1:length(propRate)) = propRate;
                     rSquared(q, 1:length(r2)) = r2;
                     validFlags(q, 1:length(flags)) = flags;
+
+                    if i == 1
+                        fitMontage = fitImage;
+                    else
+                        fitMontage = horzcat(fitMontage, fitImage);
+                    end
                 end
             end
 
@@ -589,6 +595,14 @@ for i = 1:length(inputData)
         inputData(i).propagationRate = propagationRate;
         inputData(i).rSquared = rSquared;
         inputData(i).validFlags = validFlags;
+      
+        if settings.isOAS == 1
+            umPerPixel = 2.6247; % pixel scaling for 4x objective in 2x2 binning on OAS
+        elseif settings.isOAS == 0
+            umPerPixel = 1/199.641*1000; % pixel scaling for 5x objective in 4x4 binning on Zeiss inverted scope
+        end
+
+        inputData(i).medianWormLength = median(inputData(i).wormLength, 'omitmissing')*umPerPixel;
         inputData(i).medianAbsPropRate = median(abs(propagationRate), 'omitmissing');
     end
 

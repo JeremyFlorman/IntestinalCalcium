@@ -40,6 +40,9 @@ numSegments = settings.numSegments; % if not fitting global equation, how many s
 fitPad = 2; % how much longer to draw fit line
 int1and9only = settings.int1and9only;
 minFramesBetweenEndpoints = 3;
+colorLims = settings.axylimit;
+
+manualFit = 0;
 
 % preallocate variables
 binSignal = nan(size(axialPeak,2),numBins);
@@ -51,50 +54,70 @@ relThresh = nan(numBins,1);
 excludeBin = zeros(numBins,1);
 fitError = [];
 propagationRate = [];
+manualX = [];
+manualY = [];
 
 
 
 % x values for plotting binned signal with respect to time
 binTime = repmat(linspace(0,size(axialPeak,2)/framerate,size(axialPeak,2))', 1, numBins);
 
-% get average signal in each bin to calculate peak locations and inflection points
-for binIdx = 1:numBins
-    binSignal(:,binIdx) = smoothdata(mean(axialPeak(binEdges(binIdx):binEdges(binIdx+1),:), 1, 'omitmissing'), 'movmean',15);
-    [pk,loc,w] = findpeaks(binSignal(:,binIdx),NPeaks=1, SortStr="descend");
-    if ~isempty(loc)
-        %% peak location inflection point
-        pkLoc(binIdx) = loc; % peak position
-        pkAmp(binIdx) = pk; % peak amplitude
-
-        %% derivative inflection point
-        % [~, inflectPt(binIdx)] = max(diff(binSignal(:,binIdx))); % find position of the max rate of change in signal
-        risePhase = 1:loc;
-        dy = smoothdata(gradient(binSignal(risePhase,binIdx)), 'movmean', 5);
-        [~, inflectPt(binIdx)] = max(dy);
-        %% half maximum peak amplitude inflection point
-        fwhm(binIdx) = round(loc-(w/2)); % inflection points defined as points at half-maximum based off half-width from findpeaks
-        %% relative threshold
-        % thresh = settings.threshPercent*max(binSignal(risePhase,binIdx));
-        % relThresh(binIdx) = find(binSignal(risePhase,binIdx)>thresh, 1, "first");
-        scaledSignal = rescale(binSignal(:,binIdx));
-        relThresh(binIdx) = find(scaledSignal>settings.threshPercent, 1, "first");
 
 
-        %% flag signal that doesnt have a peak or is too late
-        signalRange = max(binSignal(:,binIdx))-min(binSignal(:,binIdx));
-
-        if signalRange<settings.minRange
-            excludeBin(binIdx,1) = 1;
-        end
-
-
-    else
-        pkLoc(binIdx) =nan;
-        pkAmp(binIdx) = nan;
-        excludeBin(binIdx,1) = 1;
-    end
+if validatePropagationRate == 1
+    axFig = tiledlayout(2,1);
+    propAx = nexttile();
+    axAx = nexttile();
+    imagesc(binTime(:,1), linspace(0,WormLengthUm,size(axialPeak,1)), axialPeak,'Parent', axAx)
+    colormap(axAx,'turbo');
 end
 
+if manualFit == 0
+    % get average signal in each bin to calculate peak locations and inflection points
+    for binIdx = 1:numBins
+        binSignal(:,binIdx) = smoothdata(mean(axialPeak(binEdges(binIdx):binEdges(binIdx+1),:), 1, 'omitmissing'), 'movmean',15);
+        [pk,loc,w] = findpeaks(binSignal(:,binIdx),NPeaks=1, SortStr="descend");
+        if ~isempty(loc)
+            %% peak location inflection point
+            pkLoc(binIdx) = loc; % peak position
+            pkAmp(binIdx) = pk; % peak amplitude
+
+            %% derivative inflection point
+            % [~, inflectPt(binIdx)] = max(diff(binSignal(:,binIdx))); % find position of the max rate of change in signal
+            risePhase = 1:loc;
+            dy = smoothdata(gradient(binSignal(risePhase,binIdx)), 'movmean', 5);
+            [~, inflectPt(binIdx)] = max(dy);
+            %% half maximum peak amplitude inflection point
+            fwhm(binIdx) = round(loc-(w/2)); % inflection points defined as points at half-maximum based off half-width from findpeaks
+            %% relative threshold
+            % thresh = settings.threshPercent*max(binSignal(risePhase,binIdx));
+            % relThresh(binIdx) = find(binSignal(risePhase,binIdx)>thresh, 1, "first");
+            scaledSignal = rescale(binSignal(:,binIdx));
+            relThresh(binIdx) = find(scaledSignal>settings.threshPercent, 1, "first");
+
+
+            %% flag signal that doesnt have a peak or is too late
+            signalRange = max(binSignal(:,binIdx))-min(binSignal(:,binIdx));
+
+            if signalRange<settings.minRange
+                excludeBin(binIdx,1) = 1;
+            end
+
+
+        else
+            pkLoc(binIdx) =nan;
+            pkAmp(binIdx) = nan;
+            excludeBin(binIdx,1) = 1;
+        end
+    end
+else % manual drawing of segments
+    disp("daw roi")
+    for k = 1:numSegments
+        roi = drawline(axAx);
+        manualX = vertcat(manualX, roi.Position(:,1));
+        manualY = vertcat(manualY, roi.Position(:,2));
+    end
+end
 
 
 
@@ -110,6 +133,7 @@ elseif propMethod == 3 % peak location
 elseif propMethod == 4
     waveInit = relThresh;
 end
+
 
 %% Convert units to microns and seconds
 binEdgesUm = binEdges/size(axialPeak,1)*WormLengthUm;
@@ -132,8 +156,13 @@ if int1and9only == 1
     badBins(2:end-1) = 1;
 end
 
-cleanedInit = initSeconds(~badBins);
-cleanedCenters = binCentersUm(~badBins);
+if manualFit == 0
+    cleanedInit = initSeconds(~badBins);
+    cleanedCenters = binCentersUm(~badBins);
+else
+    cleanedInit = manualX;
+    cleanedCenters  = manualY;
+end
 %%
 
 
@@ -153,10 +182,10 @@ if length(cleanedInit)>=numSegments*2
 
         % Exclude segments with endpoints with separation too close to framerate
         % we realistically can't measure propagation at this timescale
-        if abs(cleanedInit(1)-cleanedInit(end)) <= minFramesBetweenEndpoints*framerate 
-            propagationRate = nan;                             
+        if abs(cleanedInit(1)-cleanedInit(end)) <= minFramesBetweenEndpoints*1/framerate
+            propagationRate = nan;
         end
-                  
+
 
     elseif numSegments  > 1
         %% Calculate Regional Propagation Rate
@@ -186,11 +215,11 @@ if length(cleanedInit)>=numSegments*2
 
             timeValues(i) = {tFit};
             distanceValues(i) = {yFit};
-            
+
             % Exclude segments with endpoints with separation too close to framerate
             % we realistically can't measure propagation at this timescale
-            if abs(xSegment(1)-xSegment(end)) <= minFramesBetweenEndpoints*framerate 
-                propagationRate(i) = nan;                             
+            if abs(xSegment(1)-xSegment(end)) <= minFramesBetweenEndpoints*1/framerate
+                propagationRate(i) = nan;
             end
         end
 
@@ -203,9 +232,7 @@ if length(cleanedInit)>=numSegments*2
     % try
     if validatePropagationRate == 1
         % figure(Position=[217.8000 173 447.2000 532.8000], Color=[1 1 1]);
-        axFig = tiledlayout(2,1);
-        propAx = nexttile();
-        axAx = nexttile();
+
         Col = viridis(numBins);
         colororder(Col);
 
@@ -227,7 +254,7 @@ if length(cleanedInit)>=numSegments*2
 
 
         %% Kymograph plotting
-        imagesc(binTime(:,1), linspace(0,WormLengthUm,size(axialPeak,1)), axialPeak,'Parent', axAx)
+        imagesc(binTime(:,1), linspace(0,WormLengthUm,size(axialPeak,1)), axialPeak,'Parent', axAx,colorLims)
         colormap(axAx,'turbo');
 
         for pltIdx = 1:numBins
@@ -244,9 +271,9 @@ if length(cleanedInit)>=numSegments*2
             % plot a line at each inflection point
             if badBins(pltIdx) == 0
                 line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 1 1], 'linewidth' ,1.5, 'Parent', axAx)
-            %% uncomment to plot lines at excluded bins    
-            % elseif badBins(pltIdx) == 1                                                                                                               
-            %     line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 0 0], 'linewidth' ,1.5, 'Parent', axAx)
+                %% uncomment to plot lines at excluded bins
+                % elseif badBins(pltIdx) == 1
+                %     line([initSeconds(pltIdx) initSeconds(pltIdx)], [rectY rectY+rectH], 'Color', [1 0 0], 'linewidth' ,1.5, 'Parent', axAx)
             end
         end
 
@@ -286,9 +313,7 @@ if length(cleanedInit)>=numSegments*2
         else
             validFlags = ones(1, numSegments);
         end
-        drawnow()
-        % frame = getFrame(gcf)
-
+        % drawnow()
     end
 
 
