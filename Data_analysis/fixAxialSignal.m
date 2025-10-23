@@ -85,7 +85,7 @@ guidata(fig, data);
         yend = floor(ypts(2));
         
         data.workingSignal(ystart:yend,:) = fliplr(data.workingSignal(ystart:yend,:));
-        imagesc(smoothdata(data.workingSignal,'gaussian',60), [5 60]) 
+        imagesc(smoothdata(data.workingSignal,'gaussian',60), [0 45000]) 
         
         colormap(uax, turbo)
         
@@ -106,7 +106,7 @@ guidata(fig, data);
         ystart = floor(data.ypts(end,1));
         yend = floor(data.ypts(end,2));
         data.workingSignal(ystart:yend,:) = fliplr(data.workingSignal(ystart:yend,:));
-        imagesc(smoothdata(data.workingSignal,'gaussian',60), [5 60]) 
+        imagesc(smoothdata(data.workingSignal,'gaussian',60), [0 45000]) 
         
         colormap(uax, turbo)
         guidata(fig, data);
@@ -116,7 +116,7 @@ guidata(fig, data);
         data= guidata(fig);
         ypts = [1 length(data.workingSignal)];
         data.workingSignal(ypts(1):ypts(2),:) = fliplr(data.workingSignal(ypts(1):ypts(2),:));
-        imagesc(smoothdata(data.workingSignal,'gaussian',60), [5 60]) 
+        imagesc(smoothdata(data.workingSignal,'gaussian',60), [0 45000]) 
         
         colormap(uax, turbo)
         
@@ -128,7 +128,7 @@ guidata(fig, data);
     function rvert_callback(fig, ~)
         data= guidata(fig);
         data.workingSignal = data.autoAxialSignal;
-        imagesc(smoothdata(data.workingSignal,'gaussian',60), [5 60]) 
+        imagesc(smoothdata(data.workingSignal,'gaussian',60), [0 45000]) 
         
         colormap(uax, turbo)
         
@@ -144,7 +144,7 @@ guidata(fig, data);
             disp('Sorry, no fixed signal found');
         end
         
-        imagesc(smoothdata(data.workingSignal,'gaussian',60), [5 60]) 
+        imagesc(smoothdata(data.workingSignal,'gaussian',60), [0 45000]) 
         
         colormap(uax, turbo)
         
@@ -161,7 +161,7 @@ guidata(fig, data);
                 data.workingSignal(i,:) = fliplr(data.workingSignal(i,:));
             end
         end
-        imagesc(smoothdata(data.workingSignal,'gaussian',60), [5 60]) 
+        imagesc(smoothdata(data.workingSignal,'gaussian',60), [0 45000]) 
         colormap(uax, turbo)
         
         guidata(fig, data);

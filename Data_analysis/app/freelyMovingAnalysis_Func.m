@@ -40,7 +40,7 @@ SEopen = strel('diamond', 3);
 %%
 tdir = dir([fld '\**\*.tif']);
 
-for nf =2:3%startIndex:length(tdir)
+for nf = startIndex:length(tdir)
     path = fullfile(tdir(nf).folder, tdir(nf).name)
 
     if isremote == 1
