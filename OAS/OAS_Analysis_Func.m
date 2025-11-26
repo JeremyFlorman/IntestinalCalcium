@@ -218,6 +218,7 @@ for nf =startIndex:length(imgDir)
     antSignal = NaN(nFrames,1);
     postSignal = NaN(nFrames,1);
     backgroundSignal = NaN(nFrames,1);
+    background1Pct = NaN(nFrames,1);
     orientation = NaN(nFrames,1);
     area = NaN(nFrames,1);
     wormLength = NaN(nFrames, 1);
@@ -561,12 +562,16 @@ for nf =startIndex:length(imgDir)
                 blksig = GFP(mask);
                 bulkSignal(i,1) = mean(blksig,"all",'omitnan');
 
-                %% Background Signal - lowest 5% of values outside the ROI
+                %% Background 1% - lowest 1% of values outside the ROI
                 bkgsig = GFP(~mask);
                 thresh = prctile(bkgsig, 1);
                 bkgMask = false(size(mask));
                 bkgMask(~mask) = GFP(~mask)<=thresh;
-                backgroundSignal(i,1) = mean(GFP(bkgMask),'all','omitnan');
+                background1Pct(i,1) = mean(GFP(bkgMask),'all','omitnan');
+
+                %% Background Signal - lowest 5% of values outside the ROI
+                bkgsig = GFP(~mask);
+                backgroundSignal(i,1) = mean(bkgsig,'all','omitnan');
 
                 %% Worm Area
                 area(i,1) = bwprops(wormIdx).Area;
@@ -708,9 +713,9 @@ for nf =startIndex:length(imgDir)
                             ax7.TickLength = [0.005 0.005];
                             
                             %% Area
-                            hArea = plot(time(1:i),smoothdata(velocity(1:i),'gaussian', 30), 'Parent', velAx);
+                            hArea = plot(time(1:i),smoothdata(area(1:i),'gaussian', 30), 'Parent', velAx);
                             xlim([0 time(end)]);
-                            ylabel(velAx, 'Speed (mm/sec)');
+                            ylabel(velAx, 'Worm Area (Pixels)');
                             xlabel(velAx,'Time (min)');
                             velAx.TickLength = [0.005 0.005];
                             box off
@@ -773,7 +778,7 @@ for nf =startIndex:length(imgDir)
 
                             % Area
                             hArea.XData = time(1:i);
-                            hArea.YData = smoothdata(velocity(1:i),'gaussian', 30);
+                            hArea.YData = smoothdata(area(1:i),'gaussian', 30);
 
                             if ~isempty(stimTimes) && i>stimTimes(1)
                                 hAxStim.XData = stimX;
@@ -873,6 +878,7 @@ for nf =startIndex:length(imgDir)
     wormdata.bulkSignal = bulkSignal;
     % wormdata.bulkAboveBkg = bulkAboveBkg;
     wormdata.backgroundSignal = backgroundSignal;
+    wormdata.background1Pct = background1Pct;
     wormdata.orientation = orientation;
     wormdata.area = area;
     wormdata.wormLength = wormLength;

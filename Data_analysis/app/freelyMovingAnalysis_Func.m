@@ -109,6 +109,7 @@ for nf = startIndex:length(tdir)
     axialBF = NaN(length(info)/2, axSigLen);
     bulkSignal = NaN(length(info)/2,1);
     backgroundSignal = NaN(length(info)/2,1);
+    background1Pct = NaN(length(info)/2,1);
     orientation = NaN(length(info)/2,1);
     area = NaN(length(info)/2,1);
     wormLength = NaN(length(info)/2,1);
@@ -435,12 +436,13 @@ for nf = startIndex:length(tdir)
                 blksig = GFP(mask);
                 bulkSignal(i,1) = mean(blksig,"all",'omitnan');
 
+                backgroundSignal(i,1) = mean(GFP(~mask), 'all', 'omitnan');
                 %% Background Signal - lowest 1% of values outside the ROI
                 bkgsig = GFP(~mask);
                 thresh = prctile(bkgsig, 1);
                 bkgMask = false(size(mask));
                 bkgMask(~mask) = GFP(~mask)<=thresh;
-                backgroundSignal(i,1) = mean(GFP(bkgMask),'all','omitnan');
+                background1Pct(i,1) = mean(GFP(bkgMask),'all','omitnan');
 
                 %% Worm Area
                 area(i,1) = bwprops(wormIdx).Area;
@@ -688,6 +690,7 @@ for nf = startIndex:length(tdir)
     wormdata.bulkSignal = bulkSignal;
     % wormdata.bulkAboveBkg = bulkAboveBkg;
     wormdata.backgroundSignal = backgroundSignal;
+    wormdata.background1Pct = background1Pct;
     wormdata.orientation = orientation;
     wormdata.area = area;
     wormdata.wormLength = wormLength;
