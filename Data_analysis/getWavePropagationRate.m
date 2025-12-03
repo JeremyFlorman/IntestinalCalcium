@@ -41,6 +41,7 @@ fitPad = 2; % how much longer to draw fit line
 int1and9only = settings.int1and9only;
 minFramesBetweenEndpoints = 3;
 colorLims = settings.axylimit;
+cmap = settings.axSigCMap;
 
 manualFit = 0;
 
@@ -255,7 +256,7 @@ if length(cleanedInit)>=numSegments*2
 
         %% Kymograph plotting
         imagesc(binTime(:,1), linspace(0,WormLengthUm,size(axialPeak,1)), axialPeak,'Parent', axAx,colorLims)
-        colormap(axAx,'turbo');
+        colormap(axAx,cmap);
 
         for pltIdx = 1:numBins
             rectX = 0;

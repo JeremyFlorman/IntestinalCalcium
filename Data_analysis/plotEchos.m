@@ -12,7 +12,7 @@ intmethod = 1;  % intmethod = 1 plots the correlation between every interval.
 % figure()
 
 if isempty(wtdata)
-    plotcontrol = 0; 
+    plotcontrol = 0;
 else
     plotcontrol = 1;
 end
@@ -34,7 +34,7 @@ markersize = 15;
 plotAnimalMean = 0;
 
 for i = 1:length(mtdata)
-mtint = mtdata(i).peakIntervals;
+    mtint = mtdata(i).peakIntervals;
     if length(mtint)>2
         switch intmethod
             case 1
@@ -49,9 +49,7 @@ mtint = mtdata(i).peakIntervals;
             intmat = [mtcurrInt mtprevInt];
         end
 
-        
         mtintervalMatrix = vertcat(mtintervalMatrix,intmat);
-
     end
 end
 
@@ -70,9 +68,6 @@ if plotcontrol ==1
                     [wtcurrInt, wtprevInt] = getEveryOtherCorrelation(wtint);
             end
 
-        end
-        
-        if ~isempty(wtint)
             if plotAnimalMean == 1
                 wtintmat = [mean(wtcurrInt,1) mean(wtprevInt,1)];
             else
@@ -80,6 +75,7 @@ if plotcontrol ==1
             end
 
             wtintervalMatrix = vertcat(wtintervalMatrix,wtintmat);
+
         end
     end
 end
@@ -125,11 +121,11 @@ if plotcontrol == 1
 
     if ~isempty(mtintervalMatrix)
         if noAlpha == 1
-        s2 = scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), markersize, mtcolor,...
-            'filled','MarkerEdgeColor',mtedgecolor,'Parent',ax);
+            s2 = scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), markersize, mtcolor,...
+                'filled','MarkerEdgeColor',mtedgecolor,'Parent',ax);
         else
-        s2 = scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), markersize, mtcolor, ...
-            'filled','MarkerEdgeColor',mtedgecolor,'MarkerFaceAlpha',.6,'MarkerEdgeAlpha',.9,'Parent',ax);
+            s2 = scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), markersize, mtcolor, ...
+                'filled','MarkerEdgeColor',mtedgecolor,'MarkerFaceAlpha',.6,'MarkerEdgeAlpha',.9,'Parent',ax);
         end
 
     end
@@ -188,10 +184,10 @@ elseif plotcontrol == 0
 
     if ~isempty(mtintervalMatrix)
         if noAlpha == 1
-        scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), markersize,'filled','Parent',ax);
+            scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), markersize,'filled','Parent',ax);
         else
-        scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), markersize,'MarkerEdgeColor',[0.6 0.6 0.6],...
-            'MarkerFaceAlpha',.6,'MarkerEdgeAlpha',.9,'Parent',ax);
+            scatter(mtintervalMatrix(:,1),mtintervalMatrix(:,2), markersize,'MarkerEdgeColor',[0.6 0.6 0.6],...
+                'MarkerFaceAlpha',.6,'MarkerEdgeAlpha',.9,'Parent',ax);
         end
 
         if regline == 1
