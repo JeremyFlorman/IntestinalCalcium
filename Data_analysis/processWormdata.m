@@ -201,10 +201,10 @@ normAx = 0; % nomralize axial signal?
 
 for i = 1:length(inputData)
     % Subtract Background and fill missing datapoints in bulk signal
-    bkgSignal = smoothdata(inputData(i).backgroundSignal, 'movmedian',60*settings.framerate);
+    bkgSignal = smoothdata(inputData(i).backgroundSignal, 'movmedian',10*settings.framerate);
 
     if ~strcmp(settings.normalize, 'Delta F/F0')
-        inputData(i).bulkSignal = fillmissing(inputData(i).bulkSignal-bkgSignal, 'movmedian',100);
+        inputData(i).bulkSignal = smoothdata(fillmissing(inputData(i).bulkSignal-bkgSignal, 'movmedian',100), 'movmedian', 15);
     end
 
     % fill outliers more than 3 standard deviations outside moving mean
@@ -611,6 +611,7 @@ for i = 1:length(inputData)
         AvAmp(i) = mean(tempamp);
         firstSpike(i) = templocs(1);
     else
+        firstSpike(i) = 0;
         num(i) = 0;
         AvAmp(i) = 0;
     end

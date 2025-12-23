@@ -20,7 +20,8 @@ else
 end
 
 fps = 15;
-patchAlpha = 0.25;
+patchAlpha = 1;
+patchColor = [0.996 0.9400 0.7920]; %[0.93 0.69 0.13]
 peakThreshold = 2.5;
 
 nFrames = length(wormdata.bulkSignal);
@@ -32,6 +33,8 @@ pktraces = wormdata.peakTraces;
 
 if isfield(wormdata, 'stimTimes')
     stimTimes = wormdata.stimTimes;
+else 
+    stimTimes = [];
 end
 if isfield(wormdata, 'velocity')
     velocity = wormdata.velocity;
@@ -79,7 +82,7 @@ t = tiledlayout(4,4,'TileSpacing','compact','Padding','tight');
 %% Bulk Signal % % %
 nexttile([1 3])
 if ~isnan(loc)
-    plot(time,bulkSignal,time(loc),pk*1.01, 'rv')
+    plot(time,bulkSignal, 'k',time(loc),pk*1.05, 'rv', 'MarkerSize',3)
 else
     plot(time,bulkSignal)
 end
@@ -92,8 +95,9 @@ hold off
 
 ax = gca;
 xlim([0 time(end)])
-ylabel(gca,'Fluorescence (a.u.)');
-title(gca, 'Whole Animal Calcium Trace')
+ylabel(gca,'GCaMP Signal (a.u.)');
+xlabel('Time (min)')
+title(gca, 'Bulk Calcium Trace')
 ax = gca;
 xt = ax.XTick;
 xtl = ax.XTickLabels;
@@ -103,10 +107,10 @@ box off
 % Food Patches
 if isfield(wormdata, 'onFood') && ~isempty(wormdata.onFood)
 
-            boutData = computeFoodBouts(wormdata.onFood, wormdata.offFood, nFrames, ax.YLim);
+            boutData = computeFoodBouts(wormdata.onFood, wormdata.offFood, nFrames, [0.15 ax.YLim(2)]);
             % [patchX, patchY] = shadedFoodPatches(foodBouts, [patchYVals(i)+(tracediff*0.05), patchYVals(i+1)-(tracediff*0.05)]);
             patchXinMinutes = boutData.patchX/fps/60;
-            p = patch(patchXinMinutes, boutData.patchY,  [0.93 0.69 0.13], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
+            p = patch(patchXinMinutes, boutData.patchY, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
             uistack(p, 'bottom');
 
     % [patchX, patchY] = shadedFoodPatches(wormdata,ax.YLim);
@@ -133,7 +137,8 @@ title(gca, 'Axial Calcium Trace')
 hold on
 if isfield(wormdata, 'onFood')
 ax = gca;
-foodYVals(foodTrace) = 1;
+foodYVals(~foodTrace) = NaN;
+foodYVals(foodTrace) = 10;
 plot(foodYVals, 'Color', [0.93 0.69 0.13], 'LineWidth', 2, 'LineStyle', '-', 'Marker', 'none')
 end
 
@@ -144,9 +149,10 @@ ax.XTick = xt*60*fps;
 ax.XTickLabels = xtl;
 ax.YTick = [20 size(autoAxialSignal,2)-20];
 ax.YTickLabel = {'Head', 'Tail'};
-ax.CLim =[0 50];
+ax.CLim =[0 90];
 colormap turbo
 ax.TickLength = [0.001 0.001];
+xlabel('Time (min)')
 
 % % % Interval Histogram % % %
 nexttile([1 1])
@@ -162,7 +168,7 @@ box off
 %% Velocity  % % %
 if isfield(wormdata, 'velocity')
     nexttile([1 3]);
-    plot(time,smoothdata(velocity,'gaussian',30))
+    plot(time,smoothdata(velocity,'gaussian',45),"Color",'k')
     ax = gca;
     hold on
     if ~isempty(stimTimes)
@@ -172,16 +178,18 @@ if isfield(wormdata, 'velocity')
     hold off
     xlim([0 time(end)])
     title(gca, 'Velocity')
-    ylabel(gca,'mm / sec')
+    xlabel('Time (min)')
+    ylabel(gca,'Speed (mm / sec)')
+    ylim([0 0.5])
     ax.TickLength = [0.005 0.005];
     box off
 
     % Food Patches
     if isfield(wormdata, 'onFood')
-        boutData = computeFoodBouts(wormdata.onFood, wormdata.offFood, nFrames, ax.YLim);
+        boutData = computeFoodBouts(wormdata.onFood, wormdata.offFood, nFrames, [0.01 ax.YLim(2)]);
         % [patchX, patchY] = shadedFoodPatches(foodBouts, [patchYVals(i)+(tracediff*0.05), patchYVals(i+1)-(tracediff*0.05)]);
         patchXinMinutes = boutData.patchX/fps/60;
-        p = patch(patchXinMinutes, boutData.patchY,  [0.93 0.69 0.13], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
+        p = patch(patchXinMinutes, boutData.patchY, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
         uistack(p, 'bottom');
     end
 end
@@ -228,10 +236,10 @@ box off
 
 % Food Patches
 if isfield(wormdata, 'onFood')
-    boutData = computeFoodBouts(wormdata.onFood, wormdata.offFood, nFrames, ax.YLim);
+    boutData = computeFoodBouts(wormdata.onFood, wormdata.offFood, nFrames, [1000 ax.YLim(2)]);
     % [patchX, patchY] = shadedFoodPatches(foodBouts, [patchYVals(i)+(tracediff*0.05), patchYVals(i+1)-(tracediff*0.05)]);
     patchXinMinutes = boutData.patchX/fps/60;
-    p = patch(patchXinMinutes, boutData.patchY,  [0.93 0.69 0.13], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
+    p = patch(patchXinMinutes, boutData.patchY, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
     uistack(p, 'bottom');
 end
 
