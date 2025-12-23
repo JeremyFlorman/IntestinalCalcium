@@ -394,11 +394,23 @@ for nf =startIndex:length(imgDir)
 
         % Filter connected components to get biggest most central object.
         if ~isempty(bwprops)
-            xy = vertcat(bwprops.Centroid);
-            x = xy(:,1);
-            y = xy(:,2);
-            distances = sqrt((imgWidth/2 - x) .^ 2 + (imgHeight/2 - y) .^ 2);
-            [~, centralIdx] = min(distances); % most central object
+            % xy = vertcat(bwprops.Centroid);
+            % x = xy(:,1);
+            % y = xy(:,2);
+            % distances = sqrt((imgWidth/2 - x) .^ 2 + (imgHeight/2 - y) .^ 2);
+            % [~, centralIdx] = min(distances); % most central object
+
+            % Precompute once per frame
+            cx = imgWidth * 0.5;
+            cy = imgHeight * 0.5;
+
+            C = reshape([bwprops.Centroid], 2, []).';
+            dx = C(:,1) - cx;
+            dy = C(:,2) - cy;
+
+            dist2 = dx.*dx + dy.*dy;   % no sqrt
+            [~, centralIdx] = min(dist2);% most central object
+
             [~, bigIdx] = max([bwprops.Area]); % largest object
 
             % filtering block: wormIdx is the object that we suspect is the worm.
@@ -924,9 +936,9 @@ for nf =startIndex:length(imgDir)
     % % % Bulk Signal % % %
     nexttile([1 3])
     if ~isnan(loc)
-        plot(time,bulkSignal,time(loc),pk*1.01, 'rv')
+        plot(time,bulkSignal-backgroundSignal,time(loc),pk*1.01, 'rv')
     else
-        plot(time,bulkSignal)
+        plot(time,bulkSignal-backgroundSignal)
     end
     hold on
     if ~isempty(stimTimes)
@@ -934,7 +946,7 @@ for nf =startIndex:length(imgDir)
         plot(time(stimTimes),ax.YLim(2)*.98,'Marker', 'v', 'MarkerSize', 9, 'MarkerFaceColor', [0.8 .2 .5], 'MarkerEdgeColor', [0 0 0])
     end
 
-    plot(time, backgroundSignal)
+    % plot(time, backgroundSignal)
     hold off
 
     xlim([0 time(end)])
