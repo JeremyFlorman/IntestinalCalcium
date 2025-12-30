@@ -134,6 +134,13 @@ h5data.gcamp = gcamp;
 h5data.brightfield = brightfield;
 h5data.time = timestamps;
 
-toc
+if isfile(behIndPath)
+    delete(behIndPath)
+end
 
+if isfile(gcampIndPath)
+    delete(gcampIndPath)
+end
+
+toc
 end
