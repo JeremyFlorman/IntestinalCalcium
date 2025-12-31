@@ -936,7 +936,7 @@ for nf =startIndex:length(imgDir)
     % % % Bulk Signal % % %
     nexttile([1 3])
     if ~isnan(loc)
-        plot(time,bulkSignal-backgroundSignal,time(loc),pk*1.01, 'rv')
+        plot(time,bulkSignal-backgroundSignal,time(loc),(pk-backgroundSignal(loc))*1.01, 'rv')
     else
         plot(time,bulkSignal-backgroundSignal)
     end
