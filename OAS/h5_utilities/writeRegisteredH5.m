@@ -1,7 +1,7 @@
 function [] = writeRegisteredH5(path)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
-d = dir('Z:\OAS\Pha-4GCaMP\250929_pha-4GCaMP_10x_20fps_30gain_noFood2hr\*behavior')
+d = dir('Z:\OAS\5-HT\Beads+DMP\0.5um_GreenBeads\unc-31-GFPBeads-noFood\**\*behavior')
 
 for i = 1:length(d)
     % path = 'C:\Users\Jeremy\Desktop\250723_zfis178_wildtype-multipatch\2025_07_23_21_57_49_flircamera_behavior';
@@ -15,7 +15,7 @@ for i = 1:length(d)
 
 
 
-    outputFP = strrep(path, fparts{end}, [fparts{end-1} '_' num2str(i) '.h5']);
+    outputFP = strrep(path, fparts{end}, [fparts{end-1} '.h5']); %num2str(i)
 
     if isfile(outputFP)
         delete(outputFP)
