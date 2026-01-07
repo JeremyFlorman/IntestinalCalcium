@@ -246,7 +246,10 @@ for q = 1:length(genotypes)
     if pltAx
         nexttile(axt, q)
         plotAxialSignal(mtdata,settings,labelXAxis)
-        title(['\it' mtdata(1).genotype],'FontSize', 8)
+        ttl = strrep(mtdata(1).genotype, '-GFPBeads','');
+        ttl = strrep(ttl, '-GPFBeads','');
+        ttl = strrep(ttl, '-0-5um','');
+        title(['\it' ttl],'FontSize', 8)
     end
 
     %% bulk signal
