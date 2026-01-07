@@ -46,6 +46,17 @@ if isfield(data, 'stimTimes')
 end
 hold off
 
+%% Annotate pBocs
+if isfield(data, 'pBoc')
+    for i = 1:num2plot
+        bocTimes = data(i).pBoc;
+        bocY = stimY(i);
+        for k = 1:length(bocTimes)
+            text(bocTimes(k), bocY, 'pBoc', 'Color',[1 0.9 0.5], 'FontSize', 5)
+        end
+    end
+end
+
 
 if settings.annotateFood == 1
     for i =1:num2plot

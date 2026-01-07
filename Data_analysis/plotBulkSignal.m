@@ -42,6 +42,17 @@ for i = 1:num2plot
         plot(stimTimes/fps/60,stimY,'v','color' ,[0 0 0],'MarkerFaceColor',[.8 .3 .4], 'MarkerSize',5)
     end
 
+    %% Annotate pBocs
+    if isfield(data, 'pBoc')
+        bocTimes = data(plotindex).pBoc;
+        bocY = shift+tracediff*0.75;
+        for k = 1:length(bocTimes)
+            text(bocTimes(k)/fps/60, bocY, 'P', 'Color',[0 0 0], 'FontSize', 5)
+        end
+    end
+
+
+
 
     
     if settings.annotateFood == 1
