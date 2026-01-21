@@ -187,6 +187,10 @@ end
 
 
 
+assignin('base','normWT', wtdata(1).amplitudeVector/mean(wtdata(1).amplitudeVector,"omitmissing"))
+assignin('base', 'normMT', mtdata(1).amplitudeVector/mean(wtdata(1).amplitudeVector,"omitmissing"))
+
+% for i = 1:length(mtdata)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%     %%%%%%%%%%%%%%%%%%%%%%
@@ -666,10 +670,11 @@ elseif sortType == 4            % sort by time of first spike
 end
 
 for i = 1:length(sortOrder)
-    inputData(i).sortOrder = sortOrder(i);
+    inputData(i).sortOrder = i;
+    % inputData(sortOrder(i)).filename
 end
 
-
+sortOrder = [7 9 2 10 4];
 
 processedData = inputData(sortOrder);
 
