@@ -246,8 +246,8 @@ for q = 1:length(genotypes)
     if pltAx
         nexttile(axt, q)
         plotAxialSignal(mtdata,settings,labelXAxis)
-        ttl = strrep(mtdata(1).genotype, '-GFPBeads','');
-        ttl = strrep(ttl, '-GPFBeads','');
+        ttl = strrep(mtdata(1).genotype, '-GFPBeads-noFood','');
+        ttl = strrep(ttl, '-GPFBeads-noFood','');
         ttl = strrep(ttl, '-0-5um','');
         title(['\it' ttl],'FontSize', 8)
     end
@@ -256,7 +256,10 @@ for q = 1:length(genotypes)
     if pltBulk
         nexttile(bulkt, q)
         plotBulkSignal(mtdata,settings,labelXAxis)
-        title(['\it' mtdata(1).genotype],'FontSize', 8)
+        ttl = strrep(mtdata(1).genotype, '-GFPBeads-noFood','');
+        ttl = strrep(ttl, '-GPFBeads-noFood','');
+        ttl = strrep(ttl, '-0-5um','');
+        title(['\it' ttl],'FontSize', 8)
     end
 
     %% Overlay Signal
