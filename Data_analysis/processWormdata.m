@@ -674,7 +674,7 @@ for i = 1:length(sortOrder)
     % inputData(sortOrder(i)).filename
 end
 
-sortOrder = [7 9 2 10 4];
+% sortOrder = [7 9 2 10 3];
 
 processedData = inputData(sortOrder);
 
