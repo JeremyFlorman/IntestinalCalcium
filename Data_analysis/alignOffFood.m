@@ -139,11 +139,11 @@ for i =1:length(foodEntries)
 end
 
 
-figure('Position', [347.4000 61 445.6000 683.2000], 'Color', [1 1 1]);
-t = tiledlayout(3,2);
+figure('Position', [347.4000 61 631.2000 683.2000], 'Color', [1 1 1]);
+% t = tiledlayout(3,2);
 %% Exit Traces
 
-exitAx = nexttile([3 1]);
+% exitAx = nexttile([3 1]);
 traceX = linspace(-secPre, secPost, size(exitTraceMatrix,1));
 traceY = 1:size(exitTraceMatrix,2)+(exitTraceCount-1);
 imagesc(traceX, traceY, smoothdata(exitTraceMatrix, 'gaussian', 60)', [0 90])
@@ -164,28 +164,30 @@ ylabel('Leaving Event #')
 xlabel('Time since last Ca^2^+ wave (s)')
 xlim([-15 60])
 
+xticks(-15:15:60)
+
 
 %% Entry Traces
 
-entryAx = nexttile([3 1]);
-traceX = linspace(-secPre, secPost, size(entryTraceMatrix,1));
-traceY = 1:size(entryTraceMatrix,2)+(entryTraceCount-1);
-imagesc(traceX, traceY, smoothdata(entryTraceMatrix, 'gaussian', 60)', [0 90])
-
-yt = nan(entryTraceCount-1,1);
-yt(1) = 100;
-if entryTraceCount >1
-    for i = 2:entryTraceCount-1
-        yt(i) = yt(i-1)+201;
-    end
-end
-
-yticks(yt);
-yticklabels(entryTickLabels)
-colormap("turbo");
-
-ylabel('Entry Event #')
-xlabel('Time since food entry (s)')
+% entryAx = nexttile([3 1]);
+% traceX = linspace(-secPre, secPost, size(entryTraceMatrix,1));
+% traceY = 1:size(entryTraceMatrix,2)+(entryTraceCount-1);
+% imagesc(traceX, traceY, smoothdata(entryTraceMatrix, 'gaussian', 60)', [0 90])
+% 
+% yt = nan(entryTraceCount-1,1);
+% yt(1) = 100;
+% if entryTraceCount >1
+%     for i = 2:entryTraceCount-1
+%         yt(i) = yt(i-1)+201;
+%     end
+% end
+% 
+% yticks(yt);
+% yticklabels(entryTickLabels)
+% colormap("turbo");
+% 
+% ylabel('Entry Event #')
+% xlabel('Time since food entry (s)')
 xlim([-15 60])
 cb = colorbar;
 cb.Label.String='GCaMP Signal (a.u.)';
