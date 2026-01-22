@@ -47,7 +47,7 @@ for i = 1:num2plot
         bocTimes = data(plotindex).pBoc;
         bocY = shift+tracediff*0.75;
         for k = 1:length(bocTimes)
-            text(bocTimes(k)/fps/60, bocY, 'P', 'Color',[0 0 0], 'FontSize', 5)
+            text(bocTimes(k)/fps/60, bocY, 'pBoc', 'Color', [0.87 0.6 0], 'FontSize', 5)
         end
     end
 

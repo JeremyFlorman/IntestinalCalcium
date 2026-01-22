@@ -52,7 +52,7 @@ if isfield(data, 'pBoc')
         bocTimes = data(i).pBoc;
         bocY = stimY(i);
         for k = 1:length(bocTimes)
-            text(bocTimes(k), bocY, 'pBoc', 'Color',[1 0.9 0.5], 'FontSize', 5)
+            text(bocTimes(k), bocY, 'pBoc', 'Color',[1 1 0.3], 'FontSize', 5)
         end
     end
 end
