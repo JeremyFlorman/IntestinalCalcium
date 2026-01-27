@@ -137,6 +137,9 @@ for nf =startIndex:length(imgDir)
 
     stimTimes = log_events.stimTimes;
     velocity = log_events.velocity;
+    xLoc = log_events.xLoc;
+    yLoc = log_events.yLoc;
+
 
     %% Image parameters
     imgWidth = behavior_indices.img_size{1}(1);
@@ -899,6 +902,8 @@ for nf =startIndex:length(imgDir)
     wormdata.include = 1;
     wormdata.stimTimes = stimTimes;
     wormdata.velocity = log_events.velocity;
+    wormdata.xLoc = xLoc;
+    wormdata.yLoc = yLoc;
 
     save(datasavename, 'wormdata')
 
