@@ -19,6 +19,7 @@ end
 for i = 1:num2plot
     plotindex = num2plot-i+1; % use this to make sure the first plot is on top of axes.
     signal = data(plotindex).bulkSignal;
+    % signal = smoothdata(data(plotindex).pumpingRate, 'movmean',15, 'omitmissing');
     tempamp = data(plotindex).peakAmplitude;
     templocs = data(plotindex).peakLoc;
 
