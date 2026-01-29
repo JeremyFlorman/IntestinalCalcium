@@ -852,6 +852,10 @@ for i = 1:length(inputData)
                     inputData(i).velocity = inputData(i).velocity(expStart:expEnd);
                 end
 
+                if isfield(inputData,'pumpingRate')
+                    inputData(i).pumpingRate = inputData(i).pumpingRate(expStart:expEnd);
+                end
+
 
 
             elseif expStart<1
@@ -866,6 +870,11 @@ for i = 1:length(inputData)
                 if isfield(inputData,'velocity')
                     inputData(i).velocity = vertcat(nanPadVector,inputData(i).velocity);
                 end
+
+                if isfield(inputData,'pumpingRate')
+                    inputData(i).pumpingRate = vertcat(nanPadVector,inputData(i).pumpingRate);
+                end
+
             end
 
             if isfield(inputData, 'stimTimes')
@@ -917,6 +926,10 @@ for i = 1:length(inputData)
         inputData(i).velocity = inputData(i).velocity(expStart:expEnd);
     end
 
+    if isfield(inputData,'pumpingRate')
+        inputData(i).pumpingRate = inputData(i).pumpingRate(expStart:expEnd);
+    end
+
     if isfield(inputData,'stimTimes')
         validtimes = inputData(i).stimTimes<expEnd;
         inputData(i).stimTimes = inputData(i).stimTimes(validtimes);
@@ -965,6 +978,12 @@ for i = 1:length(inputData)
         if isfield(inputData,'wormLength')
             inputData(i).wormLength = vertcat(inputData(i).wormLength, traceBuffer);
         end
+
+        if isfield(inputData,'pumpingRate')
+            inputData(i).pumpingRate = vertcat(inputData(i).pumpingRate, traceBuffer);
+        end
+
+
     elseif lenDiff < 0
         inputData(i).autoAxialSignal = inputData(i).autoAxialSignal(1:maxLen,:);
         inputData(i).bulkSignal = inputData(i).bulkSignal(1:maxLen);
@@ -978,6 +997,10 @@ for i = 1:length(inputData)
 
         if isfield(inputData,'wormLength')
             inputData(i).wormLength = inputData(i).wormLength(1:maxLen);
+        end
+
+        if isfield(inputData,'pumpingRate')
+            inputData(i).pumpingRate = inputData(i).pumpingRate(1:maxLen);
         end
 
         if isfield(inputData,'stimTimes')
