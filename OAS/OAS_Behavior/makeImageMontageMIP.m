@@ -1,4 +1,4 @@
-folder  = 'C:\Users\Jeremy\Desktop\251006_zfis178_wildtype-8patch-r12mm-1point5ul_1\2025_10_06_13_07_12_flircamera_behavior';
+folder  = 'C:\Users\Jeremy\Desktop\260203_zfis178_wildtype-noFood-0min_4\2026_02_03_13_56_34_flircamera_behavior';
 
 d  = dir(fullfile(folder, '*videoEvents.mat'));
 h5 = dir(fullfile(folder, '*.h5'));
@@ -129,7 +129,7 @@ matdir = dir([pth '\*wormdata.mat' ]);
 % img_disp = mat2gray(combinedImage, [prctile(finiteVals,1)  prctile(finiteVals,99)]);
 % imwrite(img_disp, strrep(fullfile(matdir.folder, matdir.name),'wormdata.mat','combinedImage.png'));
 
-load(fullfile(matdir.folder, matdir.name))
+load(fullfile(matdir(1).folder, matdir(1).name))
 peakLoc = wormdata.peakLoc;
 
 figure;
@@ -138,19 +138,26 @@ ax = gca;
 inc   = 1:5:nEvents;
 cdata = videoEvents.velocity(inc);  
 cdata = inc';
-s = scatter(ax, x_px_center(inc) + offsetX, y_px_center(inc) + offsetY,5, cdata/15/60, '.');
-colormap(ax, viridis);
+
+bulkSignal = smoothdata(wormdata.bulkSignal-wormdata.backgroundSignal, 'movmean', 60);
+clippedSignal = bulkSignal*5;
+% clippedSignal(clippedSignal < 10) = 1;
+
+s = scatter(ax, x_px_center(inc) + offsetX, y_px_center(inc) + offsetY,clippedSignal(inc),bulkSignal(inc), 'o', 'filled');
+colormap(ax, turbo);
+% ax.CLim = [1 3];
 
 view(2);
 grid off
 freezeColors(ax)
 hold(ax, 'on');
 
-scatter(x_px_center(peakLoc)+offsetX, y_px_center(peakLoc)+offsetY,20, 'rv', 'filled')
+scatter(x_px_center(peakLoc)+offsetX, y_px_center(peakLoc)+offsetY+150, 20, 'yv','filled', 'MarkerEdgeColor', 'k')
 
-cb = colorbar;
-cb.Label.String = 'Time (min)';
-cb.Label.Rotation = -90;
+
+% cb = colorbar;
+% cb.Label.String = 'Time (min)';
+% cb.Label.Rotation = -90;
 imh = imshow(combinedImage, [prctile(finiteVals,1) prctile(finiteVals,99)]);
 uistack(imh, 'bottom');
 
@@ -184,10 +191,10 @@ set(gca, ...
     'XTickLabel', arrayfun(@num2str, xticks_mm, 'UniformOutput', false), ...
     'YTickLabel', arrayfun(@num2str, yticks_mm, 'UniformOutput', false));
 
-xlabel('mm');
-ylabel('mm');
+% xlabel('mm');
+% ylabel('mm');
 
-ax.XAxis.Visible = 1;
-ax.YAxis.Visible = 1;
+% ax.XAxis.Visible = 1;
+% ax.YAxis.Visible = 1;
 
 hold(ax, 'off');
