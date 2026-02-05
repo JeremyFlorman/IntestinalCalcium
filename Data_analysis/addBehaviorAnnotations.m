@@ -64,11 +64,11 @@ if ~isempty(sheets)
 
 
 
-        smoothedPumping = smoothdata(pumpingRate, "movmean", 60);
+        smoothedPumping = smoothdata(pumpingRate, "movmean", 30);
 
 
-        if i == 7
-            pumpingRate(6000:end) = nan;
+        if strcmp(wormDataFile.name, '260128_zfis178_wildtype-noFood-0min_7_wormdata.mat')
+            pumpingRate(6200:end) = nan;
         end
 
         wormdata.pumpTimes = pumpFrames;
