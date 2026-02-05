@@ -139,20 +139,6 @@ if trimstim || trimSpike || trimOnFood || trimOffFood
     mtdata = alignTraces(mtdata,settings);
 end
 
-% if trimstim == 1
-%     wtdata = trim2stim(wtdata,settings);
-%     mtdata = trim2stim(mtdata,settings);
-% elseif trimSpike == 1
-%     wtdata = trim2spike(wtdata,settings);
-%     mtdata = trim2spike(mtdata,settings);
-% elseif trimOnFood == 1
-%     wtdata = trim2onFood(wtdata,settings);
-%     mtdata = trim2onFood(mtdata,settings);
-% elseif trimOffFood == 1
-%     wtdata = trim2offFood(wtdata,settings);
-%     mtdata = trim2offFood(mtdata,settings);
-% end
-
 
 if trimExperimentLength == 1 || analyzePartial == 1
     mtdata = trimExp(mtdata,settings);
@@ -169,6 +155,23 @@ wtdata = processFood(wtdata, settings);
 mtdata = processSpikes(mtdata,settings, 0);
 wtdata = processSpikes(wtdata,settings, 1);
 
+
+%%  Concatenating fields
+mtdata(1).int1Matrix = horzcat(mtdata(:).int1Signal);
+mtdata(1).int9Matrix = horzcat(mtdata(:).int9Signal);
+
+wtdata(1).int9Matrix = horzcat(wtdata(:).int9Signal);
+wtdata(1).int9Matrix = horzcat(wtdata(:).int9Signal);
+
+if isfield(mtdata, 'pumpingRate')
+    mtdata(1).pumpingMatrix = horzcat(mtdata(:).pumpingRate);
+    wtdata(1).pumpingMatrix = horzcat(wtdata(:).pumpingRate);
+end
+
+mtdata(1).TimeInSec = linspace(0, length(mtdata(1).bulkSignal)/settings.framerate,length(mtdata(1).bulkSignal))';
+wtdata(1).TimeInSec = linspace(0, length(wtdata(1).bulkSignal)/settings.framerate,length(wtdata(1).bulkSignal))';
+
+%% loading processed data into base workspace
 if saveWormdata2workspace == 1
     if isfield(mtdata, 'genotype')
         dataName = strrep(mtdata(1).genotype,'-','');
@@ -321,7 +324,6 @@ for i = 1:length(inputData)
         baseline = nan(length(templocs)+1,1);
         splitpoints = nan(length(templocs)+1,1);
         splitpoints(end) = length(bulkSignal);
-        AUC = nan(length(templocs),1);
         axialPeak = nan(size(axialSignal,2), floor(timePreSpike/3)*2+1, length(templocs));
 
         if waveAverage == 0
@@ -552,23 +554,37 @@ for i = 1:length(inputData)
     elseif isempty(templocs)
         rTime = nan;
         fTime = nan;
-        AUC = nan;
         % propagationRate = nan;
         axialPeak = nan;
         tau = nan;
     end
+    
+    %% Int1 and Int9 signal
+    dataSize = size(inputData(1).autoAxialSignal);
+    
+    % Int1 start and end points
+    antStart = 20;
+    antEnd = antStart+dataSize(2)*0.1;
+
+    % Int9 start and end points
+    postStart = dataSize(2)- dataSize(2)*0.1;
+    postEnd = dataSize(2);
+
+    inputData(i).int1Signal = mean(inputData(i).autoAxialSignal(:,antStart:antEnd),2, 'omitmissing');
+    inputData(i).int9Signal = mean(inputData(i).autoAxialSignal(:,postStart:postEnd),2, 'omitmissing');
+    
+    
+
 
     tau(tau==0) = nan;
     riseNan = isnan(rTime);
     fallNan = isnan(fTime);
-    aucNan = isnan(AUC);
     tauNan = isnan(tau);
 
     inputData(i).peakTraces = peakProfiles;
     inputData(i).riseTime = rTime(~riseNan);
     inputData(i).fallTime = fTime(~fallNan);
     inputData(i).tau = tau(~tauNan);
-    inputData(i).AUC = AUC(~aucNan);
     inputData(i).peakIntervals = tempint;
     inputData(i).meanInterval = mean(tempint, 'omitmissing');
     inputData(i).peakAmplitude = tempamp;
@@ -682,11 +698,9 @@ processedData = inputData(sortOrder);
 processedData(1).riseVector = vertcat(inputData(:).riseTime);
 processedData(1).fallVector = vertcat(inputData(:).fallTime);
 processedData(1).tauVector = vertcat(inputData(:).tau);
-processedData(1).AUCVector = vertcat(inputData(:).AUC);
 processedData(1).amplitudeVector = vertcat(inputData(:).peakAmplitude);
 processedData(1).intervalVector = vertcat(inputData(:).peakIntervals);
 processedData(1).meanIntervalVector = vertcat(inputData(:).meanInterval);
-
 
 if validateRiseFall == 1 && keepValidating == 1
     [file,path] = uiputfile('*.xlsx');
@@ -848,11 +862,15 @@ for i = 1:length(inputData)
                 inputData(i).backgroundSignal = inputData(i).backgroundSignal(expStart:expEnd);
                 inputData(i).orientation = inputData(i).orientation(expStart:expEnd);
                 inputData(i).area = inputData(i).area(expStart:expEnd);
+                % inputData(i).int1Signal = inputData(i).int1Signal(expStart:expEnd);
+                % inputData(i).int9Signal = inputData(i).int9Signal(expStart:expEnd);
+
+
                 if isfield(inputData,'velocity')
                     inputData(i).velocity = inputData(i).velocity(expStart:expEnd);
                 end
 
-                if isfield(inputData,'pumpingRate')
+                if isfield(inputData,'pumpingRate') && ~isempty(inputData(i).pumpingRate)
                     inputData(i).pumpingRate = inputData(i).pumpingRate(expStart:expEnd);
                 end
 
@@ -867,11 +885,14 @@ for i = 1:length(inputData)
                 inputData(i).backgroundSignal = vertcat(nanPadVector,inputData(i).backgroundSignal);
                 inputData(i).orientation = vertcat(nanPadVector,inputData(i).orientation);
                 inputData(i).area = vertcat(nanPadVector,inputData(i).area);
+                % inputData(i).int1Signal = vertcat(nanPadVector,inputData(i).int1Signal);
+                % inputData(i).int9Signal = vertcat(nanPadVector,inputData(i).int9Signal);
+                
                 if isfield(inputData,'velocity')
                     inputData(i).velocity = vertcat(nanPadVector,inputData(i).velocity);
                 end
 
-                if isfield(inputData,'pumpingRate')
+                if isfield(inputData,'pumpingRate') && ~isempty(inputData(i).pumpingRate)
                     inputData(i).pumpingRate = vertcat(nanPadVector,inputData(i).pumpingRate);
                 end
 
@@ -922,11 +943,14 @@ for i = 1:length(inputData)
     inputData(i).backgroundSignal = inputData(i).backgroundSignal(expStart:expEnd);
     inputData(i).orientation = inputData(i).orientation(expStart:expEnd);
     inputData(i).area = inputData(i).area(expStart:expEnd);
+    % inputData(i).int1Signal = inputData(i).int1Signal(expStart:expEnd);
+    % inputData(i).int9Signal = inputData(i).int9Signal(expStart:expEnd);
+
     if isfield(inputData,'velocity')
         inputData(i).velocity = inputData(i).velocity(expStart:expEnd);
     end
 
-    if isfield(inputData,'pumpingRate')
+    if isfield(inputData,'pumpingRate') && ~isempty(inputData(i).pumpingRate)
         inputData(i).pumpingRate = inputData(i).pumpingRate(expStart:expEnd);
     end
 
@@ -938,11 +962,9 @@ end
 processedData = inputData;
 end
 
-
 %% pad traces with NaN values to automatically equalize exp duration
 % will also trim or extend experiments based on the "end" value in analyze partial
 % recording (settings.partEnd).
-
 function [processedData] = padTraces(inputData, settings)
 lens = nan(length(inputData),1);
 
@@ -971,6 +993,9 @@ for i = 1:length(inputData)
         inputData(i).backgroundSignal = vertcat(inputData(i).backgroundSignal, traceBuffer);
         inputData(i).orientation = vertcat(inputData(i).orientation, traceBuffer);
         inputData(i).area = vertcat(inputData(i).area, traceBuffer);
+        % inputData(i).int1Signal = vertcat(inputData(i).int1Signal, traceBuffer);
+        % inputData(i).int9Signal = vertcat(inputData(i).int9Signal, traceBuffer);
+
         if isfield(inputData,'velocity')
             inputData(i).velocity = vertcat(inputData(i).velocity, traceBuffer);
         end
@@ -979,7 +1004,7 @@ for i = 1:length(inputData)
             inputData(i).wormLength = vertcat(inputData(i).wormLength, traceBuffer);
         end
 
-        if isfield(inputData,'pumpingRate')
+        if isfield(inputData,'pumpingRate') && ~isempty(inputData(i).pumpingRate)
             inputData(i).pumpingRate = vertcat(inputData(i).pumpingRate, traceBuffer);
         end
 
@@ -990,6 +1015,8 @@ for i = 1:length(inputData)
         inputData(i).backgroundSignal = inputData(i).backgroundSignal(1:maxLen);
         inputData(i).orientation = inputData(i).orientation(1:maxLen);
         inputData(i).area = inputData(i).area(1:maxLen);
+        % inputData(i).int1Signal = inputData(i).int1Signal(1:maxLen);
+        % inputData(i).int9Signal = inputData(i).int9Signal(1:maxLen);
 
         if isfield(inputData,'velocity')
             inputData(i).velocity = inputData(i).velocity(1:maxLen);
@@ -999,7 +1026,7 @@ for i = 1:length(inputData)
             inputData(i).wormLength = inputData(i).wormLength(1:maxLen);
         end
 
-        if isfield(inputData,'pumpingRate')
+        if isfield(inputData,'pumpingRate') && ~isempty(inputData(i).pumpingRate)
             inputData(i).pumpingRate = inputData(i).pumpingRate(1:maxLen);
         end
 
@@ -1023,8 +1050,6 @@ for i = 1:length(inputData)
 end
 processedData = inputData;
 end
-
-
 
 
 function [processedData] = deltaF(inputData, settings)
