@@ -370,9 +370,9 @@ for nf =startIndex:length(imgDir)
 
 
         BW = imdilate(BW,SEclose);
-        BW = imerode(BW,SEclose);
-
-        BW = imopen(BW, SEopen);
+        BW = imerode(BW,SEopen);
+        bw1 = BW;
+        BW = imopen(BW, SEclose);
         % BW = bwmorph(BW,"spur",inf);
 
 
@@ -935,7 +935,7 @@ for nf =startIndex:length(imgDir)
 
 
 
-    figure('Position', [936 72 903 586],Color=[1 1 1])
+    figure('Position', [1053 80 801 781],Color=[1 1 1])
     t = tiledlayout(4,4,'TileSpacing','compact','Padding','tight');
 
     % % % Bulk Signal % % %
@@ -1043,6 +1043,20 @@ for nf =startIndex:length(imgDir)
     ax =  gca;
     ax.TickLength = [0.005 0.005];
     box off
+
+    %% plot tracks
+    if isfield(wormdata, 'xLoc')
+        nexttile
+        scatter(wormdata.xLoc-mean(wormdata.xLoc,'omitmissing'), wormdata.yLoc-mean(wormdata.yLoc,'omitmissing'), 10, time, '.')
+        colormap(gca, 'viridis')
+        trackAx = gca;
+        trackAx.YLim = [-10 10];
+        trackAx.XLim = [-10 10];
+        xlabel('X Location (mm)')
+        ylabel('Y Location (mm)')
+        title('Worm Track')
+        axis square
+    end
 
 
     %     nexttile([1 1]);

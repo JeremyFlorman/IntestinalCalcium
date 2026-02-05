@@ -76,7 +76,7 @@ if ~exist('pk','var')
     pkmean = mean(pktraces,2,'omitnan');
 end
 
-figure('Position', [936 72 903 586],Color=[1 1 1])
+figure('Position', [1150 101 722 762],Color=[1 1 1])
 t = tiledlayout(4,4,'TileSpacing','compact','Padding','tight');
 
 %% Bulk Signal % % %
@@ -242,6 +242,22 @@ if isfield(wormdata, 'onFood')
     p = patch(patchXinMinutes, boutData.patchY, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
     uistack(p, 'bottom');
 end
+
+%% plot tracks
+if isfield(wormdata, 'xLoc')
+nexttile
+scatter(wormdata.xLoc-mean(wormdata.xLoc,'omitmissing'), wormdata.yLoc-mean(wormdata.yLoc,'omitmissing'), 10, time, '.')
+colormap(gca, 'turbo')
+
+trackAx = gca;
+trackAx.YLim = [-10 10];
+trackAx.XLim = [-10 10];
+xlabel('X Location (mm)')
+ylabel('Y Location (mm)')
+title('Worm Track')
+axis square
+end
+
 
 if saveSummaryplot == 1
     split = strsplit(wormdatapath, '\');
