@@ -18,8 +18,15 @@ end
 
 for i = 1:num2plot
     plotindex = num2plot-i+1; % use this to make sure the first plot is on top of axes.
-    signal = data(plotindex).bulkSignal;
-    % signal = smoothdata(data(plotindex).pumpingRate, 'movmean',15, 'omitmissing');
+    
+    %% overlay pumping rate or other vector instead/with bulk signal ... comment out to just plot bulk signal
+    if isfield(data, 'pumpingRate') && ~isempty(data(plotindex).pumpingRate)
+        signal = smoothdata(data(plotindex).pumpingRate, 'movmean',30, 'omitmissing');
+    else
+        signal = data(plotindex).bulkSignal;
+    end
+    % signal = data(plotindex).bulkSignal;
+
     tempamp = data(plotindex).peakAmplitude;
     templocs = data(plotindex).peakLoc;
 

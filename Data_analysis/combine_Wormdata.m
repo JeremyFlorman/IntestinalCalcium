@@ -40,6 +40,12 @@ elseif combineByKeyword == 1
     genotypes = keywords;
 end
 
+%% add behavioral annotations from spreadsheet to wormdata
+behaviorAnnotations = 1;
+
+if behaviorAnnotations == 1
+    addBehaviorAnnotations(datadir)
+end
 
 
 

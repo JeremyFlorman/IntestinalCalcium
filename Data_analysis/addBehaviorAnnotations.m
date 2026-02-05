@@ -1,4 +1,4 @@
-fp = 'Z:\OAS\foodEncounter\noFood-0min';
+function addBehaviorAnnotations(fp)
 %% pBoc
 sheets = dir([fp '\**\*(dmp*.csv']);
 if ~isempty(sheets)
@@ -60,10 +60,10 @@ if ~isempty(sheets)
                 pumpingRate(k) = numel(pumpsInWindow);
             end
         end
-        
 
 
-        
+
+
         smoothedPumping = smoothdata(pumpingRate, "movmean", 60);
 
 
@@ -71,11 +71,12 @@ if ~isempty(sheets)
             pumpingRate(6000:end) = nan;
         end
 
-        wormdata.pumpTimes = frames;
+        wormdata.pumpTimes = pumpFrames;
         wormdata.pumpingRate = pumpingRate;
 
         save(fullfile(wormDataFile(1).folder, wormDataFile(1).name), 'wormdata');
         figure()
         plot(smoothedPumping)
     end
+end
 end
