@@ -168,8 +168,8 @@ if isfield(mtdata, 'pumpingRate')
     wtdata(1).pumpingMatrix = horzcat(wtdata(:).pumpingRate);
 end
 
-mtdata(1).TimeInSec = linspace(0, length(mtdata(1).bulkSignal)/settings.framerate,length(mtdata(1).bulkSignal))';
-wtdata(1).TimeInSec = linspace(0, length(wtdata(1).bulkSignal)/settings.framerate,length(wtdata(1).bulkSignal))';
+mtdata(1).timeInSec = linspace(0, length(mtdata(1).bulkSignal)/settings.framerate,length(mtdata(1).bulkSignal))';
+wtdata(1).timeInSec = linspace(0, length(wtdata(1).bulkSignal)/settings.framerate,length(wtdata(1).bulkSignal))';
 
 %% loading processed data into base workspace
 if saveWormdata2workspace == 1
@@ -190,8 +190,8 @@ end
 
 
 
-assignin('base','normWT', wtdata(1).amplitudeVector/mean(wtdata(1).amplitudeVector,"omitmissing"))
-assignin('base', 'normMT', mtdata(1).amplitudeVector/mean(wtdata(1).amplitudeVector,"omitmissing"))
+% assignin('base','normWT', wtdata(1).amplitudeVector/mean(wtdata(1).amplitudeVector,"omitmissing"))
+% assignin('base', 'normMT', mtdata(1).amplitudeVector/mean(wtdata(1).amplitudeVector,"omitmissing"))
 
 % for i = 1:length(mtdata)
 
@@ -561,14 +561,40 @@ for i = 1:length(inputData)
     
     %% Int1 and Int9 signal
     dataSize = size(inputData(1).autoAxialSignal);
+    segmentSize = round(dataSize(2)*0.05);
+    lengthChunk = floor(dataSize(2)/3);
+    
     
     % Int1 start and end points
-    antStart = 20;
-    antEnd = antStart+dataSize(2)*0.1;
+    anteriorMean = mean(inputData(i).autoAxialSignal(:,1:lengthChunk),1,'omitmissing');
+    [~,antLoc] = findpeaks(rescale(anteriorMean), NPeaks=1, SortStr="descend");
+    
+    antStart = antLoc-segmentSize;
+    antEnd = antLoc+segmentSize;
+    if antStart<1
+        antStart = 1;
+    end
 
     % Int9 start and end points
-    postStart = dataSize(2)- dataSize(2)*0.1;
-    postEnd = dataSize(2);
+    posteriorMean = mean(inputData(i).autoAxialSignal(:,end-lengthChunk:end),1,'omitmissing');
+    [~,postLoc] = findpeaks(rescale(posteriorMean), NPeaks=1, SortStr="descend");
+
+    postLoc = postLoc+(lengthChunk*2); % account for the anterior two thirds
+    postStart = postLoc-segmentSize;
+    postEnd = postLoc+segmentSize;
+    if postEnd > dataSize(2)
+        postEnd = dataSize(2);
+    end
+
+    %% plot int1/int9 identification
+    % plot(mean(inputData(i).autoAxialSignal,1,'omitmissing'))
+    % ax = gca;
+    % lims = ax.YLim;
+    % line([antLoc-10 antLoc-10], [lims(1) lims(2)])
+    % line([antLoc+10 antLoc+10], [lims(1) lims(2)])
+    % line([postLoc-10 postLoc-10],  [lims(1) lims(2)])
+    % line([postLoc+10 postLoc+10],  [lims(1) lims(2)])
+    %%
 
     inputData(i).int1Signal = mean(inputData(i).autoAxialSignal(:,antStart:antEnd),2, 'omitmissing');
     inputData(i).int9Signal = mean(inputData(i).autoAxialSignal(:,postStart:postEnd),2, 'omitmissing');
