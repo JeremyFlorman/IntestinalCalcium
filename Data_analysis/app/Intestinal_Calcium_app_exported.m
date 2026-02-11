@@ -346,6 +346,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             %% OAS related settings
             plotSettings.isOAS = app.AnalyzeOASdataCheckBox.Value;
+            plotSettings.isOASPlot = app.AnalyzeOASdataCheckBox_2.Value;
             plotSettings.trimExperimentLength = app.EqualizeExpDurationCheckBox.Value;
             plotSettings.analyzePartial = app.AnalyzePartialRecordingCheckBox.Value;
             plotSettings.partStart = app.partStart.Value;
@@ -470,6 +471,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             %% OAS related settings
             app.AnalyzeOASdataCheckBox.Value = plotSettings.isOAS;
+            app.AnalyzeOASdataCheckBox_2.Value = plotSettings.isOASPlot;
             app.EqualizeExpDurationCheckBox.Value = plotSettings.trimExperimentLength;
 
             app.AnalyzePartialRecordingCheckBox.Value = plotSettings.analyzePartial;
