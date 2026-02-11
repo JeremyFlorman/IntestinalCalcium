@@ -561,7 +561,7 @@ for i = 1:length(inputData)
     
     %% Int1 and Int9 signal
     dataSize = size(inputData(1).autoAxialSignal);
-    segmentSize = round(dataSize(2)*0.05);
+    segmentSize = round(dataSize(2)*0.025);
     lengthChunk = floor(dataSize(2)/3);
     
     
@@ -590,11 +590,11 @@ for i = 1:length(inputData)
     % plot(mean(inputData(i).autoAxialSignal,1,'omitmissing'))
     % ax = gca;
     % lims = ax.YLim;
-    % line([antLoc-10 antLoc-10], [lims(1) lims(2)])
-    % line([antLoc+10 antLoc+10], [lims(1) lims(2)])
-    % line([postLoc-10 postLoc-10],  [lims(1) lims(2)])
-    % line([postLoc+10 postLoc+10],  [lims(1) lims(2)])
-    %%
+    % line([antLoc-segmentSize antLoc-segmentSize], [lims(1) lims(2)])
+    % line([antLoc+segmentSize antLoc+segmentSize], [lims(1) lims(2)])
+    % line([postLoc-segmentSize postLoc-segmentSize],  [lims(1) lims(2)])
+    % line([postLoc+segmentSize postLoc+segmentSize],  [lims(1) lims(2)])
+    %
 
     inputData(i).int1Signal = mean(inputData(i).autoAxialSignal(:,antStart:antEnd),2, 'omitmissing');
     inputData(i).int9Signal = mean(inputData(i).autoAxialSignal(:,postStart:postEnd),2, 'omitmissing');
