@@ -1,4 +1,4 @@
-folder  = 'C:\Users\Jeremy\Desktop\260203_zfis178_wildtype-noFood-0min_4\2026_02_03_13_56_34_flircamera_behavior';
+folder  = 'Z:\OAS\foodEncounter\wildtype-noFood-0minCycleStart\260209_zfis178_wildtype-noFood-0min_1\2026_02_09_14_09_10_flircamera_behavior';
 
 d  = dir(fullfile(folder, '*videoEvents.mat'));
 h5 = dir(fullfile(folder, '*.h5'));
@@ -132,20 +132,22 @@ matdir = dir([pth '\*wormdata.mat' ]);
 load(fullfile(matdir(1).folder, matdir(1).name))
 peakLoc = wormdata.peakLoc;
 
+bulkSignal = smoothdata(wormdata.bulkSignal-wormdata.backgroundSignal, 'movmean', 60);
+
+[int1Signal, int9Signal] = extractCellSignal(wormdata); % Get cell specific signal
+int1Signal = int1Signal - wormdata.backgroundSignal;    % subtract background
+int9Signal = int9Signal - wormdata.backgroundSignal;
+
+
+colorSignal = int1Signal; % signal used for color of scatter plot markers
+sizeSignal = abs(int1Signal-5); % signal used for size of scatter plot markers
+inc   = 1:5:nEvents; % subsample for faster plotting
+
 figure;
 ax = gca;
-% 
-inc   = 1:5:nEvents;
-cdata = videoEvents.velocity(inc);  
-cdata = inc';
-
-bulkSignal = smoothdata(wormdata.bulkSignal-wormdata.backgroundSignal, 'movmean', 60);
-clippedSignal = bulkSignal*5;
-% clippedSignal(clippedSignal < 10) = 1;
-
-s = scatter(ax, x_px_center(inc) + offsetX, y_px_center(inc) + offsetY,clippedSignal(inc),bulkSignal(inc), 'o', 'filled');
+s = scatter(ax, x_px_center(inc) + offsetX, y_px_center(inc) + offsetY,sizeSignal(inc),colorSignal(inc), 'o', 'filled');
 colormap(ax, turbo);
-% ax.CLim = [1 3];
+ax.CLim = [0 60];
 
 view(2);
 grid off
