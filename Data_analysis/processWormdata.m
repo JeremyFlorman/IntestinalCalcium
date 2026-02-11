@@ -891,6 +891,9 @@ for i = 1:length(inputData)
                 % inputData(i).int1Signal = inputData(i).int1Signal(expStart:expEnd);
                 % inputData(i).int9Signal = inputData(i).int9Signal(expStart:expEnd);
 
+                if isfield(inputData,'wormLength')
+                    inputData(i).wormLength = inputData(i).wormLength(expStart:expEnd);
+                end
 
                 if isfield(inputData,'velocity')
                     inputData(i).velocity = inputData(i).velocity(expStart:expEnd);
@@ -913,7 +916,12 @@ for i = 1:length(inputData)
                 inputData(i).area = vertcat(nanPadVector,inputData(i).area);
                 % inputData(i).int1Signal = vertcat(nanPadVector,inputData(i).int1Signal);
                 % inputData(i).int9Signal = vertcat(nanPadVector,inputData(i).int9Signal);
-                
+
+                if isfield(inputData,'wormLength')
+                    inputData(i).wormLength = vertcat(nanPadVector,inputData(i).wormLength);
+                end
+
+
                 if isfield(inputData,'velocity')
                     inputData(i).velocity = vertcat(nanPadVector,inputData(i).velocity);
                 end
@@ -971,6 +979,10 @@ for i = 1:length(inputData)
     inputData(i).area = inputData(i).area(expStart:expEnd);
     % inputData(i).int1Signal = inputData(i).int1Signal(expStart:expEnd);
     % inputData(i).int9Signal = inputData(i).int9Signal(expStart:expEnd);
+
+    if isfield(inputData,'wormLength')
+        inputData(i).wormLength = inputData(i).wormLength(expStart:expEnd);
+    end
 
     if isfield(inputData,'velocity')
         inputData(i).velocity = inputData(i).velocity(expStart:expEnd);
