@@ -1,4 +1,4 @@
-function warped = warp_trace_between_events(data, nPre, nMid, nPost)
+function warped = interpolateKymograph(trace, idxFood, idxSpike, nPre, nMid, nPost)
 %WARP_TRACE_BETWEEN_EVENTS Time-warp a kymograph between two events.
 %
 %   trace   : [T x P] matrix (time x position along animal)
@@ -10,20 +10,20 @@ function warped = warp_trace_between_events(data, nPre, nMid, nPost)
 %
 %   warped  : [(nPre + nMid + nPost) x P] warped trace
 
-fps = 30;
-if nargin<2
+
+if nargin<4
+    fps = 30;
     nPre = 30*fps;
     nMid = 45*fps;
     nPost = 45*fps;
 end
 
-trace = data.autoAxialSignal;
-idxFood = data.stimTimes(1);
+% trace = data.autoAxialSignal;
+% idxFood = data.stimTimes(1);
+[T, P] = size(trace);
 
-if ~isempty(data(1).peakLoc)
-    idxSpike = data.peakLoc(1);
+if ~isempty(idxSpike) && ~isnan(idxSpike) && idxSpike<T
 
-    [T, P] = size(trace);
     origTime = (1:T)';
 
     % --- Pre-food segment: [1 .. idxFood] ---------------------------------
@@ -44,7 +44,7 @@ if ~isempty(data(1).peakLoc)
     % --- Concatenate ------------------------------------------------------
     warped = [preWarped; midWarped; postWarped];
 else
-    disp(['Skipping Trace ' num2str(1i) ' - No Spikes Found'])
+    disp('Skipping Trace - No Spikes Found')
     warped = nan(nPre+nMid+nPost, 1);
 end
 

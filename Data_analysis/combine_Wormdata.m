@@ -1,4 +1,4 @@
-function combine_Wormdata(datadir,outputdir, controlname)
+function combine_Wormdata(datadir,outputdir, settings)
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -13,7 +13,6 @@ if isempty(outputdir)
     outputdir = datadir;
     isremote = 0;
 end
-
 
 % use this to combine genotypes that may be named slightly differently but
 % should be combined. Enclose keywords in asterisks 
@@ -41,10 +40,8 @@ elseif combineByKeyword == 1
 end
 
 %% add behavioral annotations from spreadsheet to wormdata
-behaviorAnnotations = 1;
-
-if behaviorAnnotations == 1
-    addBehaviorAnnotations(datadir)
+if settings.addBehaviorAnnotations == 1
+    addBehaviorAnnotations(datadir, settings.framerate)
 end
 
 

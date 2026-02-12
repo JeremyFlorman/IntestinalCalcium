@@ -150,6 +150,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         axialYLim                       matlab.ui.control.EditField
         AxialSignallimLabel             matlab.ui.control.Label
         miscsettingsTab                 matlab.ui.container.Tab
+        AddBehaviorAnnotationsCheckBox  matlab.ui.control.CheckBox
+        InterpolateInt1Int9CheckBox     matlab.ui.control.CheckBox
         AlignTracesToPanel              matlab.ui.container.Panel
         timePreAlignment                matlab.ui.control.NumericEditField
         TimepreeventsEditFieldLabel     matlab.ui.control.Label
@@ -398,7 +400,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             plotSettings.saveWormdata2workspace = app.saveWormDataToWorkspace.Value;
             plotSettings.annotateFood = app.annotateFood.Value;
-
+            plotSettings.interpolateInt1Int9 = app.InterpolateInt1Int9CheckBox.Value;
+            plotSettings.addBehaviorAnnotations = app.AddBehaviorAnnotationsCheckBox.Value;
         end
 
 
@@ -523,6 +526,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             
             app.saveWormDataToWorkspace.Value = plotSettings.saveWormdata2workspace;
             app.annotateFood.Value = plotSettings.annotateFood;
+            app.InterpolateInt1Int9CheckBox.Value = plotSettings.interpolateInt1Int9;
+            app.AddBehaviorAnnotationsCheckBox.Value = plotSettings.addBehaviorAnnotations;
 
 
 
@@ -669,6 +674,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
         % Button pushed function: CombinewormDataButton
         function CombinewormDataButtonPushed(app, event)
+            plotSettings = parsePlotSettings(app);
             datadir = app.DataDir.Value;
             if ~isfolder(datadir)
                 datadir = uigetdir(app.defaultDataDir,...
@@ -684,7 +690,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             end
 
             disp('working...')
-            combine_Wormdata(datadir,outputdir,app.controlnameEditField.Value);
+            combine_Wormdata(datadir,outputdir,app.controlnameEditField.Value, plotSettings);
 
             app.outputDir.Value = outputdir;
             app.DataDir.Value = datadir;
@@ -2205,6 +2211,16 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.timePreAlignment = uieditfield(app.AlignTracesToPanel, 'numeric');
             app.timePreAlignment.Position = [129 3 26 18];
             app.timePreAlignment.Value = 30;
+
+            % Create InterpolateInt1Int9CheckBox
+            app.InterpolateInt1Int9CheckBox = uicheckbox(app.miscsettingsTab);
+            app.InterpolateInt1Int9CheckBox.Text = 'Interpolate Int1/Int9';
+            app.InterpolateInt1Int9CheckBox.Position = [292 151 125 22];
+
+            % Create AddBehaviorAnnotationsCheckBox
+            app.AddBehaviorAnnotationsCheckBox = uicheckbox(app.miscsettingsTab);
+            app.AddBehaviorAnnotationsCheckBox.Text = 'Add Behavior Annotations';
+            app.AddBehaviorAnnotationsCheckBox.Position = [293 121 160 22];
 
             % Show the figure after all components are created
             app.IntestinalCalciumAppUIFigure.Visible = 'on';

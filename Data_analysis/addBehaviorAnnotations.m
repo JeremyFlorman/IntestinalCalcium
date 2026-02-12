@@ -1,4 +1,8 @@
-function addBehaviorAnnotations(fp)
+function addBehaviorAnnotations(fp, fps)
+if nargin<2
+    fps=30;
+end
+
 %% pBoc
 sheets = dir([fp '\**\*(dmp*.csv']);
 if ~isempty(sheets)
@@ -48,12 +52,11 @@ if ~isempty(sheets)
 
 
         %% Instantaneous frequency trace
-        fs = 30;
         numFrames = length(wormdata.bulkSignal);
         pumpingRate = zeros(numFrames,1);
 
-        for k = fs:numFrames
-            lo = k-fs;
+        for k = fps:numFrames
+            lo = k-fps;
             hi = k;
             pumpsInWindow = pumpFrames(pumpFrames>lo & pumpFrames < hi);
             if ~isempty(pumpsInWindow)

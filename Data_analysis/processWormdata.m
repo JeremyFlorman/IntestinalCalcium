@@ -559,46 +559,46 @@ for i = 1:length(inputData)
         tau = nan;
     end
     
-    %% Int1 and Int9 signal
-    dataSize = size(inputData(1).autoAxialSignal);
-    segmentSize = round(dataSize(2)*0.025);
-    lengthChunk = floor(dataSize(2)/3);
-    
-    
-    % Int1 start and end points
-    anteriorMean = mean(inputData(i).autoAxialSignal(:,1:lengthChunk),1,'omitmissing');
-    [~,antLoc] = findpeaks(rescale(anteriorMean), NPeaks=1, SortStr="descend");
-    
-    antStart = antLoc-segmentSize;
-    antEnd = antLoc+segmentSize;
-    if antStart<1
-        antStart = 1;
-    end
 
-    % Int9 start and end points
-    posteriorMean = mean(inputData(i).autoAxialSignal(:,end-lengthChunk:end),1,'omitmissing');
-    [~,postLoc] = findpeaks(rescale(posteriorMean), NPeaks=1, SortStr="descend");
-
-    postLoc = postLoc+(lengthChunk*2); % account for the anterior two thirds
-    postStart = postLoc-segmentSize;
-    postEnd = postLoc+segmentSize;
-    if postEnd > dataSize(2)
-        postEnd = dataSize(2);
-    end
-
-    %% plot int1/int9 identification
-    % plot(mean(inputData(i).autoAxialSignal,1,'omitmissing'))
-    % ax = gca;
-    % lims = ax.YLim;
-    % line([antLoc-segmentSize antLoc-segmentSize], [lims(1) lims(2)])
-    % line([antLoc+segmentSize antLoc+segmentSize], [lims(1) lims(2)])
-    % line([postLoc-segmentSize postLoc-segmentSize],  [lims(1) lims(2)])
-    % line([postLoc+segmentSize postLoc+segmentSize],  [lims(1) lims(2)])
-    %
-
-    inputData(i).int1Signal = mean(inputData(i).autoAxialSignal(:,antStart:antEnd),2, 'omitmissing');
-    inputData(i).int9Signal = mean(inputData(i).autoAxialSignal(:,postStart:postEnd),2, 'omitmissing');
-    
+    % dataSize = size(inputData(1).autoAxialSignal);
+    % segmentSize = round(dataSize(2)*0.025);
+    % lengthChunk = floor(dataSize(2)/3);
+    % 
+    % 
+    % % Int1 start and end points
+    % anteriorMean = mean(inputData(i).autoAxialSignal(:,1:lengthChunk),1,'omitmissing');
+    % [~,antLoc] = findpeaks(rescale(anteriorMean), NPeaks=1, SortStr="descend");
+    % 
+    % antStart = antLoc-segmentSize;
+    % antEnd = antLoc+segmentSize;
+    % if antStart<1
+    %     antStart = 1;
+    % end
+    % 
+    % % Int9 start and end points
+    % posteriorMean = mean(inputData(i).autoAxialSignal(:,end-lengthChunk:end),1,'omitmissing');
+    % [~,postLoc] = findpeaks(rescale(posteriorMean), NPeaks=1, SortStr="descend");
+    % 
+    % postLoc = postLoc+(lengthChunk*2); % account for the anterior two thirds
+    % postStart = postLoc-segmentSize;
+    % postEnd = postLoc+segmentSize;
+    % if postEnd > dataSize(2)
+    %     postEnd = dataSize(2);
+    % end
+    % 
+    % %% plot int1/int9 identification
+    % % plot(mean(inputData(i).autoAxialSignal,1,'omitmissing'))
+    % % ax = gca;
+    % % lims = ax.YLim;
+    % % line([antLoc-segmentSize antLoc-segmentSize], [lims(1) lims(2)])
+    % % line([antLoc+segmentSize antLoc+segmentSize], [lims(1) lims(2)])
+    % % line([postLoc-segmentSize postLoc-segmentSize],  [lims(1) lims(2)])
+    % % line([postLoc+segmentSize postLoc+segmentSize],  [lims(1) lims(2)])
+    % %
+    % 
+    % inputData(i).int1Signal = mean(inputData(i).autoAxialSignal(:,antStart:antEnd),2, 'omitmissing');
+    % inputData(i).int9Signal = mean(inputData(i).autoAxialSignal(:,postStart:postEnd),2, 'omitmissing');
+    % 
     
 
 
@@ -619,6 +619,46 @@ for i = 1:length(inputData)
 
     inputData(i).axialPeak = axialPeak;
     inputData(i).avgKymograph = mean(axialPeak,3,'omitmissing');
+
+
+
+    %% Int1 and Int9 signal
+    if settings.interpolateInt1Int9 == 0
+        [int1Signal, int9Signal] = extractCellSignal(inputData(i).autoAxialSignal);
+        inputData(i).int1Signal = int1Signal;
+        inputData(i).int9Signal = int9Signal;
+
+    elseif settings.interpolateInt1Int9 == 1
+        if ~isempty(inputData(i).stimTimes) && ~isempty(inputData(i).peakLoc)
+
+            idxFood = inputData(i).stimTimes(1); %Event 1
+            idxSpike = inputData(i).peakLoc(1); % Event 2
+            warpedSignal = interpolateKymograph(inputData(i).autoAxialSignal, idxFood, idxSpike); % piecewise interpolation of kymograph signal based on two events
+
+            if ~all(isnan(warpedSignal))
+                [int1Signal, int9Signal] = extractCellSignal(warpedSignal);
+                inputData(i).int1Signal = int1Signal;
+                inputData(i).int9Signal = int9Signal;
+            else % if there is no peak just return a vector of NaNs
+                inputData(i).int1Signal = warpedSignal;
+                inputData(i).int9Signal = warpedSignal;
+            end
+
+            if isfield(inputData(i), 'pumpingRate') && ~isempty(inputData(i).pumpingRate)
+                warpedPumping = interpolateKymograph(inputData(i).pumpingRate, idxFood, idxSpike);
+                inputData(i).pumpingRate = warpedPumping;
+            end
+        else % if we are missing events we cant interpolate, return vectors of NaNs
+            inputData(i).int1Signal = nan(length(inputData(i).bulkSignal), 1);
+            inputData(i).int9Signal = nan(length(inputData(i).bulkSignal), 1);
+            inputData(i).pumpingRate = nan(length(inputData(i).bulkSignal), 1);
+
+        end
+
+    end
+
+
+
 
     %% calculate average propagation rate of spikes in a recording instead of individual spikes
     if analyzePropagationRate == 1 &&  waveAverage == 1
