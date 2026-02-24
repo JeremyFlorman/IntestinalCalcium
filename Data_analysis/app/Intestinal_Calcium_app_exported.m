@@ -690,7 +690,7 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             end
 
             disp('working...')
-            combine_Wormdata(datadir,outputdir,app.controlnameEditField.Value, plotSettings);
+            combine_Wormdata(datadir,outputdir, plotSettings);
 
             app.outputDir.Value = outputdir;
             app.DataDir.Value = datadir;
