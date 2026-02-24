@@ -55,15 +55,22 @@ if ~isempty(sheets)
         numFrames = length(wormdata.bulkSignal);
         pumpingRate = zeros(numFrames,1);
 
-        for k = fps:numFrames
-            lo = k-fps;
+        % for k = fps:numFrames
+        %     lo = k-fps;
+        %     hi = k;
+        %     pumpsInWindow = pumpFrames(pumpFrames>lo & pumpFrames < hi);
+        %     if ~isempty(pumpsInWindow)
+        %         pumpingRate(k) = numel(pumpsInWindow);
+        %     end
+        % end
+        for k = 1:numFrames
+            lo = max(1, k - fps + 1);
             hi = k;
-            pumpsInWindow = pumpFrames(pumpFrames>lo & pumpFrames < hi);
-            if ~isempty(pumpsInWindow)
-                pumpingRate(k) = numel(pumpsInWindow);
-            end
-        end
+            windowSec = (hi - lo + 1)/fps;
 
+            pumpsInWindow = pumpFrames(pumpFrames >= lo & pumpFrames <= hi);
+            pumpingRate(k) = numel(pumpsInWindow) / windowSec;
+        end
 
 
 
