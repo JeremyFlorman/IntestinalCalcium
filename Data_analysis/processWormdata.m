@@ -648,10 +648,10 @@ for i = 1:length(inputData)
                 warpedPumping = interpolateKymograph(inputData(i).pumpingRate, idxFood, idxSpike);
                 inputData(i).pumpingRate = warpedPumping;
             end
-        else % if we are missing events we cant interpolate, return vectors of NaNs
-            inputData(i).int1Signal = nan(length(inputData(i).bulkSignal), 1);
-            inputData(i).int9Signal = nan(length(inputData(i).bulkSignal), 1);
-            inputData(i).pumpingRate = nan(length(inputData(i).bulkSignal), 1);
+        else % if we are missing events we cant interpolate, return empty value.
+            inputData(i).int1Signal = [];
+            inputData(i).int9Signal = [];
+            inputData(i).pumpingRate = [];
 
         end
 

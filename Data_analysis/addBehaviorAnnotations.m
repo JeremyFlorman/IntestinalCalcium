@@ -63,10 +63,16 @@ if ~isempty(sheets)
         end
 
         smoothedPumping = smoothdata(pumpingRate, "movmean", 30);
-
+        
+        %% Handle cases where worm crawls off plate / cant focus on grinder
         if strcmp(wormDataFile.name, '260128_zfis178_wildtype-noFood-0min_7_wormdata.mat')
             pumpingRate(6200:end) = nan;
         end
+
+        if strcmp(wormDataFile.name, '260218_zfis178_tph-1-noFood-0min_1_wormdata.mat')
+            pumpingRate(4800:end) = nan;
+        end
+        %%
 
         wormdata.pumpTimes = pumpFrames;
         wormdata.pumpingRate = pumpingRate;
@@ -107,8 +113,8 @@ if ~isempty(sheets)
             pumpingRate(6200:end) = nan;
         end
 
-        wormdata.pumpTimes = pumpFrames;
-        wormdata.pumpingRate = pumpingRate;
+        wormdata.pumpKymoTimes = pumpFrames;
+        wormdata.pumpingKymoRate = pumpingRate;
 
         save(fullfile(wormDataFile(1).folder, wormDataFile(1).name), 'wormdata');
         figure()
