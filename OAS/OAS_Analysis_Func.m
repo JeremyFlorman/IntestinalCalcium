@@ -1019,7 +1019,7 @@ for nf =startIndex:length(imgDir)
     hold off
     xlim([0 time(end)])
     title(gca, 'Velocity')
-    ylabel(gca,'Steps/sec')
+    ylabel(gca,'mm/sec')
     %     xlabel(gca,'Time (min)')
     ax.TickLength = [0.005 0.005];
     box off
