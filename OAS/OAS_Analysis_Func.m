@@ -1109,10 +1109,11 @@ for nf =startIndex:length(imgDir)
 
             % copy summary plots
             [statussummaryplot,~,~]=copyfile(summaryPlotName, serverLocation);
-
-            % copy summary plots
-            [statusvideoplot,~,~]=copyfile(videopath, serverLocation);
-
+            
+            if videostuff == 1
+                % copy summary plots
+                [statusvideoplot,~,~]=copyfile(videopath, serverLocation);
+            end
 
         elseif isremote == 1  % if working with remote files, moved analyzed results back to where we found them.
             clear('img')
