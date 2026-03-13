@@ -1,4 +1,4 @@
-folder  = 'Z:\OAS\foodEncounter\wildtype-noFood-0minCycleStart\260209_zfis178_wildtype-noFood-0min_1\2026_02_09_14_09_10_flircamera_behavior';
+folder  = 'C:\Users\Alkem\Desktop\260311_zfis178_pezo-1-7patch-r12mm-05ul-30fps\2026_03_11_13_51_53_flircamera_behavior';
 
 d  = dir(fullfile(folder, '*videoEvents.mat'));
 h5 = dir(fullfile(folder, '*.h5'));
@@ -168,35 +168,83 @@ set(ax, 'YDir', 'normal');
 ylim(ax, [1 canvasHeight]);
 xlim(ax, [1 canvasWidth]);
 
+% 
+% % Convert axis labels from pixels to mm
+% mmTickStep = 2;
+% xlim_mm = ax.XLim / pxPerMm;
+% ylim_mm = ax.YLim / pxPerMm;
+% 
+% % Choose round-number mm ticks within the visible range
+% xticks_mm = ceil(xlim_mm(1)/mmTickStep)*mmTickStep : ...
+%     mmTickStep : ...
+%     floor(xlim_mm(2)/mmTickStep)*mmTickStep;
+% 
+% yticks_mm = ceil(ylim_mm(1)/mmTickStep)*mmTickStep : ...
+%     mmTickStep : ...
+%     floor(ylim_mm(2)/mmTickStep)*mmTickStep;
+% 
+% % Convert back to pixels for positioning
+% xticks_px = xticks_mm * pxPerMm;
+% yticks_px = yticks_mm * pxPerMm;
+% 
+% set(gca, ...
+%     'XTick', xticks_px, ...
+%     'YTick', yticks_px, ...
+%     'XTickLabel', arrayfun(@num2str, xticks_mm, 'UniformOutput', false), ...
+%     'YTickLabel', arrayfun(@num2str, yticks_mm, 'UniformOutput', false));
+% 
+% % xlabel('mm');
+% % ylabel('mm');
+% 
+% % ax.XAxis.Visible = 1;
+% % ax.YAxis.Visible = 1;
+% 
+% hold(ax, 'off');
 
-% Convert axis labels from pixels to mm
-mmTickStep = 2;
-xlim_mm = ax.XLim / pxPerMm;
-ylim_mm = ax.YLim / pxPerMm;
+%% Define food patches
 
-% Choose round-number mm ticks within the visible range
-xticks_mm = ceil(xlim_mm(1)/mmTickStep)*mmTickStep : ...
-    mmTickStep : ...
-    floor(xlim_mm(2)/mmTickStep)*mmTickStep;
+% ROIs = struct();
+nPatches = 6;
+for i = 1:nPatches
+    disp(['Draw Circle ' num2str(i) ' of ' num2str(nPatches) ...
+        ' - Double Click When Done'])
+    c = drawcircle;
+    wait(c)
+    ROIs(i).Center = c.Center;
+    ROIs(i).Radius = c.Radius;
+    ROIs(i).Vertices = c.Vertices;
+end
 
-yticks_mm = ceil(ylim_mm(1)/mmTickStep)*mmTickStep : ...
-    mmTickStep : ...
-    floor(ylim_mm(2)/mmTickStep)*mmTickStep;
+%% Set up query points for ROI 
 
-% Convert back to pixels for positioning
-xticks_px = xticks_mm * pxPerMm;
-yticks_px = yticks_mm * pxPerMm;
+xq= x_px_center(inc) + offsetX; % define x querry points
+xnan = find(isnan(xq)); % identify nans
+xq(xnan) = xq(xnan+1); %replace nan points with subsequent values
 
-set(gca, ...
-    'XTick', xticks_px, ...
-    'YTick', yticks_px, ...
-    'XTickLabel', arrayfun(@num2str, xticks_mm, 'UniformOutput', false), ...
-    'YTickLabel', arrayfun(@num2str, yticks_mm, 'UniformOutput', false));
+yq = y_px_center(inc) + offsetY; % define y querry points
+ynan = find(isnan(yq)); % identify nans
+yq(ynan) = yq(ynan+1); %replace nan points with subsequent values
 
-% xlabel('mm');
-% ylabel('mm');
+nPoints = numel(xq);
+inPoints = nan(nPoints, nPatches);
 
-% ax.XAxis.Visible = 1;
-% ax.YAxis.Visible = 1;
 
-hold(ax, 'off');
+%% Compute points inside patches
+for i =1:numel(ROIs)
+    
+    c = drawcircle('Center', ROIs(i).Center,'Radius', ...
+        (ROIs(i).Radius)+pxPerMm/2); % dilate circle by 1mm 
+
+    inPoints(1:nPoints, i) = inROI(c, xq, yq);
+end
+
+allIn = any(inPoints, 2);
+
+figure()
+plot(xq(allIn), yq(allIn), 'yo')
+hold on
+plot(xq(~allIn), yq(~allIn), 'rx')
+
+
+    
+
