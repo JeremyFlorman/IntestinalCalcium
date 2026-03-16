@@ -221,13 +221,46 @@ for i = 1:length(inputData)
     % Subtract Background  in axial signal
     backgroundMatrix = repmat(bkgSignal,1,size(inputData(i).autoAxialSignal,2));
     axsig = inputData(i).autoAxialSignal-backgroundMatrix;
-
+    %% AutoFix Axial Signal
     if settings.autoFixAxialSignal && ~isfield(inputData(i), 'noAutoFix')
         toQuerry = settings.axSigToQuerry;
         inputData(i).autoAxialSignal = autoFixSignal(axsig,toQuerry);
     else
         inputData(i).autoAxialSignal = axsig;
     end
+
+    % sc = nan(size(axsig,1)-1,1);
+    % if settings.autoFixAxialSignal && ~isfield(inputData(i), 'noAutoFix')
+    %     toQuerry = settings.axSigToQuerry;
+    %     for frameIdx = 2:size(axsig,1)
+    %         % prevTrace = axsig(frameIdx-1, :);
+    %         currentTrace = axsig(frameIdx, :);
+    % 
+    %         % [totalScore, ~] = scoreOrientation(prevTrace, currentTrace);
+    % 
+    % 
+    %         N = size(axsig,2);
+    %         vf = var(currentTrace(1:floor(toQuerry*N))); % "Anterior" variance
+    %         vl = var(currentTrace(floor(toQuerry*N):N)); % "Posterior" variance
+    % 
+    %         varianceScore = vl - vf; % variance score
+    % 
+    % 
+    %         sc(frameIdx) = varianceScore;
+    %         if varianceScore<25 %totalScore < -0.5
+    %             axsig(frameIdx, 1:size(axsig,2)) = fliplr(currentTrace);
+    %             % figure(); plot(1:200, fliplr(currentTrace),1:200, prevTrace)
+    %         else
+    %             axsig(frameIdx, 1:size(axsig,2)) = currentTrace;
+    %         end
+    %     end
+    %     % axsig = fliplr(axsig);
+    % end
+    % 
+    % inputData(i).autoAxialSignal = axsig;
+
+
+
 
     if normAx == 1
         as = inputData(i).autoAxialSignal;

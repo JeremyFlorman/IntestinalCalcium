@@ -1,7 +1,7 @@
-function  [totalScore, metrics] = scoreOrientation(prevTrace, tt)
+function  [totalScore, metrics] = scoreOrientation(prevTrace, currentTrace)
 %scoreOrientation Orientation scoring for straightened worm midline signals
 % PURPOSE
-%   Compare frame N ("tt") to frame N-1 ("prevTrace") and compute:
+%   Compare frame N ("currentTrace") to frame N-1 ("prevTrace") and compute:
 %       1) raw profile correlation score
 %       2) spatial gradient correlation score
 %       3) posterior-vs-anterior variance score
@@ -13,9 +13,9 @@ function  [totalScore, metrics] = scoreOrientation(prevTrace, tt)
 %
 % USAGE
 %   if i > 1 && ~isempty(prevTrace)
-%       [totalScore, metrics] = scoreOrientation(prevTrace, tt);
+%       [totalScore, metrics] = scoreOrientation(prevTrace, currentTrace);
 %       if totalScore < -0.05
-%           tt = fliplr(tt);   % flip current row
+%           currentTrace = fliplr(currentTrace);   % flip current row
 %       end
 %   end
 %
@@ -28,7 +28,7 @@ function  [totalScore, metrics] = scoreOrientation(prevTrace, tt)
 % Orientation scoring for straightened worm midline signals
 %
 % PURPOSE
-%   Compare frame N ("tt") to frame N-1 ("prevTrace") and compute:
+%   Compare frame N ("currentTrace") to frame N-1 ("prevTrace") and compute:
 %       1) raw profile correlation score
 %       2) spatial gradient correlation score
 %       3) posterior-vs-anterior variance score
@@ -57,9 +57,9 @@ function  [totalScore, metrics] = scoreOrientation(prevTrace, tt)
 
 % ----- force row vectors -----
 prevTrace = prevTrace(:)';
-tt        = tt(:)';
+currentTrace        = currentTrace(:)';
 
-if numel(prevTrace) ~= numel(tt)
+if numel(prevTrace) ~= numel(currentTrace)
     error('prevTrace and tt must have the same number of samples.');
 end
 
@@ -69,8 +69,8 @@ smoothWin = 3;      % light smoothing before gradient calculation
 
 % ----- 1) RAW PROFILE CORRELATION SCORE -----
 % Compare current frame as-is vs flipped, relative to previous frame.
-sameRaw = normalizedDotPairwise(prevTrace, tt);
-flipRaw = normalizedDotPairwise(prevTrace, fliplr(tt));
+sameRaw = normalizedDotPairwise(prevTrace, currentTrace);
+flipRaw = normalizedDotPairwise(prevTrace, fliplr(currentTrace));
 
 % Positive rawScore = keep as-is
 % Negative rawScore = flipped version matches better
@@ -79,7 +79,7 @@ rawScore = sameRaw - flipRaw;
 % ----- 2) SPATIAL GRADIENT CORRELATION SCORE -----
 % Smooth a bit first so diff() is not dominated by sample-to-sample noise.
 prevSm = movmean(prevTrace, smoothWin, 'omitnan');
-ttSm   = movmean(tt,        smoothWin, 'omitnan');
+ttSm   = movmean(currentTrace,        smoothWin, 'omitnan');
 
 gPrev = diff(prevSm);
 gSame = diff(ttSm);
@@ -94,11 +94,11 @@ gradScore = sameGrad - flipGrad;
 
 % ----- 3) VARIANCE ASYMMETRY SCORE -----
 % Posterior tends to be more variable/brighter in your intestinal signal.
-n = numel(tt);
+n = numel(currentTrace);
 k = max(3, round(endFrac * n));
 
-head = tt(1:k);
-tail = tt(end-k+1:end);
+head = currentTrace(1:k);
+tail = currentTrace(end-k+1:end);
 
 head = head(~isnan(head));
 tail = tail(~isnan(tail));
