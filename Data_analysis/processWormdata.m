@@ -665,7 +665,9 @@ for i = 1:length(inputData)
         if ~isempty(inputData(i).stimTimes) && ~isempty(inputData(i).peakLoc)
 
             idxFood = inputData(i).stimTimes(1); %Event 1
-            idxSpike = inputData(i).peakLoc(1); % Event 2
+            idxSpikePostFood = find(inputData(i).peakLoc>idxFood, 1); % Event 2
+            idxSpike = inputData(i).peakLoc(idxSpikePostFood);
+
             warpedSignal = interpolateKymograph(inputData(i).autoAxialSignal, idxFood, idxSpike); % piecewise interpolation of kymograph signal based on two events
 
             if ~all(isnan(warpedSignal))
@@ -679,7 +681,7 @@ for i = 1:length(inputData)
 
             if isfield(inputData(i), 'pumpingRate') && ~isempty(inputData(i).pumpingRate)
                 warpedPumping = interpolateKymograph(inputData(i).pumpingRate, idxFood, idxSpike);
-                inputData(i).pumpingRate = warpedPumping;
+                inputData(i).interpolatedPumping = warpedPumping;
             end
         else % if we are missing events we cant interpolate, return empty value.
             inputData(i).int1Signal = [];
@@ -834,7 +836,7 @@ end
 
 
 
-    disp('Spike Processing Complete')
+    % disp('Spike Processing Complete')
 end
 
 %% Align Traces to Events
