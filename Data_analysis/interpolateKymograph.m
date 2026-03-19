@@ -20,6 +20,10 @@ end
 
 % trace = data.autoAxialSignal;
 % idxFood = data.stimTimes(1);
+idxStart = find(~isnan(trace(:,1)), 1, 'first');
+idxEnd = find(~isnan(trace(:,1)), 1, 'last');
+trace = trace(idxStart:idxEnd,:);
+
 [T, P] = size(trace);
 
 if ~isempty(idxSpike) && ~isnan(idxSpike) && idxSpike<T
