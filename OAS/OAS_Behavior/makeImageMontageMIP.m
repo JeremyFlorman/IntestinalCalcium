@@ -1,4 +1,4 @@
-folder  = 'C:\Users\Alkem\Desktop\260311_zfis178_pezo-1-7patch-r12mm-05ul-30fps\2026_03_11_13_51_53_flircamera_behavior';
+folder  = 'E:\260323_zfis178_wildtype-7patch-r12mm-05ul-30fps\2026_03_23_12_50_57_flircamera_behavior';
 
 d  = dir(fullfile(folder, '*videoEvents.mat'));
 h5 = dir(fullfile(folder, '*.h5'));
@@ -66,7 +66,7 @@ combinedImage = inf(canvasHeight, canvasWidth);  % start "very bright" (for min 
 h5 = h5(idx);
 
 frameOffset = 0;
-stepSize    = 75;   % your subsampling
+stepSize    = 300;   %Subsampling
 
 for j = 1:numel(h5)
     h5file = fullfile(h5(j).folder, h5(j).name);
@@ -121,15 +121,20 @@ bgFill     = median(finiteVals, 'omitnan');
 combinedImage(~isfinite(combinedImage)) = bgFill;
 
 
-%% 8) Visualize with trajectory overlay (using same pixel coords)
+%% 5) Visualize with trajectory overlay (using same pixel coords)
 [pth, ~, ~] = fileparts(folder);
 matdir = dir([pth '\*wormdata.mat' ]);
 
 % save combined image at full resolution w/o overlays
 % img_disp = mat2gray(combinedImage, [prctile(finiteVals,1)  prctile(finiteVals,99)]);
 % imwrite(img_disp, strrep(fullfile(matdir.folder, matdir.name),'wormdata.mat','combinedImage.png'));
-
+if numel(matdir) == 1
 load(fullfile(matdir(1).folder, matdir(1).name))
+else 
+    [dataFile, dataPath]= uigetfile([pth '\*wormdata.mat' ]);
+    load(fullfile(dataPath, dataFile))
+end
+
 peakLoc = wormdata.peakLoc;
 
 bulkSignal = smoothdata(wormdata.bulkSignal-wormdata.backgroundSignal, 'movmean', 60);
@@ -139,26 +144,30 @@ int1Signal = int1Signal - wormdata.backgroundSignal;    % subtract background
 int9Signal = int9Signal - wormdata.backgroundSignal;
 
 
-colorSignal = int1Signal; % signal used for color of scatter plot markers
-sizeSignal = abs(int1Signal-5); % signal used for size of scatter plot markers
+colorSignal = int9Signal; % signal used for color of scatter plot markers
+sizeSignal = repmat(5, size(colorSignal)); % signal used for size of scatter plot markers
+% sizeSignal(sizeSignal<5) = 1;
 inc   = 1:5:nEvents; % subsample for faster plotting
 
 figure;
 ax = gca;
-s = scatter(ax, x_px_center(inc) + offsetX, y_px_center(inc) + offsetY,sizeSignal(inc),colorSignal(inc), 'o', 'filled');
+xSubset = x_px_center(inc) + offsetX;
+ySubset = y_px_center(inc) + offsetY;
+
+s = scatter(ax,xSubset,ySubset,sizeSignal(inc),colorSignal(inc), 'o', 'filled');
 colormap(ax, turbo);
-ax.CLim = [0 60];
+ax.CLim = [0 10];
 
 view(2);
 grid off
 freezeColors(ax)
 hold(ax, 'on');
 
-scatter(x_px_center(peakLoc)+offsetX, y_px_center(peakLoc)+offsetY+150, 20, 'yv','filled', 'MarkerEdgeColor', 'k')
+% scatter(x_px_center(peakLoc)+offsetX, y_px_center(peakLoc)+offsetY+150, 20, 'yv','filled', 'MarkerEdgeColor', 'k')
 
 
 % cb = colorbar;
-% cb.Label.String = 'Time (min)';
+% cb.Label.String = 'GCaMP Signal (a.u.)';
 % cb.Label.Rotation = -90;
 imh = imshow(combinedImage, [prctile(finiteVals,1) prctile(finiteVals,99)]);
 uistack(imh, 'bottom');
@@ -168,47 +177,47 @@ set(ax, 'YDir', 'normal');
 ylim(ax, [1 canvasHeight]);
 xlim(ax, [1 canvasWidth]);
 
-% 
-% % Convert axis labels from pixels to mm
-% mmTickStep = 2;
-% xlim_mm = ax.XLim / pxPerMm;
-% ylim_mm = ax.YLim / pxPerMm;
-% 
-% % Choose round-number mm ticks within the visible range
-% xticks_mm = ceil(xlim_mm(1)/mmTickStep)*mmTickStep : ...
-%     mmTickStep : ...
-%     floor(xlim_mm(2)/mmTickStep)*mmTickStep;
-% 
-% yticks_mm = ceil(ylim_mm(1)/mmTickStep)*mmTickStep : ...
-%     mmTickStep : ...
-%     floor(ylim_mm(2)/mmTickStep)*mmTickStep;
-% 
-% % Convert back to pixels for positioning
-% xticks_px = xticks_mm * pxPerMm;
-% yticks_px = yticks_mm * pxPerMm;
-% 
-% set(gca, ...
-%     'XTick', xticks_px, ...
-%     'YTick', yticks_px, ...
-%     'XTickLabel', arrayfun(@num2str, xticks_mm, 'UniformOutput', false), ...
-%     'YTickLabel', arrayfun(@num2str, yticks_mm, 'UniformOutput', false));
-% 
-% % xlabel('mm');
-% % ylabel('mm');
-% 
-% % ax.XAxis.Visible = 1;
-% % ax.YAxis.Visible = 1;
-% 
-% hold(ax, 'off');
+
+% Convert axis labels from pixels to mm
+mmTickStep = 2;
+xlim_mm = ax.XLim / pxPerMm;
+ylim_mm = ax.YLim / pxPerMm;
+
+% Choose round-number mm ticks within the visible range
+xticks_mm = ceil(xlim_mm(1)/mmTickStep)*mmTickStep : ...
+    mmTickStep : ...
+    floor(xlim_mm(2)/mmTickStep)*mmTickStep;
+
+yticks_mm = ceil(ylim_mm(1)/mmTickStep)*mmTickStep : ...
+    mmTickStep : ...
+    floor(ylim_mm(2)/mmTickStep)*mmTickStep;
+
+% Convert back to pixels for positioning
+xticks_px = xticks_mm * pxPerMm;
+yticks_px = yticks_mm * pxPerMm;
+
+set(gca, ...
+    'XTick', xticks_px, ...
+    'YTick', yticks_px, ...
+    'XTickLabel', arrayfun(@num2str, xticks_mm, 'UniformOutput', false), ...
+    'YTickLabel', arrayfun(@num2str, yticks_mm, 'UniformOutput', false));
+
+xlabel('');
+ylabel('');
+
+ax.XAxis.Visible = 0;
+ax.YAxis.Visible = 0;
+
+hold(ax, 'off');
 
 %% Define food patches
 
 % ROIs = struct();
-nPatches = 6;
+nPatches = 2;
 for i = 1:nPatches
     disp(['Draw Circle ' num2str(i) ' of ' num2str(nPatches) ...
         ' - Double Click When Done'])
-    c = drawcircle;
+    c = drawcircle('Color',[0.6350 0.0780 0.1840], FaceAlpha=0, LineWidth=1);
     wait(c)
     ROIs(i).Center = c.Center;
     ROIs(i).Radius = c.Radius;
@@ -233,17 +242,18 @@ inPoints = nan(nPoints, nPatches);
 for i =1:numel(ROIs)
     
     c = drawcircle('Center', ROIs(i).Center,'Radius', ...
-        (ROIs(i).Radius)+pxPerMm/2); % dilate circle by 1mm 
+        ROIs(i).Radius+pxPerMm/2, 'Color',[0.9059    0.1608    0.5412], ...
+        FaceAlpha=0, LineWidth=1.5, MarkerSize=1); % dilate circle by 1mm 
 
     inPoints(1:nPoints, i) = inROI(c, xq, yq);
 end
 
 allIn = any(inPoints, 2);
 
-figure()
-plot(xq(allIn), yq(allIn), 'yo')
-hold on
-plot(xq(~allIn), yq(~allIn), 'rx')
+% figure()
+% plot(xq(allIn), yq(allIn), 'yo')
+% hold on
+% plot(xq(~allIn), yq(~allIn), 'rx')
 
 
     
