@@ -268,7 +268,15 @@ for q = 1:length(genotypes)
         plotOverlay(mtdata,settings,labelXAxis)
         title(['\it' mtdata(1).genotype],'FontSize', 8)
     end
+    writeStats = 0;
+    if writeStats == 1
+        % writeGroupStats(mtdata, q, settings)
+        bulkSig = horzcat(mtdata(1:5).bulkSignal);
+        outname = [settings.workingDir '\' mtdata(1).genotype '_bulkSignal.csv'];
 
+        writematrix(bulkSig, outname);
+
+    end
 end
 
 

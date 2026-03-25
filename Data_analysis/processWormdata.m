@@ -182,7 +182,7 @@ if saveWormdata2workspace == 1
         dataName = strrep(dataName, ';', '');
 
         assignin("base", [dataName 'Data'], mtdata)
-        assignin("base", [dataName '_ControlData'], wtdata)
+        % assignin("base", [dataName '_ControlData'], wtdata)
     else
         assignin("base", 'SingleSpikeData', mtdata);
     end
@@ -221,13 +221,46 @@ for i = 1:length(inputData)
     % Subtract Background  in axial signal
     backgroundMatrix = repmat(bkgSignal,1,size(inputData(i).autoAxialSignal,2));
     axsig = inputData(i).autoAxialSignal-backgroundMatrix;
-
+    %% AutoFix Axial Signal
     if settings.autoFixAxialSignal && ~isfield(inputData(i), 'noAutoFix')
         toQuerry = settings.axSigToQuerry;
         inputData(i).autoAxialSignal = autoFixSignal(axsig,toQuerry);
     else
         inputData(i).autoAxialSignal = axsig;
     end
+
+    % sc = nan(size(axsig,1)-1,1);
+    % if settings.autoFixAxialSignal && ~isfield(inputData(i), 'noAutoFix')
+    %     toQuerry = settings.axSigToQuerry;
+    %     for frameIdx = 2:size(axsig,1)
+    %         % prevTrace = axsig(frameIdx-1, :);
+    %         currentTrace = axsig(frameIdx, :);
+    % 
+    %         % [totalScore, ~] = scoreOrientation(prevTrace, currentTrace);
+    % 
+    % 
+    %         N = size(axsig,2);
+    %         vf = var(currentTrace(1:floor(toQuerry*N))); % "Anterior" variance
+    %         vl = var(currentTrace(floor(toQuerry*N):N)); % "Posterior" variance
+    % 
+    %         varianceScore = vl - vf; % variance score
+    % 
+    % 
+    %         sc(frameIdx) = varianceScore;
+    %         if varianceScore<25 %totalScore < -0.5
+    %             axsig(frameIdx, 1:size(axsig,2)) = fliplr(currentTrace);
+    %             % figure(); plot(1:200, fliplr(currentTrace),1:200, prevTrace)
+    %         else
+    %             axsig(frameIdx, 1:size(axsig,2)) = currentTrace;
+    %         end
+    %     end
+    %     % axsig = fliplr(axsig);
+    % end
+    % 
+    % inputData(i).autoAxialSignal = axsig;
+
+
+
 
     if normAx == 1
         as = inputData(i).autoAxialSignal;
@@ -632,16 +665,21 @@ for i = 1:length(inputData)
         if ~isempty(inputData(i).stimTimes) && ~isempty(inputData(i).peakLoc)
 
             idxFood = inputData(i).stimTimes(1); %Event 1
-            idxSpike = inputData(i).peakLoc(1); % Event 2
-            warpedSignal = interpolateKymograph(inputData(i).autoAxialSignal, idxFood, idxSpike); % piecewise interpolation of kymograph signal based on two events
+            idxSpikePostFood = find(inputData(i).peakLoc>idxFood, 1); % Event 2
+            idxSpike = inputData(i).peakLoc(idxSpikePostFood);
 
+            warpedSignal = interpolateKymograph(inputData(i).autoAxialSignal, idxFood, idxSpike); % piecewise interpolation of kymograph signal based on two events
+            warpedBulk = interpolateKymograph(inputData(i).bulkSignal, idxFood, idxSpike);
+            
             if ~all(isnan(warpedSignal))
                 [int1Signal, int9Signal] = extractCellSignal(warpedSignal);
                 inputData(i).int1Signal = int1Signal;
                 inputData(i).int9Signal = int9Signal;
-            else % if there is no peak just return a vector of NaNs
-                inputData(i).int1Signal = warpedSignal;
-                inputData(i).int9Signal = warpedSignal;
+                inputData(i).autoAxialSignal = warpedSignal;
+                inputData(i).bulkSignal = warpedBulk;
+            % else % if there is no peak just return a vector of NaNs
+            %     inputData(i).int1Signal = warpedSignal;
+            %     inputData(i).int9Signal = warpedSignal;
             end
 
             if isfield(inputData(i), 'pumpingRate') && ~isempty(inputData(i).pumpingRate)
@@ -801,7 +839,7 @@ end
 
 
 
-    disp('Spike Processing Complete')
+    % disp('Spike Processing Complete')
 end
 
 %% Align Traces to Events

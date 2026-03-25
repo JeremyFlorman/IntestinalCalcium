@@ -205,15 +205,17 @@ elseif plotcontrol == 0
         line([avgint avgint], ax.YLim, 'LineStyle', ':', 'Color', 'k','LineWidth',1)
 
 
-        if labelXAxis == 1
-            xlabel('Current Interval (s)')
-        end
 
-        if labelYAxis == 1
-            ylabel('Previous Interval (s)')
-        elseif labelYAxis == 0
-            yticklabels([]);
-        end
+    end
+
+    if labelXAxis == 1
+        xlabel('Current Interval (s)')
+    end
+
+    if labelYAxis == 1
+        ylabel('Previous Interval (s)')
+    elseif labelYAxis == 0
+        % yticklabels([]);
     end
 
 
