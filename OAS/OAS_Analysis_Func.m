@@ -469,6 +469,18 @@ for nf =startIndex:length(imgDir)
                     % Precompute ndgrid
                     [Xgrid, Ygrid] = ndgrid(1:size(GFP, 1), 1:size(GFP, 2));
 
+                    %% 
+                    xdiff = diff(Xgrid,1,1);
+                    ydiff = diff(Ygrid, 1, 2);
+
+                    if ~all(xdiff(:) == 1)
+                        assignin('base','badXgrid', Xgrid)
+                    end
+
+                    if ~all(ydiff(:) == 1)
+                        assignin('base','badYgrid', Ygrid)
+                    end
+
                     % Precompute interpolants once
                     GFP_interp = griddedInterpolant(Xgrid, Ygrid, GFP, 'linear', 'nearest');
                     mCh_interp = griddedInterpolant(Xgrid, Ygrid, mCh, 'linear', 'nearest');
