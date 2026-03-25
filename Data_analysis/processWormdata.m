@@ -669,19 +669,22 @@ for i = 1:length(inputData)
             idxSpike = inputData(i).peakLoc(idxSpikePostFood);
 
             warpedSignal = interpolateKymograph(inputData(i).autoAxialSignal, idxFood, idxSpike); % piecewise interpolation of kymograph signal based on two events
-
+            warpedBulk = interpolateKymograph(inputData(i).bulkSignal, idxFood, idxSpike);
+            
             if ~all(isnan(warpedSignal))
                 [int1Signal, int9Signal] = extractCellSignal(warpedSignal);
                 inputData(i).int1Signal = int1Signal;
                 inputData(i).int9Signal = int9Signal;
-            else % if there is no peak just return a vector of NaNs
-                inputData(i).int1Signal = warpedSignal;
-                inputData(i).int9Signal = warpedSignal;
+                inputData(i).autoAxialSignal = warpedSignal;
+                inputData(i).bulkSignal = warpedBulk;
+            % else % if there is no peak just return a vector of NaNs
+            %     inputData(i).int1Signal = warpedSignal;
+            %     inputData(i).int9Signal = warpedSignal;
             end
 
             if isfield(inputData(i), 'pumpingRate') && ~isempty(inputData(i).pumpingRate)
                 warpedPumping = interpolateKymograph(inputData(i).pumpingRate, idxFood, idxSpike);
-                inputData(i).interpolatedPumping = warpedPumping;
+                inputData(i).pumpingRate = warpedPumping;
             end
         else % if we are missing events we cant interpolate, return empty value.
             inputData(i).int1Signal = [];
