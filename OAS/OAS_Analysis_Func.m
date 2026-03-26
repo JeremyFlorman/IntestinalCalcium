@@ -475,15 +475,19 @@ for nf =startIndex:length(imgDir)
 
                     if ~all(xdiff(:) == 1)
                         assignin('base','badXgrid', Xgrid)
+                        assignin('base','badYgrid', Ygrid)
+                        assignin('base','badGFP', GFP)
                     end
 
                     if ~all(ydiff(:) == 1)
                         assignin('base','badYgrid', Ygrid)
+                        assignin('base','badXgrid', Xgrid)
+                        assignin('base','badGFP', GFP)
                     end
 
                     % Precompute interpolants once
-                    GFP_interp = griddedInterpolant(Xgrid, Ygrid, GFP, 'linear', 'nearest');
-                    mCh_interp = griddedInterpolant(Xgrid, Ygrid, mCh, 'linear', 'nearest');
+                    GFP_interp = griddedInterpolant({1:size(GFP,1), 1:size(GFP,2)}, GFP, 'linear', 'nearest');
+                    mCh_interp = griddedInterpolant({1:size(GFP,1), 1:size(GFP,2)}, mCh, 'linear', 'nearest');
 
 
                     % Define the desired number of evenly spaced samples
@@ -745,6 +749,7 @@ for nf =startIndex:length(imgDir)
                                 %% Velocity
                                 hArea = plot(time(1:i),smoothdata(velocity(1:i),'gaussian', 30), 'Parent', velAx);
                                 xlim([0 time(end)]);
+                                ylim([0 0.4])
                                 ylabel(velAx, 'Velocity (mm / sec)');
                                 xlabel(velAx,'Time (min)');
                                 velAx.TickLength = [0.005 0.005];
