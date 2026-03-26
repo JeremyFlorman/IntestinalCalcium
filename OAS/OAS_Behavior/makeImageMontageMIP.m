@@ -128,9 +128,9 @@ matdir = dir([pth '\*wormdata.mat' ]);
 % save combined image at full resolution w/o overlays
 % img_disp = mat2gray(combinedImage, [prctile(finiteVals,1)  prctile(finiteVals,99)]);
 % imwrite(img_disp, strrep(fullfile(matdir.folder, matdir.name),'wormdata.mat','combinedImage.png'));
-if numel(matdir) == 1
-load(fullfile(matdir(1).folder, matdir(1).name))
-else 
+if isscalar(matdir)
+    load(fullfile(matdir(1).folder, matdir(1).name))
+else
     [dataFile, dataPath]= uigetfile([pth '\*wormdata.mat' ]);
     load(fullfile(dataPath, dataFile))
 end
@@ -224,13 +224,13 @@ for i = 1:nPatches
     ROIs(i).Vertices = c.Vertices;
 end
 
-%% Set up query points for ROI 
+%% Set up query points for ROI
 
-xq= x_px_center(inc) + offsetX; % define x querry points
+xq= x_px_center + offsetX; % define x querry points
 xnan = find(isnan(xq)); % identify nans
 xq(xnan) = xq(xnan+1); %replace nan points with subsequent values
 
-yq = y_px_center(inc) + offsetY; % define y querry points
+yq = y_px_center + offsetY; % define y querry points
 ynan = find(isnan(yq)); % identify nans
 yq(ynan) = yq(ynan+1); %replace nan points with subsequent values
 
@@ -238,23 +238,219 @@ nPoints = numel(xq);
 inPoints = nan(nPoints, nPatches);
 
 
-%% Compute points inside patches
+% Compute points inside patches
 for i =1:numel(ROIs)
-    
+
     c = drawcircle('Center', ROIs(i).Center,'Radius', ...
         ROIs(i).Radius+pxPerMm/2, 'Color',[0.9059    0.1608    0.5412], ...
-        FaceAlpha=0, LineWidth=1.5, MarkerSize=1); % dilate circle by 1mm 
+        FaceAlpha=0, LineWidth=1.5, MarkerSize=1); % dilate circle by 1mm
 
     inPoints(1:nPoints, i) = inROI(c, xq, yq);
 end
 
 allIn = any(inPoints, 2);
+wormdata.onFoodVector = allIn;
+wormdata.patchROIs = ROIs;
+
+% save()
 
 % figure()
 % plot(xq(allIn), yq(allIn), 'yo')
 % hold on
 % plot(xq(~allIn), yq(~allIn), 'rx')
+%%
 
 
+
+[int1Clipped, ~] = clipSpikes(wormdata.peakLoc, 750, int1Signal);
+[int9Clipped, ~] = clipSpikes(wormdata.peakLoc, 750, int9Signal);
+
+toClip = 1;
+if toClip == 1
+    int1Plotting = int1Clipped;
+    int9Plotting = int9Clipped;
+else
+    int1Plotting = int1Signal;
+    int9Plotting = int9Signal;
+end
+
+
+
+int1onFood = int1Plotting;
+int1onFood(~allIn) = nan;
+
+int1offFood = int1Plotting;
+int1offFood(allIn) = nan;
+
+int9onFood = int9Plotting;
+int9onFood(~allIn) = nan;
+
+int9offFood = int9Plotting;
+int9offFood(allIn) = nan;
+
+time = linspace(0, length(bulkSignal)/30/60, length(bulkSignal));
+
+[onFood, offFood] = transitionPts(allIn);
+
+
+% annotate food patches
+xpatch = nan(4, length(onFood));
+for i=1:length(onFood)
+    s = onFood(i,1);
+    e = onFood(i,2);
+    xpatch(1:4, i) = [s s e e];
+end
+xpatch = xpatch/30/60;
+yhi = max([int1Plotting int9Plotting], [],'all', 'omitmissing')*1.1;
+ypatch = repmat([0; yhi; yhi; 0],1 ,length(onFood));
+
+if toClip == 0
+    histYLims = [0 0.25];
+    histXLims = [0 80];
+    plotLims = [0 yhi];
+elseif toClip == 1
+    histYLims = [0 0.25];
+    histXLims = [0 80];
+    plotLims = [0 yhi];
+end
+histBins = 0:2:100;
+
+figure(Color=[1 1 1], ...
+    Position=[2397 -3.8000 1.1104e+03 392.8000]);
+
+tl = tiledlayout(2,3, 'TileSpacing','tight', 'Padding','compact');
+
+% Int1 Signal
+nexttile([1 2])
+plot(time, int1Plotting, 'k')
+
+
+p = patch(xpatch, ypatch, [0.93 0.69 0.13], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
+uistack(p, 'bottom');
+ylim(plotLims)
+ylabel('Int1 Signal');
+xlabel('Time (min)')
+box off
+
+
+nexttile([1 1])
+h1 = histogram(int1onFood,'BinEdges', histBins, 'Normalization','probability','EdgeAlpha',0.25);
+hold on
+h2 = histogram(int1offFood,'BinEdges', histBins,'Normalization','probability','EdgeAlpha',0.25);
+hold off
+legend();
+
+ylim(histYLims)
+xlim(histXLims)
+ylabel('Probability');
+xlabel('Int1 Signal')
+box off
+
+
+nexttile([1 2])
+plot(time, int9Plotting, 'k')
+p = patch(xpatch, ypatch, [0.93 0.69 0.13], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
+uistack(p, 'bottom');
+ylim(plotLims)
+ylabel('Int9 Signal');
+xlabel('Time (min)')
+box off
+
+nexttile([1 1])
+
+h3 =histogram(int9onFood,'BinEdges', histBins,  'Normalization','probability', 'EdgeAlpha',0.25);
+hold on
+h4 =histogram(int9offFood,'BinEdges', histBins,  'Normalization','probability','EdgeAlpha',0.25);
+hold off
+legend();
+ylim(histYLims)
+xlim(histXLims)
+ylabel('Probability');
+xlabel('Int9 Signal')
+box off
+%%
+
+
+% [onFood offFood]
+
+
+% plot(time, bulkSignal, time, clippedSignal)
+
+function [clippedSignal, spikeFlags] = clipSpikes(spikes, windowFrames, signal)
+
+spikeFlags = true(length(signal), 1);
+
+for i =1:length(spikes)
+    preSpikeIdx = spikes(i)-floor(windowFrames*0.33);
+    postSpikeIdx = spikes(i)+floor(windowFrames*0.66);
+
+    spikeFlags(preSpikeIdx:postSpikeIdx, 1) = 0;
+end
+
+clippedSignal = signal;
+clippedSignal(~spikeFlags) = nan;
+end
+
+
+
+
+function [onBouts, offBouts] = transitionPts(foodVector)
+onFood = [];
+offFood = [];
+
+%% find whether the worm starts on or off food
+switch foodVector(1) 
+    case 1
+        onFood(1) = 1;
+    case 0
+        offFood(1) = 1;
+end
+
+%% find transition points in the foodVector (1 marks on food, 0 off food)
+dif = diff(foodVector); % determine transitions by subracting the previous value, 0 = no change
+off = find(dif==-1); % -1 is a leaving event
+on = find(dif==1); % +1 is an entry event
+
+%% concatenate the starting state
+onFood = vertcat(onFood, on);
+offFood = vertcat(offFood, off);
+
+
+%% compute 'on food' bouts (beginning and end frames)
+onBouts = nan(length(onFood),2);
+
+for i =1:length(onFood)
+    thisOn = onFood(i);
+    onBouts(i,1) = thisOn;
     
+    % find the subsequent leaving event
+    thisOff = find(offFood>thisOn, 1, "first");
+
+    if ~isempty(thisOff) % make sure its not the last timepoint
+        onBouts(i,2) = offFood(thisOff);
+    else
+        onBouts(i,2) = length(foodVector);
+    end
+end
+
+
+%% compute 'off food' bouts (beginning and end frames)
+offBouts = nan(length(offFood),2);
+
+for i =1:length(offFood)
+    thisOff = offFood(i);
+    offBouts(i,1) = thisOff; 
+
+    % find the subsequent entry event
+    thisOn = find(onFood>thisOff, 1, "first"); 
+    if ~isempty(thisOn) % make sure its not the last timepoint
+        offBouts(i,2) = onFood(thisOn);
+    else
+        offBouts(i,2) = length(foodVector);
+    end
+end
+
+end
+
+
 
