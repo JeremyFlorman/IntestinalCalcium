@@ -53,10 +53,25 @@ end
 for i = 1:size(onBouts,1)
     thisOn = onBouts(i,:);
     
-    validEvents = loc(loc>thisOn(1) & loc<thisOn(2)) % find defecation events that occur during the current bout
+    validEvents = loc(loc>thisOn(1) & loc<thisOn(2)); % find defecation events that occur during the current bout
     if numel(validEvents)>1
         interval = mean(diff(validEvents))/fps; % average interval during this bout
-        secondsRemaining = (thisOn(2)-validEvents(end))/fps % time between ca2+ wave and leaving event
+        secondsRemaining = interval - (thisOn(2)-validEvents(end))/fps; % time between ca2+ wave and leaving event
+        
+        frameOfNextEvent  = loc(find(loc>validEvents(end), 1)); % find the next ca2+ wave after the leaving event
+        isEventOnFood = wormdata.onFoodVector(frameOfNextEvent); % check the food vector to see if it was on or off food
+
+        if isEventOnFood == 1
+            eventBout = onBouts(find(onBouts(:,1)<frameOfNextEvent, 1, "last"),:); % get the bout where the next event happens
+            secondsAfterFoodEntry = (frameOfNextEvent-eventBout(1))/fps; % find how many seconds after food entry the next event occured
+            combinedCycleTime = secondsRemaining+secondsAfterFoodEntry; % cycle time excluding time off food
+            phaseChange = mod(combinedCycleTime,interval); 
+            secondsDifference = combinedCycleTime -interval
+        end
+
+        rawInterval = frameOfNextEvent-validEvents(end)/fps;
+        rawPhaseChange = mod(rawInterval, interval)
+
     end
 end
 
