@@ -62,7 +62,11 @@ if isfield(wormdata, 'onFood')
     if trimOffFood ==1
         offFood = offFood(1:end-1);
     end
+elseif isfield(wormdata, 'onFoodVector')
+    foodTrace = wormdata.onFoodVector;
 end
+
+
 
 
 %% Plot traces
@@ -104,19 +108,22 @@ xtl = ax.XTickLabels;
 ax.TickLength =[0.005 0.005];
 box off
 
-% Food Patches
-if isfield(wormdata, 'onFood') && ~isempty(wormdata.onFood)
+%% Food Patches 
+if isfield(wormdata, 'onFood') && ~isempty(wormdata.onFood) % manual food patch detection
 
-            boutData = computeFoodBouts(wormdata.onFood, wormdata.offFood, nFrames, [0.15 ax.YLim(2)]);
-            % [patchX, patchY] = shadedFoodPatches(foodBouts, [patchYVals(i)+(tracediff*0.05), patchYVals(i+1)-(tracediff*0.05)]);
-            patchXinMinutes = boutData.patchX/fps/60;
-            p = patch(patchXinMinutes, boutData.patchY, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
-            uistack(p, 'bottom');
+    boutData = computeFoodBouts(wormdata.onFood, wormdata.offFood, nFrames, [0.15 ax.YLim(2)]);
+    patchXinMinutes = boutData.patchX/fps/60;
+    p = patch(patchXinMinutes, boutData.patchY, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
+    uistack(p, 'bottom');
 
-    % [patchX, patchY] = shadedFoodPatches(wormdata,ax.YLim);
-    % p = patch(patchX/fps/60, patchY,  [0.93 0.69 0.13], 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
-    % uistack(p, 'bottom');
+elseif isfield(wormdata, 'boutData') && ~isempty(wormdata.boutData) % ROI based patch detection
+    xCoords = wormdata.boutData.xPatch/fps/60;
+    yCoords = (wormdata.boutData.yPatch*max(bulkSignal, [], 'all')*1.1)+0.1;
+    p = patch(xCoords, yCoords, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
+    uistack(p, 'bottom');
 end
+
+
 
 
 %% Peak Profile % % %
@@ -135,10 +142,11 @@ ax = nexttile([1 3]);
 imagesc(smoothdata(autoAxialSignal,1,'gaussian',60)'-median(backgroundSignal,'omitnan'))
 title(gca, 'Axial Calcium Trace')
 hold on
-if isfield(wormdata, 'onFood')
+if isfield(wormdata, 'onFood') || isfield(wormdata, 'onFoodVector')
 ax = gca;
 foodYVals(~foodTrace) = NaN;
 foodYVals(foodTrace) = 10;
+
 plot(foodYVals, 'Color', [0.93 0.69 0.13], 'LineWidth', 2, 'LineStyle', '-', 'Marker', 'none')
 end
 
@@ -191,14 +199,25 @@ if isfield(wormdata, 'velocity')
         patchXinMinutes = boutData.patchX/fps/60;
         p = patch(patchXinMinutes, boutData.patchY, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
         uistack(p, 'bottom');
+    elseif isfield(wormdata, 'boutData') && ~isempty(wormdata.boutData) % ROI based patch detection
+        xCoords = wormdata.boutData.xPatch/fps/60;
+        yCoords = (wormdata.boutData.yPatch*0.5);
+        yCoords(yCoords == 0) = 0.005;
+        p = patch(xCoords, yCoords, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
+        uistack(p, 'bottom');
     end
+
 end
 
+nexttile([1 1])
 if isfield(wormdata, 'onFood') && ~isempty(wormdata.onFood)
-    nexttile([1 1])
-
     ondur = boutData.onDur/fps/60;
     offdur = boutData.offDur/fps/60;
+elseif isfield(wormdata, 'boutData')
+    ondur = wormdata.boutData.onDuration/fps/60;
+    offdur = wormdata.boutData.offDuration/fps/60;
+    
+
     binEdges = 0:2:20;
     h1 = histogram(ondur,'BinEdges',binEdges,'FaceColor',[0.93 0.69 0.13], Normalization='count');
     hold on
@@ -208,12 +227,9 @@ if isfield(wormdata, 'onFood') && ~isempty(wormdata.onFood)
     xlabel('Bout Duration (min)')
     ylabel('Count')
     legend({'On Food', 'Off Food'})
-
-
     
 else
     %% Peak Widths % % %
-nexttile([1 1])
 histogram(w./fps,'BinEdges', 1:15);
 ylim([0 10])
 xlim([0 15])
