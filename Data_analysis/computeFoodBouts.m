@@ -82,7 +82,7 @@ for i =1:length(onFood)
         onBouts(i,2) = length(foodVector);
     end
 
-    onDuration(i) = onBouts(i,2)-onBouts(i,1)/fps;
+    onDuration(i) = (onBouts(i,2)-onBouts(i,1))/fps/60;
 end
 
 
@@ -102,7 +102,7 @@ for i =1:length(offFood)
         offBouts(i,2) = length(foodVector);
     end
 
-    offDuration(i) = offBouts(i,2)-offBouts(i,1)/fps;
+    offDuration(i) = (offBouts(i,2)-offBouts(i,1))/fps/60;
 end
 
 %% Create onFood X coordinates for plotting patches, units are frames.

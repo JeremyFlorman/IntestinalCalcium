@@ -22,7 +22,7 @@ end
 fps = 15;
 patchAlpha = 1;
 patchColor = [0.996 0.9400 0.7920]; %[0.93 0.69 0.13]
-peakThreshold = 2.5;
+peakThreshold = 5;
 
 nFrames = length(wormdata.bulkSignal);
 bulkSignal = wormdata.bulkSignal-wormdata.backgroundSignal;
@@ -214,8 +214,8 @@ if isfield(wormdata, 'onFood') && ~isempty(wormdata.onFood)
     ondur = boutData.onDur/fps/60;
     offdur = boutData.offDur/fps/60;
 elseif isfield(wormdata, 'boutData')
-    ondur = wormdata.boutData.onDuration/fps/60;
-    offdur = wormdata.boutData.offDuration/fps/60;
+    ondur = wormdata.boutData.onDuration;
+    offdur = wormdata.boutData.offDuration;
     
 
     binEdges = 0:2:20;
