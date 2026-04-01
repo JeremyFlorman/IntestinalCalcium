@@ -90,28 +90,31 @@ for i = 1:size(onBouts,1)
 end
 
 t = struct2table(phaseData);
-   %% Plot for debugging
-        patchAlpha = 1;
-        patchColor = [0.996 0.9400 0.7920]; %[0.93 0.69 0.13]
-        figure;
-        pk = max(bulkSignal, [], "all");
+%% Plot for debugging
+patchAlpha = 1;
+patchColor = [0.996 0.9400 0.7920]; %[0.93 0.69 0.13]
+figure;
+pk = max(bulkSignal, [], "all");
+if isfield(phaseData, 'preFrame')
+    preSpikes = time(vertcat(phaseData.preFrame));
+    postSpikes = time(vertcat(phaseData.postFrame));
+    plot(time,bulkSignal, 'k',preSpikes,pk*1.05, 'rv',postSpikes,pk*1.05, 'gv', 'MarkerSize',3)
+else
+    plot(time,bulkSignal, 'k')
+end
+xpatch = nan(4,length(onBouts));
+for j=1:length(onBouts)
+    s = onBouts(j,1);
+    e = onBouts(j,2);
+    xpatch(1:4, j) = [s s e e];
+end
+ypatch = repmat([0; 1; 1; 0],1 ,size(xpatch, 2));
 
-        preSpikes = time(vertcat(phaseData.preFrame));
-        postSpikes = time(vertcat(phaseData.postFrame)); 
-        plot(time,bulkSignal, 'k',preSpikes,pk*1.05, 'rv',postSpikes,pk*1.05, 'gv', 'MarkerSize',3)
+if isfield(wormdata, 'boutData') && ~isempty(wormdata.boutData)
+    xCoords = xpatch/fps/60;
+    yCoords = (ypatch*max(bulkSignal, [], 'all')*1.1)+0.1;
+    p = patch(xCoords, yCoords, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
+    uistack(p, 'bottom');
+end
 
-        xpatch = nan(4,length(onBouts));
-        for j=1:length(onBouts)
-            s = onBouts(j,1);
-            e = onBouts(j,2);
-            xpatch(1:4, j) = [s s e e];
-        end
-        ypatch = repmat([0; 1; 1; 0],1 ,size(xpatch, 2));
-
-        if isfield(wormdata, 'boutData') && ~isempty(wormdata.boutData)
-            xCoords = xpatch/fps/60;
-            yCoords = (ypatch*max(bulkSignal, [], 'all')*1.1)+0.1;
-            p = patch(xCoords, yCoords, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
-            uistack(p, 'bottom');
-        end 
 end
