@@ -32,7 +32,7 @@ loc = wormdata.peakLoc;
 time = linspace(0, length(bulkSignal)/fps/60, length(bulkSignal));
 
 %% Remove short exits
-minOffDuration = 10;
+minOffDuration = 15;
 
 for i = 1:size(offBouts,1) 
     thisOff = offBouts(i,:);
@@ -55,51 +55,59 @@ for i = 1:size(onBouts,1)
     
     validEvents = loc(loc>thisOn(1) & loc<thisOn(2)); % find defecation events that occur during the current bout
     if numel(validEvents)>1
+       
         interval = mean(diff(validEvents))/fps; % average interval during this bout
-        secondsRemaining = interval - (thisOn(2)-validEvents(end))/fps; % time between ca2+ wave and leaving event
-        
-        frameOfNextEvent  = loc(find(loc>validEvents(end), 1)); % find the next ca2+ wave after the leaving event
+        frameOfThisEvent = validEvents(end); % Frame of the last event during this on food bout
+        secondsRemaining = interval - (thisOn(2)-frameOfThisEvent)/fps; % time between ca2+ wave and leaving event
+        frameOfNextEvent  = loc(find(loc>frameOfThisEvent, 1)); % find the next ca2+ wave after the leaving event
         isEventOnFood = wormdata.onFoodVector(frameOfNextEvent); % check the food vector to see if it was on or off food
 
         if isEventOnFood == 1
             eventBout = onBouts(find(onBouts(:,1)<frameOfNextEvent, 1, "last"),:); % get the bout where the next event happens
+           
             secondsAfterFoodEntry = (frameOfNextEvent-eventBout(1))/fps; % find how many seconds after food entry the next event occured
+           
             combinedCycleTime = secondsRemaining+secondsAfterFoodEntry; % cycle time excluding time off food
-            phaseChange = mod(combinedCycleTime,interval); 
-            secondsDifference = combinedCycleTime -interval
+          
+            % phaseChange = mod(combinedCycleTime,interval); %this is unsigned
+           
+            phaseChange = combinedCycleTime -interval % this is signed, will tell you +/- cycle extension
         end
 
         rawInterval = frameOfNextEvent-validEvents(end)/fps;
         rawPhaseChange = mod(rawInterval, interval)
 
-    end
+
+
+        %% Plot for debugging
+        patchAlpha = 1;
+        patchColor = [0.996 0.9400 0.7920]; %[0.93 0.69 0.13]
+        figure;
+        pk = max(bulkSignal, [], "all");
+        plot(time,bulkSignal, 'k',time([validEvents(end) frameOfNextEvent]),pk*1.05, 'rv', 'MarkerSize',3)
+
+        xpatch = nan(4,length(onBouts));
+        for j=1:length(onBouts)
+            s = onBouts(j,1);
+            e = onBouts(j,2);
+            xpatch(1:4, j) = [s s e e];
+        end
+        ypatch = repmat([0; 1; 1; 0],1 ,size(xpatch, 2));
+
+        if isfield(wormdata, 'boutData') && ~isempty(wormdata.boutData)
+            xCoords = xpatch/fps/60;
+            yCoords = (ypatch*max(bulkSignal, [], 'all')*1.1)+0.1;
+            p = patch(xCoords, yCoords, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
+            uistack(p, 'bottom');
+        end
+    
+    end   
 end
 
 
 
 
-%% Plot for debugging
-patchAlpha = 1;
-patchColor = [0.996 0.9400 0.7920]; %[0.93 0.69 0.13]
-figure;
-if ~isnan(loc)
-    pk = max(bulkSignal, [], "all");
-    plot(time,bulkSignal, 'k',time(loc),pk*1.05, 'rv', 'MarkerSize',3)
-end
 
-xpatch = nan(4,length(onBouts));
-for i=1:length(onBouts)
-    s = onBouts(i,1);
-    e = onBouts(i,2);
-    xpatch(1:4, i) = [s s e e];
-end
-ypatch = repmat([0; 1; 1; 0],1 ,size(xpatch, 2));
-
-if isfield(wormdata, 'boutData') && ~isempty(wormdata.boutData)
-    xCoords = xpatch/fps/60;
-    yCoords = (ypatch*max(bulkSignal, [], 'all')*1.1)+0.1;
-    p = patch(xCoords, yCoords, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
-    uistack(p, 'bottom');
-end
+    
 
 end

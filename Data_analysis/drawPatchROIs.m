@@ -1,4 +1,4 @@
-folder  = 'Z:\OAS\Patch_Foraging\Radial Patch 0.5ul 0.6OD\15fps\260324_zfis178_wildtype-7patch-r12mm-05ul-15fps_1\2026_03_24_11_06_34_flircamera_behavior';
+folder  = 'C:\Users\Jeremy\Desktop\260326_zfis178_wildtype-7patch-r12mm-05ul-15fps_2\2026_03_26_13_17_47_flircamera_behavior';
 tic
 d  = dir(fullfile(folder, '*videoEvents.mat'));
 h5 = dir(fullfile(folder, '*.h5'));
@@ -66,7 +66,7 @@ combinedImage = inf(canvasHeight, canvasWidth);  % start "very bright" (for min 
 h5 = h5(idx);
 
 frameOffset = 0;
-stepSize    = 300;   %Subsampling
+stepSize    = 150;   %Subsampling
 
 for j = 1:numel(h5)
     h5file = fullfile(h5(j).folder, h5(j).name);
@@ -150,7 +150,7 @@ int9Signal = int9Signal - wormdata.backgroundSignal;
 colorSignal = int9Signal; % signal used for color of scatter plot markers
 sizeSignal = repmat(5, size(colorSignal)); % signal used for size of scatter plot markers
 % sizeSignal(sizeSignal<5) = 1;
-inc   = 1:5:nEvents; % subsample for faster plotting
+inc   = 1:15:nEvents; % subsample for faster plotting
 
 figure;
 ax = gca;
@@ -159,7 +159,7 @@ ySubset = y_px_center(inc) + offsetY;
 
 s = scatter(ax,xSubset,ySubset,sizeSignal(inc),colorSignal(inc), 'o', 'filled');
 colormap(ax, turbo);
-ax.CLim = [0 10];
+ax.CLim = [0 45];
 
 view(2);
 grid off
@@ -261,6 +261,7 @@ boutData = computeFoodBouts(allIn, 15);
 wormdata.boutData = boutData;
 
 save(wormDataPath,"wormdata")
+clear('ROIs')
 
 % figure()
 % plot(xq(allIn), yq(allIn), 'yo')
