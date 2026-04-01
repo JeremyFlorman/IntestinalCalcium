@@ -72,6 +72,12 @@ if settings.annotateFood == 1
                 foodY = stimY(i)+5;
                 line([foodStart foodEnd], [foodY foodY], 'Color', [0.97 0.93 0.62], 'LineWidth', 0.5, 'LineStyle', '-', 'Marker', 'none')
             end
+        elseif isfield(data(i), 'boutData')
+            onBout = data(i).boutData.onFood;
+            for k = 1:size(onBout,1)
+                foodY = stimY(i)+5;
+                line([onBout(k,1) onBout(k,2)], [foodY foodY], 'Color', [0.97 0.93 0.62], 'LineWidth', 0.5, 'LineStyle', '-', 'Marker', 'none')
+            end
         end
     end
 end
