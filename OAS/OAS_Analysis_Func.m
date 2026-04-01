@@ -891,7 +891,7 @@ for nf =startIndex:length(imgDir)
 
 
     % peak analysis
-    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',3,'MinPeakDistance',150);
+    [pk,loc,w] = findpeaks(bulkSignal,'MinPeakProminence',5,'MinPeakDistance',150);
     peakpad = fps*15; % framerate*time in seconds;
     pktime = linspace(-15,15, peakpad*2)';
     if isempty(loc)
