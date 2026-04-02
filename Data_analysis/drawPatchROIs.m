@@ -242,12 +242,15 @@ yq(ynan) = yq(ynan+1); %replace nan points with subsequent values
 nPoints = numel(xq);
 inPoints = nan(nPoints, nPatches);
 
+ROIs(1).xPoints = xq;
+ROIs(1).yPoints = yq;
+
 
 % Compute points inside patches
 for i =1:numel(ROIs)
 
     c = drawcircle('Center', ROIs(i).Center,'Radius', ...
-        ROIs(i).Radius+pxPerMm/2, 'Color',[0.9059    0.1608    0.5412], ...
+        ROIs(i).Radius, 'Color',[0.9059    0.1608    0.5412], ...
         FaceAlpha=0, LineWidth=1.5, MarkerSize=1); % dilate circle by 1mm
 
     inPoints(1:nPoints, i) = inROI(c, xq, yq);
@@ -263,6 +266,10 @@ wormdata.boutData = boutData;
 save(wormDataPath,"wormdata")
 clear('ROIs')
 
+
+plot_SummaryTraces(wormDataPath)
+
+pc = computePhaseChange(wormdata,15);
 % figure()
 % plot(xq(allIn), yq(allIn), 'yo')
 % hold on
