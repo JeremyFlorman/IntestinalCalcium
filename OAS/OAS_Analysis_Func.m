@@ -225,6 +225,8 @@ for nf =startIndex:length(imgDir)
     orientation = NaN(nFrames,1);
     area = NaN(nFrames,1);
     wormLength = NaN(nFrames, 1);
+    headLoc = NaN(nFrames, 2);
+    tailLoc = NaN(nFrames,2);
 
     time = (log_events.time-log_events.time(1))/60; %minutes per frame
     wormIdx = [];
@@ -451,13 +453,14 @@ for nf =startIndex:length(imgDir)
 
                 outskel = logical(outline+skel);
                 [ep] = bwmorph(skel,'endpoints');
+                
 
 
                 % Extract Axial signal by sampling perpendicular lines from skeleton %
 
                 if nnz(ep) >0
-                    [ey,ex] = find(ep,1);
-                    sortSkel= bwtraceboundary(skel,[ey ex],'E');
+                    [ey,ex] = find(ep);
+                    sortSkel= bwtraceboundary(skel,[ey(1) ex(1)],'E');
                     sortSkel = sortSkel(1:ceil(length(sortSkel)/2),:);
 
                     stepSize = 3; % # of points along spine for each spine segment
@@ -580,7 +583,10 @@ for nf =startIndex:length(imgDir)
                             temptrace = fliplr(temptrace);
                             abf = fliplr(abf);
                             tempbf = fliplr(tempbf);
+                            ex = flipud(ex);
+                            ey = flipud(ey);
                         end
+                        
 
                         % % % % % % % % % % % % % % % % % % % %
 
@@ -607,8 +613,16 @@ for nf =startIndex:length(imgDir)
                 %% Worm Area
                 area(i,1) = bwprops(wormIdx).Area;
 
-                %% Worm Length 
+                %% Worm Length
                 wormLength(i) = totalPoints;
+
+                if length(ex) == 2
+                    headLoc(i,1:2) = [ex(1) ey(1)];
+                    tailLoc(i,1:2) = [ex(end) ey(end)];
+                end
+
+                
+
 
 
                 % Upsample temptrace and tempbf to match original sortSkel size
@@ -937,6 +951,8 @@ for nf =startIndex:length(imgDir)
     wormdata.velocity = log_events.velocity;
     wormdata.xLoc = xLoc;
     wormdata.yLoc = yLoc;
+    wormdata.headLoc = headLoc;
+    wormdata.tailLoc = tailLoc;
 
     save(datasavename, 'wormdata')
 
