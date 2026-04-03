@@ -1,4 +1,4 @@
-folder  = 'C:\Users\Jeremy\Desktop\260326_zfis178_wildtype-7patch-r12mm-05ul-15fps_2\2026_03_26_13_17_47_flircamera_behavior';
+folder  = 'C:\Users\Jeremy\Desktop\260325_zfis178_wildtype-7patch-r12mm-05ul-15fps_1\2026_03_25_11_54_09_flircamera_behavior';
 tic
 d  = dir(fullfile(folder, '*videoEvents.mat'));
 h5 = dir(fullfile(folder, '*.h5'));
@@ -33,7 +33,7 @@ x_px_center = round(x_px_center);
 y_px_center = round(y_px_center);
 
 imageResolution = 512;                   % 512x512
-halfSize       = imageResolution / 2;
+halfSize = imageResolution / 2;
 
 nEvents = numel(x_px_center);
 
@@ -66,7 +66,7 @@ combinedImage = inf(canvasHeight, canvasWidth);  % start "very bright" (for min 
 h5 = h5(idx);
 
 frameOffset = 0;
-stepSize    = 150;   %Subsampling
+stepSize    = 75;   %Subsampling
 
 for j = 1:numel(h5)
     h5file = fullfile(h5(j).folder, h5(j).name);
@@ -131,7 +131,7 @@ matdir = dir([pth '\*wormdata.mat' ]);
 if isscalar(matdir)
     wormDataPath = fullfile(matdir(1).folder, matdir(1).name);
     load(wormDataPath)
-    
+
 else
     [dataFile, dataPath]= uigetfile([pth '\*wormdata.mat' ]);
     wormDataPath = fullfile(dataPath, dataFile);
@@ -145,17 +145,80 @@ bulkSignal = smoothdata(wormdata.bulkSignal-wormdata.backgroundSignal, 'movmean'
 [int1Signal, int9Signal] = extractCellSignal(wormdata); % Get cell specific signal
 int1Signal = int1Signal - wormdata.backgroundSignal;    % subtract background
 int9Signal = int9Signal - wormdata.backgroundSignal;
+inc   = 1:75:nEvents; % subsample for faster plotting
+
+%% Correct head/tail swaps
+if isfield(wormdata, 'headLoc') && isfield(wormdata, 'tailLoc')
+    headXY = wormdata.headLoc;
+    tailXY = wormdata.tailLoc;
+
+    nFrames = size(headXY,1);
+
+    cleanedHead = headXY;
+    cleanedTail = tailXY;
+
+    swapped = false(nFrames,1);
+
+    for i = 2:nFrames
+        prevHead = cleanedHead(i-1,:);
+        prevTail = cleanedTail(i-1,:);
+
+        currHead = headXY(i,:);
+        currTail = tailXY(i,:);
+
+        % cost if current labels are correct
+        cost_noSwap = norm(currHead - prevHead) + norm(currTail - prevTail);
+
+        % cost if current labels should be swapped
+        cost_swap = norm(currTail - prevHead) + norm(currHead - prevTail);
+
+        if cost_swap < cost_noSwap
+            cleanedHead(i,:) = currTail;
+            cleanedTail(i,:) = currHead;
+            swapped(i) = true;
+        else
+            cleanedHead(i,:) = currHead;
+            cleanedTail(i,:) = currTail;
+        end
+    end
 
 
+    %% convert Head and Tail coordinates to common frame of reference
+    xCenter = x_px_center;
+    yCenter = y_px_center;
+    frameCenter = [xCenter yCenter];
+
+    imgCenter = [(imageResolution+1)/2, (imageResolution+1)/2];   % matches stitch placement convention
+
+    % Correct for 90 degree rotation
+    headLocal = [cleanedHead(:,2), imageResolution + 1 - cleanedHead(:,1)];
+    tailLocal = [cleanedTail(:,2), imageResolution + 1 - cleanedTail(:,1)];
+
+    % fill missing values
+    headGlobal = fillmissing(frameCenter + (headLocal - imgCenter) + offsetX, 'next');
+    midGlobal = fillmissing([xCenter+offsetX yCenter+offsetY], 'linear');
+    tailGlobal = fillmissing(frameCenter + (tailLocal - imgCenter) + offsetY, 'next');
+
+    % Subsample for plotting
+    xSubset = headGlobal(inc,1);
+    ySubset = headGlobal(inc,2);
+else
+
+    midGlobal = fillmissing([xCenter+offsetX yCenter+offsetY], 'linear');
+
+    % Subsample for plotting
+    xSubset = x_px_center(inc) + offsetX;
+    ySubset = y_px_center(inc) + offsetY;
+end
+%%
 colorSignal = int9Signal; % signal used for color of scatter plot markers
-sizeSignal = repmat(5, size(colorSignal)); % signal used for size of scatter plot markers
+sizeSignal = repmat(8, size(colorSignal)); % signal used for size of scatter plot markers
 % sizeSignal(sizeSignal<5) = 1;
-inc   = 1:15:nEvents; % subsample for faster plotting
+
 
 figure;
 ax = gca;
-xSubset = x_px_center(inc) + offsetX;
-ySubset = y_px_center(inc) + offsetY;
+
 
 s = scatter(ax,xSubset,ySubset,sizeSignal(inc),colorSignal(inc), 'o', 'filled');
 colormap(ax, turbo);
@@ -230,20 +293,27 @@ if ~isempty(nPatches) && isnumeric(nPatches)
 end
 
 %% Set up query points for ROI
+if isfield(wormdata, 'headLoc') && isfield(wormdata, 'tailLoc')
+    xq= headGlobal(:,1); % define x querry points
+    yq = headGlobal(:,2); % define y querry points
 
-xq= x_px_center + offsetX; % define x querry points
-xnan = find(isnan(xq)); % identify nans
-xq(xnan) = xq(xnan+1); %replace nan points with subsequent values
-
-yq = y_px_center + offsetY; % define y querry points
-ynan = find(isnan(yq)); % identify nans
-yq(ynan) = yq(ynan+1); %replace nan points with subsequent values
+ROIs(1).headXY = headGlobal;
+ROIs(1).midXY = midGlobal;
+ROIs(1).tailXY = tailGlobal;
 
 nPoints = numel(xq);
-inPoints = nan(nPoints, nPatches);
+headIn = nan(nPoints, nPatches);
+midIn = nan(nPoints, nPatches);
+tailIn = nan(nPoints, nPatches);
+else
+    xq= midGlobal(:,1); % define x querry points
+    yq = midGlobal(:,2); % define y querry points
+    ROIs(1).midXY = midGlobal;
+    
+    nPoints = numel(xq);
+    inPoints = nan(nPoints, nPatches);
+end
 
-ROIs(1).xPoints = xq;
-ROIs(1).yPoints = yq;
 
 
 % Compute points inside patches
@@ -253,8 +323,22 @@ for i =1:numel(ROIs)
         ROIs(i).Radius, 'Color',[0.9059    0.1608    0.5412], ...
         FaceAlpha=0, LineWidth=1.5, MarkerSize=1); % dilate circle by 1mm
 
-    inPoints(1:nPoints, i) = inROI(c, xq, yq);
+    if isfield(wormdata, 'headLoc') && isfield(wormdata, 'tailLoc')
+        headIn(1:nPoints, i) = inROI(c, headGlobal(:,1), headGlobal(:,2));
+        midIn(1:nPoints, i) = inROI(c, midGlobal(:,1), midGlobal(:,2));
+        tailIn(1:nPoints, i) = inROI(c, tailGlobal(:,1), tailGlobal(:,2));
+    else 
+        inPoints(1:nPoints, i) = inROI(c, midGlobal(:,1), midGlobal(:,2));
+    end
 end
+
+
+if isfield(wormdata, 'headLoc') && isfield(wormdata, 'tailLoc')
+    allIn = any(headIn,2) | any(midIn,2) | any(tailIn,2);
+else 
+    allIn = any(inPoints, 2);
+end
+
 
 allIn = any(inPoints, 2);
 wormdata.onFoodVector = allIn;
@@ -270,17 +354,20 @@ clear('ROIs')
 plot_SummaryTraces(wormDataPath)
 
 pc = computePhaseChange(wormdata,15);
+
+
+
 % figure()
 % plot(xq(allIn), yq(allIn), 'yo')
 % hold on
 % plot(xq(~allIn), yq(~allIn), 'rx')
 %%
-% 
-% 
-% 
+%
+%
+%
 % [int1Clipped, ~] = clipSpikes(wormdata.peakLoc, 750, int1Signal);
 % [int9Clipped, ~] = clipSpikes(wormdata.peakLoc, 750, int9Signal);
-% 
+%
 % toClip = 1;
 % if toClip == 1
 %     int1Plotting = int1Clipped;
@@ -289,26 +376,26 @@ pc = computePhaseChange(wormdata,15);
 %     int1Plotting = int1Signal;
 %     int9Plotting = int9Signal;
 % end
-% 
-% 
-% 
+%
+%
+%
 % int1onFood = int1Plotting;
 % int1onFood(~allIn) = nan;
-% 
+%
 % int1offFood = int1Plotting;
 % int1offFood(allIn) = nan;
-% 
+%
 % int9onFood = int9Plotting;
 % int9onFood(~allIn) = nan;
-% 
+%
 % int9offFood = int9Plotting;
 % int9offFood(allIn) = nan;
-% 
+%
 % time = linspace(0, length(bulkSignal)/30/60, length(bulkSignal));
-% 
+%
 % [onFood, offFood] = transitionPts(allIn);
-% 
-% 
+%
+%
 % % annotate food patches
 % xpatch = nan(4, length(onFood));
 % for i=1:length(onFood)
@@ -319,7 +406,7 @@ pc = computePhaseChange(wormdata,15);
 % xpatch = xpatch/30/60;
 % yhi = max([int1Plotting int9Plotting], [],'all', 'omitmissing')*1.1;
 % ypatch = repmat([0; yhi; yhi; 0],1 ,length(onFood));
-% 
+%
 % if toClip == 0
 %     histYLims = [0 0.25];
 %     histXLims = [0 80];
@@ -330,39 +417,39 @@ pc = computePhaseChange(wormdata,15);
 %     plotLims = [0 yhi];
 % end
 % histBins = 0:2:100;
-% 
+%
 % figure(Color=[1 1 1], ...
 %     Position=[2397 -3.8000 1.1104e+03 392.8000]);
-% 
+%
 % tl = tiledlayout(2,3, 'TileSpacing','tight', 'Padding','compact');
-% 
+%
 % % Int1 Signal
 % nexttile([1 2])
 % plot(time, int1Plotting, 'k')
-% 
-% 
+%
+%
 % p = patch(xpatch, ypatch, [0.93 0.69 0.13], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
 % uistack(p, 'bottom');
 % ylim(plotLims)
 % ylabel('Int1 Signal');
 % xlabel('Time (min)')
 % box off
-% 
-% 
+%
+%
 % nexttile([1 1])
 % h1 = histogram(int1onFood,'BinEdges', histBins, 'Normalization','probability','EdgeAlpha',0.25);
 % hold on
 % h2 = histogram(int1offFood,'BinEdges', histBins,'Normalization','probability','EdgeAlpha',0.25);
 % hold off
 % legend();
-% 
+%
 % ylim(histYLims)
 % xlim(histXLims)
 % ylabel('Probability');
 % xlabel('Int1 Signal')
 % box off
-% 
-% 
+%
+%
 % nexttile([1 2])
 % plot(time, int9Plotting, 'k')
 % p = patch(xpatch, ypatch, [0.93 0.69 0.13], 'FaceAlpha', 0.25, 'EdgeColor', 'none');
@@ -371,9 +458,9 @@ pc = computePhaseChange(wormdata,15);
 % ylabel('Int9 Signal');
 % xlabel('Time (min)')
 % box off
-% 
+%
 % nexttile([1 1])
-% 
+%
 % h3 =histogram(int9onFood,'BinEdges', histBins,  'Normalization','probability', 'EdgeAlpha',0.25);
 % hold on
 % h4 =histogram(int9offFood,'BinEdges', histBins,  'Normalization','probability','EdgeAlpha',0.25);
@@ -385,88 +472,88 @@ pc = computePhaseChange(wormdata,15);
 % xlabel('Int9 Signal')
 % box off
 % %%
-% 
-% 
+%
+%
 % % [onFood offFood]
-% 
-% 
+%
+%
 % % plot(time, bulkSignal, time, clippedSignal)
-% 
+%
 % function [clippedSignal, spikeFlags] = clipSpikes(spikes, windowFrames, signal)
-% 
+%
 % spikeFlags = true(length(signal), 1);
-% 
+%
 % for i =1:length(spikes)
 %     preSpikeIdx = spikes(i)-floor(windowFrames*0.33);
 %     postSpikeIdx = spikes(i)+floor(windowFrames*0.66);
-% 
+%
 %     spikeFlags(preSpikeIdx:postSpikeIdx, 1) = 0;
 % end
-% 
+%
 % clippedSignal = signal;
 % clippedSignal(~spikeFlags) = nan;
 % end
-% 
-% 
-% 
-% 
+%
+%
+%
+%
 % function [onBouts, offBouts] = transitionPts(foodVector)
 % onFood = [];
 % offFood = [];
-% 
+%
 % %% find whether the worm starts on or off food
-% switch foodVector(1) 
+% switch foodVector(1)
 %     case 1
 %         onFood(1) = 1;
 %     case 0
 %         offFood(1) = 1;
 % end
-% 
+%
 % %% find transition points in the foodVector (1 marks on food, 0 off food)
 % dif = diff(foodVector); % determine transitions by subracting the previous value, 0 = no change
 % off = find(dif==-1); % -1 is a leaving event
 % on = find(dif==1); % +1 is an entry event
-% 
+%
 % %% concatenate the starting state
 % onFood = vertcat(onFood, on);
 % offFood = vertcat(offFood, off);
-% 
-% 
+%
+%
 % %% compute 'on food' bouts (beginning and end frames)
 % onBouts = nan(length(onFood),2);
-% 
+%
 % for i =1:length(onFood)
 %     thisOn = onFood(i);
 %     onBouts(i,1) = thisOn;
-% 
+%
 %     % find the subsequent leaving event
 %     thisOff = find(offFood>thisOn, 1, "first");
-% 
+%
 %     if ~isempty(thisOff) % make sure its not the last timepoint
 %         onBouts(i,2) = offFood(thisOff);
 %     else
 %         onBouts(i,2) = length(foodVector);
 %     end
 % end
-% 
-% 
+%
+%
 % %% compute 'off food' bouts (beginning and end frames)
 % offBouts = nan(length(offFood),2);
-% 
+%
 % for i =1:length(offFood)
 %     thisOff = offFood(i);
-%     offBouts(i,1) = thisOff; 
-% 
+%     offBouts(i,1) = thisOff;
+%
 %     % find the subsequent entry event
-%     thisOn = find(onFood>thisOff, 1, "first"); 
+%     thisOn = find(onFood>thisOff, 1, "first");
 %     if ~isempty(thisOn) % make sure its not the last timepoint
 %         offBouts(i,2) = onFood(thisOn);
 %     else
 %         offBouts(i,2) = length(foodVector);
 %     end
 % end
-% 
+%
 % end
-% 
-% 
-% 
+%
+%
+%
