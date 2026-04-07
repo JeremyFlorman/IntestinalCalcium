@@ -1,4 +1,4 @@
-folder  = 'C:\Users\Jeremy\Desktop\260325_zfis178_wildtype-7patch-r12mm-05ul-15fps_1\2026_03_25_11_54_09_flircamera_behavior';
+folder  = 'C:\src\OpenAutoScope-v2\data\260327_zfis178_wildtype-19patch-r24mm-05ul-15fps\2026_03_27_13_22_30_flircamera_behavior';
 tic
 d  = dir(fullfile(folder, '*videoEvents.mat'));
 h5 = dir(fullfile(folder, '*.h5'));
@@ -195,15 +195,19 @@ if isfield(wormdata, 'headLoc') && isfield(wormdata, 'tailLoc')
     tailLocal = [cleanedTail(:,2), imageResolution + 1 - cleanedTail(:,1)];
 
     % fill missing values
-    headGlobal = fillmissing(frameCenter + (headLocal - imgCenter) + offsetX, 'next');
+    headGlobal = fillmissing(frameCenter + (headLocal - imgCenter) + offsetX, 'previous');
+    headGlobal = fillmissing(headGlobal, 'next');
     midGlobal = fillmissing([xCenter+offsetX yCenter+offsetY], 'linear');
-    tailGlobal = fillmissing(frameCenter + (tailLocal - imgCenter) + offsetY, 'next');
+    tailGlobal = fillmissing(frameCenter + (tailLocal - imgCenter) + offsetY, 'previous');
+    tailGlobal = fillmissing(tailGlobal, 'next');
 
     % Subsample for plotting
     xSubset = headGlobal(inc,1);
     ySubset = headGlobal(inc,2);
 else
-
+    xCenter = x_px_center;
+    yCenter = y_px_center;
+    frameCenter = [xCenter yCenter];
     midGlobal = fillmissing([xCenter+offsetX yCenter+offsetY], 'linear');
 
     % Subsample for plotting
