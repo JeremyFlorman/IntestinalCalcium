@@ -1,4 +1,4 @@
-function [phaseData] = computePhaseChange(wormdata, framerate)
+function [phaseData] = computePhaseChange(wormdata, framerate, h5path)
 %computePhaseChange calculates the change in phase of the defecation cycle
 %when a worm leaves and returns to food
 %   inputs: 
@@ -25,61 +25,65 @@ elseif isstruct(framerate)
     fps = framerate.framerate;
 end
 
+%% Remove short exits
+minOffDurationSeconds = 15;
+boutData = computeFoodBouts(wormdata.onFoodVector, fps, minOffDurationSeconds);
 
-onBouts = wormdata.boutData.onFood;
-offBouts = wormdata.boutData.offFood;
+onBouts = boutData.onFood;
+% offBouts = boutData.offFood;
 bulkSignal = wormdata.bulkSignal - wormdata.backgroundSignal;
 loc = wormdata.peakLoc;
 time = linspace(0, length(bulkSignal)/fps/60, length(bulkSignal));
 phaseData = struct();
 
 %% Remove short exits
-minOffDuration = 15;
-
-for i = 1:size(offBouts,1) 
-    thisOff = offBouts(i,:);
-    secondsOff = (thisOff(2)-thisOff(1))/fps;
-    if secondsOff < minOffDuration
-        previousOnIdx = find(onBouts(:,2) == thisOff(1)); % find the previous bout based on the shared end/start times
-        nextOnIdx = find(onBouts(:,1) == thisOff(2)); % find the previous bout based on the shared start/end times (I know, could just do +1 but I'm scared of edge cases)
-
-        onBouts(previousOnIdx, 2) = onBouts(nextOnIdx,2); % replace the end of the previous onBout with the end of the next bout
-        
-        offBouts(i,:) = [nan nan]; % clear the intervening offBout
-        onBouts(nextOnIdx,:) = [nan nan];  % clear the next onBout as it has been merged with the previous
-    end
-end
+% minOffDuration = 15;
+% 
+% for i = 1:size(offBouts,1) 
+%     thisOff = offBouts(i,:);
+%     secondsOff = (thisOff(2)-thisOff(1))/fps;
+%     if secondsOff < minOffDuration
+%         previousOnIdx = find(onBouts(:,2) == thisOff(1)); % find the previous bout based on the shared end/start times
+%         nextOnIdx = find(onBouts(:,1) == thisOff(2)); % find the next bout based on the shared start/end times (I know, could just do +1 but I'm scared of edge cases)
+% 
+%         onBouts(previousOnIdx, 2) = onBouts(nextOnIdx,2); % replace the end sof the previous onBout with the end of the next bout
+% 
+%         offBouts(i,:) = [nan nan]; % clear the intervening offBout
+%         onBouts(nextOnIdx,:) = [nan nan];  % clear the next onBout as it has been merged with the previous
+%     end
+% end
 
 eventIndex = 1;
 %% Get Relative spike times
 for i = 1:size(onBouts,1)
     thisOn = onBouts(i,:);
-    
+    exitFrame = thisOn(2);
     validEvents = loc(loc>thisOn(1) & loc<thisOn(2)); % find defecation events that occur during the current bout
     if numel(validEvents)>1
        
         interval = mean(diff(validEvents))/fps; % average interval during this bout
         frameOfThisEvent = validEvents(end); % Frame of the last event during this on food bout
-        secondsRemaining = interval - (thisOn(2)-frameOfThisEvent)/fps; % time between ca2+ wave and leaving event
+        secondsRemaining = interval - (exitFrame-frameOfThisEvent)/fps; % time between ca2+ wave and leaving event
         frameOfNextEvent  = loc(find(loc>frameOfThisEvent, 1)); % find the next ca2+ wave after the leaving event
         isEventOnFood = wormdata.onFoodVector(frameOfNextEvent); % check the food vector to see if it was on or off food
 
         if isEventOnFood == 1
             eventBout = onBouts(find(onBouts(:,1)<frameOfNextEvent, 1, "last"),:); % get the bout where the next event happens
-           
-            secondsAfterFoodEntry = (frameOfNextEvent-eventBout(1))/fps; % find how many seconds after food entry the next event occured
-           
+            entryFrame =eventBout(1);
+            secondsAfterFoodEntry = (frameOfNextEvent-entryFrame)/fps; % find how many seconds after food entry the next event occured
             combinedCycleTime = secondsRemaining+secondsAfterFoodEntry; % cycle time excluding time off food
           
             phaseChange = combinedCycleTime -interval % this is signed, will tell you +/- cycle extension/reduction
             
             % Store data
-            phaseData(eventIndex).interval = interval; % Average interval during the current onFood bout
-            phaseData(eventIndex).preFrame = frameOfThisEvent; % Frame when the on food defecation occured
-            phaseData(eventIndex).secondsEventToExit = (thisOn(2)-frameOfThisEvent)/fps; % How many seconds between the on-food defecation event and the leaving event
+            phaseData(eventIndex).preFrame = frameOfThisEvent; % Frame when the on-food defecation occured
+            phaseData(eventIndex).exitFrame = exitFrame; % Frame when worm leaves food
+            phaseData(eventIndex).entryFrame = entryFrame; % frame when worm returns to food
             phaseData(eventIndex).postFrame = frameOfNextEvent; % Frame of the subsequent defecation event after returning to food
+            phaseData(eventIndex).interval = interval; % Average interval during the current onFood bout
+            phaseData(eventIndex).secondsEventToExit = (exitFrame-frameOfThisEvent)/fps; % How many seconds between the on-food defecation event and the leaving event
             phaseData(eventIndex).totalCycleTime = (frameOfNextEvent-frameOfThisEvent)/fps; % Total time in seconds between the two defecation events
-            phaseData(eventIndex).timeOffFood = (eventBout(1) - thisOn(2))/fps; % Total time in seconds spent off food, this may also include on short on-food bouts where no defecation occurs
+            phaseData(eventIndex).timeOffFood = (entryFrame - exitFrame)/fps; % Total time in seconds spent off food, this may also include on short on-food bouts where no defecation occurs
             phaseData(eventIndex).cycleSecondsRemaining = secondsRemaining; % The number of seconds left in the cycle (based on the average interval) when the animal left food
             phaseData(eventIndex).secondsDelay = secondsAfterFoodEntry; % The delay in seconds from food entry to the next defecation event
             phaseData(eventIndex).phaseChange = phaseChange; % The number of seconds the cycle shifted, simply (# seconds left in the cycle + delay after food entry) - average interval; 
@@ -89,8 +93,29 @@ for i = 1:size(onBouts,1)
     end   
 end
 
-t = struct2table(phaseData);
+phaseTable = struct2table(phaseData);
+
+
 %% Plot for debugging
+
+
+% figure;
+% t = tiledlayout(length(phaseData), 2, 'TileSpacing','none','Padding','tight');
+% h5Files = dir([h5path '\*.h5']);
+% for i = 1:length(phaseData)
+%     nexttile()
+%     exitImg = getImage(phaseData(i).exitFrame, h5Files);
+%     imshow(exitImg)
+% 
+%     nexttile()
+%     entryImg = getImage(phaseData(i).entryFrame, h5Files);
+%     imshow(entryImg)
+% 
+% end
+% 
+
+
+
 patchAlpha = 1;
 patchColor = [0.996 0.9400 0.7920]; %[0.93 0.69 0.13]
 figure;
@@ -117,4 +142,11 @@ if isfield(wormdata, 'boutData') && ~isempty(wormdata.boutData)
     uistack(p, 'bottom');
 end
 
+end
+
+function img = getImage(frame, h5Files)
+fileIndex = floor(frame/3600);
+frameIndex = mod(frame, 3600)+1;
+filepath = fullfile(h5Files(fileIndex).folder, h5Files(fileIndex).name);
+img = h5read(filepath, '/data',[1 1 frameIndex],[512 512 1]);
 end
