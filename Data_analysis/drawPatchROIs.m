@@ -334,17 +334,18 @@ end
 
 
 if isfield(wormdata, 'headLoc') && isfield(wormdata, 'tailLoc')
-    allIn = any(headIn,2) | any(midIn,2) | any(tailIn,2);
+    allIn = any(headIn,2) | any(midIn,2); % Animal is on food if its head or midbody are on food,
+                                           % this will exclude headpokes outside of the foodpatch from being considered leaving events
 else 
     allIn = any(inPoints, 2);
 end
 
 
-allIn = any(inPoints, 2);
+
 wormdata.onFoodVector = allIn;
 wormdata.patchROIs = ROIs;
 
-boutData = computeFoodBouts(allIn, 15);
+boutData = computeFoodBouts(allIn, 15, 0);
 wormdata.boutData = boutData;
 
 save(wormDataPath,"wormdata")
@@ -353,7 +354,7 @@ clear('ROIs')
 
 plot_SummaryTraces(wormDataPath)
 
-pc = computePhaseChange(wormdata,15);
+pc = computePhaseChange(wormdata,15, folder);
 
 
 

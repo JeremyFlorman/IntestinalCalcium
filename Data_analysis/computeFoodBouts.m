@@ -1,4 +1,4 @@
-function [boutData] = computeFoodBouts(foodVector, framerate)
+function [boutData] = computeFoodBouts(foodVector, framerate, minGapSeconds)
 % computeFoodBouts Converts a logical vector indicating whether an animals
 % was on or off food to "Bout" format. Each bout is a 2 column vector with
 % the starting and ending frame for the bout. 
@@ -43,6 +43,31 @@ elseif isscalar(framerate)
 elseif isstruct(framerate)
     fps = framerate.framerate;
 end
+
+
+%% remove short exit events
+if ~isempty(minGapSeconds) | minGapSeconds > 0
+    minGapFrames = minGapSeconds*fps;
+    foodVecClosed = foodVector;
+
+    d = diff([0; foodVector; 0]);
+
+    onStarts = find(d == 1);
+    onEnds   = find(d == -1) - 1;
+
+    for k = 1:numel(onEnds)-1
+        gapStart = onEnds(k) + 1;
+        gapEnd   = onStarts(k+1) - 1;
+        gapLen   = gapEnd - gapStart + 1;
+
+        if gapLen <= minGapFrames
+            foodVecClosed(gapStart:gapEnd) = true;
+        end
+    end
+    foodVector = foodVecClosed;
+end
+
+
 
 onFood = [];
 offFood = [];
