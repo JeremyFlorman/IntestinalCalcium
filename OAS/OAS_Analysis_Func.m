@@ -247,11 +247,11 @@ for nf =startIndex:length(imgDir)
     hArea = [];
 
     hNormals = gobjects(numSegments,1);
-
-    for normIdx = 1:numSegments
-        hNormals(normIdx) = line(nan(2,1), nan(2,1),'Color', [0.6 0.6 0.6],'Parent', ax1);
+    if plotstuff == 1
+        for normIdx = 1:numSegments
+            hNormals(normIdx) = line(nan(2,1), nan(2,1),'Color', [0.6 0.6 0.6],'Parent', ax1);
+        end
     end
-
     hAxStim = [];
     hBulkStim = [];
     hAreaStim = [];
@@ -1166,8 +1166,10 @@ for nf =startIndex:length(imgDir)
 
         elseif isremote == 1  % if working with remote files, moved analyzed results back to where we found them.
             clear('img')
+            if videostuff == 1
             [statusvideoplot,~,~]=copyfile(localVideoPath, videopath);
             delete(localVideoPath);
+            end
         end
     end
 
