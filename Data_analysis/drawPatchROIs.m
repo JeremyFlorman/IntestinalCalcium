@@ -1,4 +1,4 @@
-folder  = 'C:\src\OpenAutoScope-v2\data\260327_zfis178_wildtype-19patch-r24mm-05ul-15fps\2026_03_27_13_22_30_flircamera_behavior';
+folder  = 'C:\Users\Alkem\Desktop\analysis\260406_zfis178_wildtype-19patch-r24mm-05ul-15fps_4\2026_04_06_14_55_58_flircamera_behavior';
 tic
 d  = dir(fullfile(folder, '*videoEvents.mat'));
 h5 = dir(fullfile(folder, '*.h5'));
@@ -195,6 +195,12 @@ if isfield(wormdata, 'headLoc') && isfield(wormdata, 'tailLoc')
     tailLocal = [cleanedTail(:,2), imageResolution + 1 - cleanedTail(:,1)];
 
     % fill missing values
+    if length(frameCenter) ~= length(headLocal)
+        xCenter = xCenter(1:length(headLocal));
+        yCenter = yCenter(1:length(headLocal));
+        frameCenter = [xCenter yCenter];
+    end
+
     headGlobal = fillmissing(frameCenter + (headLocal - imgCenter) + offsetX, 'previous');
     headGlobal = fillmissing(headGlobal, 'next');
     midGlobal = fillmissing([xCenter+offsetX yCenter+offsetY], 'linear');
