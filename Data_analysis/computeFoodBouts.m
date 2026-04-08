@@ -131,8 +131,8 @@ for i =1:length(offFood)
 end
 
 %% Create onFood X coordinates for plotting patches, units are frames.
-xpatch = nan(4,length(onBouts));
-for i=1:length(onBouts)
+xpatch = nan(4,size(onBouts,1));
+for i=1:size(onBouts,1)
     s = onBouts(i,1);
     e = onBouts(i,2);
     xpatch(1:4, i) = [s s e e];

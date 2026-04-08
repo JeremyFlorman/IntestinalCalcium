@@ -127,8 +127,8 @@ if isfield(phaseData, 'preFrame')
 else
     plot(time,bulkSignal, 'k')
 end
-xpatch = nan(4,length(onBouts));
-for j=1:length(onBouts)
+xpatch = nan(4,size(onBouts,1));
+for j=1:size(onBouts,1)
     s = onBouts(j,1);
     e = onBouts(j,2);
     xpatch(1:4, j) = [s s e e];
