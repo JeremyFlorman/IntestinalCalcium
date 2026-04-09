@@ -205,13 +205,17 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         validateRiseFallButton          matlab.ui.control.Button
         validateRiseFall                matlab.ui.control.CheckBox
         showFitParams                   matlab.ui.control.CheckBox
+        Panel_4                         matlab.ui.container.Panel
+        ComputePhaseChangeButton        matlab.ui.control.Button
+        FillGapssecEditField            matlab.ui.control.NumericEditField
+        FillGapssecEditFieldLabel       matlab.ui.control.Label
     end
 
 
     properties (Access = private)
-        defaultTiffDir = 'C:\src\OpenAutoScope-v2\data';
-        defaultRemoteDir = 'Z:\OAS';
-        defaultDataDir='Z:\OAS';
+        defaultTiffDir = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
+        defaultRemoteDir = 'Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
+        defaultDataDir='Z:\Calcium Imaging\Intestinal_Calcium\DMP_Mutants';
         defaultOutputDir = 'C:\Users\Jeremy\Dropbox\combinedData';
     end
 
@@ -402,6 +406,9 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             plotSettings.annotateFood = app.annotateFood.Value;
             plotSettings.interpolateInt1Int9 = app.InterpolateInt1Int9CheckBox.Value;
             plotSettings.addBehaviorAnnotations = app.AddBehaviorAnnotationsCheckBox.Value;
+
+            %% Phase Change
+            plotSettings.fillGaps = app.FillGapssecEditField.Value;
         end
 
 
@@ -528,7 +535,9 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             app.annotateFood.Value = plotSettings.annotateFood;
             app.InterpolateInt1Int9CheckBox.Value = plotSettings.interpolateInt1Int9;
             app.AddBehaviorAnnotationsCheckBox.Value = plotSettings.addBehaviorAnnotations;
-
+            
+            %% Phase Change
+            app.FillGapssecEditField.Value = plotSettings.fillGaps;
 
 
         end
@@ -986,6 +995,22 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         function ExportPlotSettingsButtonPushed(app, event)
             settings = parsePlotSettings(app);
             assignin("base", "settings", settings)
+        end
+
+        % Button pushed function: ComputePhaseChangeButton
+        function ComputePhaseChangeButtonPushed(app, event)
+            fillGaps = app.FillGapssecEditField.Value;
+            framerate = app.FrameRateEditField.Value;
+            inputDataName = app.WorkspacevariableEditField.Value;
+            inputData = evalin("base", inputDataName);
+            phaseTable = table();
+            
+            for i = 1:numel(inputData)
+                [h5path, ~] = fileparts(inputData(i).filename);
+                phaseChange = computePhaseChange(inputData(i),framerate, fillGaps, [h5path '\*behavior']);
+                phaseTable =vertcat(phaseTable, struct2table(phaseChange));
+            end
+
         end
     end
 
@@ -1877,6 +1902,29 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create miscsettingsTab
             app.miscsettingsTab = uitab(app.TabGroup);
             app.miscsettingsTab.Title = 'misc settings';
+
+            % Create Panel_4
+            app.Panel_4 = uipanel(app.miscsettingsTab);
+            app.Panel_4.Position = [290 11 164 62];
+
+            % Create FillGapssecEditFieldLabel
+            app.FillGapssecEditFieldLabel = uilabel(app.Panel_4);
+            app.FillGapssecEditFieldLabel.HorizontalAlignment = 'right';
+            app.FillGapssecEditFieldLabel.Position = [5 6 82 22];
+            app.FillGapssecEditFieldLabel.Text = 'Fill Gaps (sec)';
+
+            % Create FillGapssecEditField
+            app.FillGapssecEditField = uieditfield(app.Panel_4, 'numeric');
+            app.FillGapssecEditField.Tooltip = {'Removes short leaving events lasting less than the number of seconds specified'};
+            app.FillGapssecEditField.Position = [102 4 51 25];
+            app.FillGapssecEditField.Value = 15;
+
+            % Create ComputePhaseChangeButton
+            app.ComputePhaseChangeButton = uibutton(app.Panel_4, 'push');
+            app.ComputePhaseChangeButton.ButtonPushedFcn = createCallbackFcn(app, @ComputePhaseChangeButtonPushed, true);
+            app.ComputePhaseChangeButton.Tooltip = {'Calculates defecation cycle phase change on dataset specified in the "workspace variable" edit field to the left'};
+            app.ComputePhaseChangeButton.Position = [6 33 146 22];
+            app.ComputePhaseChangeButton.Text = 'Compute Phase Change';
 
             % Create SpikeKineticsPanel
             app.SpikeKineticsPanel = uipanel(app.miscsettingsTab);

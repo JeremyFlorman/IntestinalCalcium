@@ -180,6 +180,7 @@ if saveWormdata2workspace == 1
         dataName = strrep(dataName, '(', '');
         dataName = strrep(dataName, ')', '');
         dataName = strrep(dataName, ';', '');
+        dataName = strrep(dataName, '*', '');
 
         assignin("base", [dataName 'Data'], mtdata)
         % assignin("base", [dataName '_ControlData'], wtdata)

@@ -364,7 +364,7 @@ clear('ROIs')
 
 plot_SummaryTraces(wormDataPath)
 
-pc = computePhaseChange(wormdata,15, folder);
+pc = computePhaseChange(wormdata,15,15, folder);
 
 
 
