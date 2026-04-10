@@ -33,6 +33,7 @@ else
 end
 
 % Compute points inside patches
+fig = figure('Visible','off');
 for i =1:nPatches
     c = drawcircle('Center', ROIs(i).Center,'Radius', ...
         ROIs(i).Radius+dilationInPx, 'Color',[0.9059    0.1608    0.5412], ...
@@ -47,6 +48,7 @@ for i =1:nPatches
     end
 end
 
+close(fig)
 
 if hasHeadPoints == 1
     onFoodVector = any(headIn,2) | any(midIn,2) | any(tailIn,2);

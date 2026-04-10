@@ -1,4 +1,4 @@
-function [phaseData] = computePhaseChange(wormdata, fps, minOffDurationSeconds, h5path)
+function [phaseData] = computePhaseChange(wormdata, fps, minOffDurationSeconds, h5path, dilationInMM, debugPlots)
 %computePhaseChange calculates the change in phase of the defecation cycle
 %when a worm leaves and returns to food
 %   inputs:
@@ -28,7 +28,7 @@ elseif nargin == 3
 end
 
 %% Recompute Food Vector
-dilationInMM = -0.25;
+% dilationInMM = -0.1;
 onFoodVector = computeFoodVector(wormdata.patchROIs, dilationInMM);
 %% Recalculate Food Bouts
 boutData = computeFoodBouts(onFoodVector, fps, minOffDurationSeconds);
@@ -95,6 +95,8 @@ for i = 1:size(onBouts,1)
             phaseChange = combinedCycleTime -interval % this is signed, will tell you +/- cycle extension/reduction
 
             % Store data
+            fn = strsplit(wormdata.filename, '\');
+            phaseData(eventIndex).filename = fn{end}; % file name of recording
             phaseData(eventIndex).preFrame = frameOfThisEvent; % Frame when the on-food defecation occured
             phaseData(eventIndex).exitFrame = exitFrame; % Frame when worm leaves food
             phaseData(eventIndex).entryFrame = entryFrame; % frame when worm returns to food
@@ -112,81 +114,91 @@ for i = 1:size(onBouts,1)
     end
 end
 
-phaseTable = struct2table(phaseData);
+% phaseTable = struct2table(phaseData);
 
 
 %% Plot for debugging
+if debugPlots == 1
+    if ~isempty(h5path) && isfield(phaseData, 'exitFrame')
+        figure('Name', phaseData(1).filename);
+        t = tiledlayout(3, length(phaseData), 'TileSpacing','none','Padding','tight');
+        h5Files = dir([h5path '\*.h5']);
+        %% Display images of leaving and return events
+        for i = 1:length(phaseData)
+            nexttile(i)
+            exitImg = getImage(phaseData(i).exitFrame, h5Files);
+            imshow(exitImg)
+            line(wormdata.headLoc(phaseData(i).exitFrame,1), wormdata.headLoc(phaseData(i).exitFrame,2), 'Color', 'g', 'Marker', 'o')
+            line(wormdata.tailLoc(phaseData(i).exitFrame,1), wormdata.tailLoc(phaseData(i).exitFrame,2), 'Color', 'r', 'Marker', 'o')
+            if i == 1
+                ylabel('Exit')
+                yticks([])
+            end
+            nexttile(length(phaseData)+i)
+            entryImg = getImage(phaseData(i).entryFrame, h5Files);
+            imshow(entryImg)
+            line(wormdata.headLoc(phaseData(i).entryFrame,1), wormdata.headLoc(phaseData(i).entryFrame,2), 'Color', 'g', 'Marker', 'o')
+            line(wormdata.tailLoc(phaseData(i).entryFrame,1), wormdata.tailLoc(phaseData(i).entryFrame,2), 'Color', 'r', 'Marker', 'o')
+            if i == 1
+                ylabel('Return')
+                yticks([])
+            end
 
-if ~isempty(h5path)
-    figure;
-    t = tiledlayout(length(phaseData)+1, 2, 'TileSpacing','none','Padding','tight');
-    h5Files = dir([h5path '\*.h5']);
-    for i = 1:length(phaseData)
-        nexttile()
-        exitImg = getImage(phaseData(i).exitFrame, h5Files);
-        imshow(exitImg)
-        line(wormdata.headLoc(phaseData(i).exitFrame,1), wormdata.headLoc(phaseData(i).exitFrame,2), 'Color', 'g', 'Marker', 'o')
-        line(wormdata.tailLoc(phaseData(i).exitFrame,1), wormdata.tailLoc(phaseData(i).exitFrame,2), 'Color', 'r', 'Marker', 'o')
+        end
+        %% plot bulk signal and event locations
+        nexttile([1 length(phaseData)])
+        patchAlpha = 1;
+        patchColor = [0.996 0.9400 0.7920]; %[0.93 0.69 0.13]
+        pk = max(bulkSignal, [], "all");
+        if isfield(phaseData, 'preFrame')
+            preSpikes = time(vertcat(phaseData.preFrame));
+            postSpikes = time(vertcat(phaseData.postFrame));
+            plot(time,bulkSignal, 'k',preSpikes,pk*1.05, 'rv',postSpikes,pk*1.05, 'gv', 'MarkerSize',3)
+        else
+            plot(time,bulkSignal, 'k')
+        end
+        xpatch = nan(4,size(onBouts,1));
+        for j=1:size(onBouts,1)
+            s = onBouts(j,1);
+            e = onBouts(j,2);
+            xpatch(1:4, j) = [s s e e];
+        end
+        ypatch = repmat([0; 1; 1; 0],1 ,size(xpatch, 2));
 
-        nexttile()
-        entryImg = getImage(phaseData(i).entryFrame, h5Files);
-        imshow(entryImg)
-        line(wormdata.headLoc(phaseData(i).entryFrame,1), wormdata.headLoc(phaseData(i).entryFrame,2), 'Color', 'g', 'Marker', 'o')
-        line(wormdata.tailLoc(phaseData(i).entryFrame,1), wormdata.tailLoc(phaseData(i).entryFrame,2), 'Color', 'r', 'Marker', 'o')
-    end
-    %% plot bulk signal and event locations
-    nexttile([1 2])
-    patchAlpha = 1;
-    patchColor = [0.996 0.9400 0.7920]; %[0.93 0.69 0.13]
-    pk = max(bulkSignal, [], "all");
-    if isfield(phaseData, 'preFrame')
-        preSpikes = time(vertcat(phaseData.preFrame));
-        postSpikes = time(vertcat(phaseData.postFrame));
-        plot(time,bulkSignal, 'k',preSpikes,pk*1.05, 'rv',postSpikes,pk*1.05, 'gv', 'MarkerSize',3)
+        if isfield(wormdata, 'boutData') && ~isempty(wormdata.boutData)
+            xCoords = xpatch/fps/60;
+            yCoords = (ypatch*max(bulkSignal, [], 'all')*1.1)+0.1;
+            p = patch(xCoords, yCoords, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
+            uistack(p, 'bottom');
+        end
+
+
     else
-        plot(time,bulkSignal, 'k')
-    end
-    xpatch = nan(4,size(onBouts,1));
-    for j=1:size(onBouts,1)
-        s = onBouts(j,1);
-        e = onBouts(j,2);
-        xpatch(1:4, j) = [s s e e];
-    end
-    ypatch = repmat([0; 1; 1; 0],1 ,size(xpatch, 2));
+        %% Just plot bulk signal and event locations
+        patchAlpha = 1;
+        patchColor = [0.996 0.9400 0.7920]; %[0.93 0.69 0.13]
+        pk = max(bulkSignal, [], "all");
+        if isfield(phaseData, 'preFrame')
+            preSpikes = time(vertcat(phaseData.preFrame));
+            postSpikes = time(vertcat(phaseData.postFrame));
+            plot(time,bulkSignal, 'k',preSpikes,pk*1.05, 'rv',postSpikes,pk*1.05, 'gv', 'MarkerSize',3)
+        else
+            plot(time,bulkSignal, 'k')
+        end
+        xpatch = nan(4,size(onBouts,1));
+        for j=1:size(onBouts,1)
+            s = onBouts(j,1);
+            e = onBouts(j,2);
+            xpatch(1:4, j) = [s s e e];
+        end
+        ypatch = repmat([0; 1; 1; 0],1 ,size(xpatch, 2));
 
-    if isfield(wormdata, 'boutData') && ~isempty(wormdata.boutData)
-        xCoords = xpatch/fps/60;
-        yCoords = (ypatch*max(bulkSignal, [], 'all')*1.1)+0.1;
-        p = patch(xCoords, yCoords, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
-        uistack(p, 'bottom');
-    end
-
-
-else
-    %% Just plot bulk signal and event locations
-    patchAlpha = 1;
-    patchColor = [0.996 0.9400 0.7920]; %[0.93 0.69 0.13]
-    pk = max(bulkSignal, [], "all");
-    if isfield(phaseData, 'preFrame')
-        preSpikes = time(vertcat(phaseData.preFrame));
-        postSpikes = time(vertcat(phaseData.postFrame));
-        plot(time,bulkSignal, 'k',preSpikes,pk*1.05, 'rv',postSpikes,pk*1.05, 'gv', 'MarkerSize',3)
-    else
-        plot(time,bulkSignal, 'k')
-    end
-    xpatch = nan(4,size(onBouts,1));
-    for j=1:size(onBouts,1)
-        s = onBouts(j,1);
-        e = onBouts(j,2);
-        xpatch(1:4, j) = [s s e e];
-    end
-    ypatch = repmat([0; 1; 1; 0],1 ,size(xpatch, 2));
-
-    if isfield(wormdata, 'boutData') && ~isempty(wormdata.boutData)
-        xCoords = xpatch/fps/60;
-        yCoords = (ypatch*max(bulkSignal, [], 'all')*1.1)+0.1;
-        p = patch(xCoords, yCoords, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
-        uistack(p, 'bottom');
+        if isfield(wormdata, 'boutData') && ~isempty(wormdata.boutData)
+            xCoords = xpatch/fps/60;
+            yCoords = (ypatch*max(bulkSignal, [], 'all')*1.1)+0.1;
+            p = patch(xCoords, yCoords, patchColor, 'FaceAlpha', patchAlpha, 'EdgeColor', 'none');
+            uistack(p, 'bottom');
+        end
     end
 end
 

@@ -206,6 +206,9 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         validateRiseFall                matlab.ui.control.CheckBox
         showFitParams                   matlab.ui.control.CheckBox
         Panel_4                         matlab.ui.container.Panel
+        DebugPlotsCheckBox              matlab.ui.control.CheckBox
+        DilatePatchEditField            matlab.ui.control.NumericEditField
+        DilatePatchmmEditFieldLabel     matlab.ui.control.Label
         ComputePhaseChangeButton        matlab.ui.control.Button
         FillGapssecEditField            matlab.ui.control.NumericEditField
         FillGapssecEditFieldLabel       matlab.ui.control.Label
@@ -409,6 +412,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             %% Phase Change
             plotSettings.fillGaps = app.FillGapssecEditField.Value;
+            plotSettings.dilatePatch = app.DilatePatchEditField.Value;
+            plotSettings.debugPlots = app.DebugPlotsCheckBox.Value;
         end
 
 
@@ -538,6 +543,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             
             %% Phase Change
             app.FillGapssecEditField.Value = plotSettings.fillGaps;
+            app.DilatePatchEditField.Value = plotSettings.dilatePatch;
+            app.DebugPlotsCheckBox.Value = plotSettings.debugPlots;
 
 
         end
@@ -1001,16 +1008,23 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
         function ComputePhaseChangeButtonPushed(app, event)
             fillGaps = app.FillGapssecEditField.Value;
             framerate = app.FrameRateEditField.Value;
-            inputDataName = app.WorkspacevariableEditField.Value;
+            patchDilation = app.DilatePatchEditField.Value;
+            debugPlots = app.DebugPlotsCheckBox.Value;
+            inputDataName = app.WorkspacevariableEditField.Value;         
             inputData = evalin("base", inputDataName);
-            phaseTable = table();
-            
-            for i = 1:numel(inputData)
-                [h5path, ~] = fileparts(inputData(i).filename);
-                phaseChange = computePhaseChange(inputData(i),framerate, fillGaps, [h5path '\*behavior']);
-                phaseTable =vertcat(phaseTable, struct2table(phaseChange));
-            end
 
+            phaseTable = table();
+
+            for i = 1:numel(inputData)
+                if numel(inputData(i).peakLoc)>2
+                    [h5path, ~] = fileparts(inputData(i).filename);
+                    phaseChange = computePhaseChange(inputData(i),framerate, fillGaps, [h5path '\*behavior'], patchDilation, debugPlots);
+                    phaseTable =vertcat(phaseTable, struct2table(phaseChange));
+
+                    [~, ~, foragingTraces] = alignOffFood(inputData(i));
+                end
+            end
+            assignin("base", "phaseTable", phaseTable)
         end
     end
 
@@ -1905,26 +1919,43 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
 
             % Create Panel_4
             app.Panel_4 = uipanel(app.miscsettingsTab);
-            app.Panel_4.Position = [290 11 164 62];
+            app.Panel_4.Position = [290 11 164 117];
 
             % Create FillGapssecEditFieldLabel
             app.FillGapssecEditFieldLabel = uilabel(app.Panel_4);
             app.FillGapssecEditFieldLabel.HorizontalAlignment = 'right';
-            app.FillGapssecEditFieldLabel.Position = [5 6 82 22];
+            app.FillGapssecEditFieldLabel.Position = [5 61 82 22];
             app.FillGapssecEditFieldLabel.Text = 'Fill Gaps (sec)';
 
             % Create FillGapssecEditField
             app.FillGapssecEditField = uieditfield(app.Panel_4, 'numeric');
             app.FillGapssecEditField.Tooltip = {'Removes short leaving events lasting less than the number of seconds specified'};
-            app.FillGapssecEditField.Position = [102 4 51 25];
-            app.FillGapssecEditField.Value = 15;
+            app.FillGapssecEditField.Position = [114 59 39 25];
+            app.FillGapssecEditField.Value = 30;
 
             % Create ComputePhaseChangeButton
             app.ComputePhaseChangeButton = uibutton(app.Panel_4, 'push');
             app.ComputePhaseChangeButton.ButtonPushedFcn = createCallbackFcn(app, @ComputePhaseChangeButtonPushed, true);
             app.ComputePhaseChangeButton.Tooltip = {'Calculates defecation cycle phase change on dataset specified in the "workspace variable" edit field to the left'};
-            app.ComputePhaseChangeButton.Position = [6 33 146 22];
+            app.ComputePhaseChangeButton.Position = [6 88 146 22];
             app.ComputePhaseChangeButton.Text = 'Compute Phase Change';
+
+            % Create DilatePatchmmEditFieldLabel
+            app.DilatePatchmmEditFieldLabel = uilabel(app.Panel_4);
+            app.DilatePatchmmEditFieldLabel.HorizontalAlignment = 'right';
+            app.DilatePatchmmEditFieldLabel.Position = [5 30 101 22];
+            app.DilatePatchmmEditFieldLabel.Text = 'Dilate Patch (mm)';
+
+            % Create DilatePatchEditField
+            app.DilatePatchEditField = uieditfield(app.Panel_4, 'numeric');
+            app.DilatePatchEditField.Tooltip = {'Removes short leaving events lasting less than the number of seconds specified'};
+            app.DilatePatchEditField.Position = [115 28 38 25];
+            app.DilatePatchEditField.Value = -0.1;
+
+            % Create DebugPlotsCheckBox
+            app.DebugPlotsCheckBox = uicheckbox(app.Panel_4);
+            app.DebugPlotsCheckBox.Text = 'Debug Plots';
+            app.DebugPlotsCheckBox.Position = [8 7 96 22];
 
             % Create SpikeKineticsPanel
             app.SpikeKineticsPanel = uipanel(app.miscsettingsTab);
@@ -2263,12 +2294,12 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             % Create InterpolateInt1Int9CheckBox
             app.InterpolateInt1Int9CheckBox = uicheckbox(app.miscsettingsTab);
             app.InterpolateInt1Int9CheckBox.Text = 'Interpolate Int1/Int9';
-            app.InterpolateInt1Int9CheckBox.Position = [292 151 125 22];
+            app.InterpolateInt1Int9CheckBox.Position = [293 161 125 22];
 
             % Create AddBehaviorAnnotationsCheckBox
             app.AddBehaviorAnnotationsCheckBox = uicheckbox(app.miscsettingsTab);
             app.AddBehaviorAnnotationsCheckBox.Text = 'Add Behavior Annotations';
-            app.AddBehaviorAnnotationsCheckBox.Position = [293 121 160 22];
+            app.AddBehaviorAnnotationsCheckBox.Position = [293 131 160 22];
 
             % Show the figure after all components are created
             app.IntestinalCalciumAppUIFigure.Visible = 'on';

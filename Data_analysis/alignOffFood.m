@@ -1,12 +1,25 @@
-function [exitInt1Matrix, exitInt9Matrix] = alignOffFood(wormdata) %
+function [exitInt1Matrix, exitInt9Matrix, foragingTraces] = alignOffFood(wormdata) %
 %UNTITLED2 Summary of this function goes here
 %   Detailed explanation goes here
 if nargin<1
     wormdata = evalin("caller",'wormdata');
 end
 
-foodExits = wormdata.offFood;
-foodEntries = wormdata.onFood;
+if isfield(wormdata, 'onFood')
+    foodExits = wormdata.offFood;
+    foodEntries = wormdata.onFood;
+elseif isfield(wormdata, 'patchROIs')     
+    dilationInMM = -0.1;
+    minOffDurationSeconds = 45;
+    framerate = 15;
+    %% Recalculate Food Bouts
+    onFoodVector = computeFoodVector(wormdata.patchROIs, dilationInMM);
+    boutData = computeFoodBouts(onFoodVector, framerate, minOffDurationSeconds);
+    foodExits = boutData.onFood(:,2);
+    foodEntries = boutData.onFood(:,1);
+end
+
+
 secPost = 90;
 secPre = 30;
 fps = 15;
@@ -30,7 +43,13 @@ entryTraceMatrix = [];
 entryInt1Matrix = [];
 entryInt9Matrix = [];
 
+foragingTraces = struct();
 
+if isfield(wormdata, 'genotype')
+    isprocessed = 1;
+else
+    isprocessed = 0;
+end
 
 
 %% Get calcium traces when animals leave food and align to last Ca2+ spike. Exclude short forays. 
@@ -77,8 +96,12 @@ for i = 1:length(foodExits)
             end
 
             %% Get and concatenate valid traces
-            backgroundTrace = wormdata.backgroundSignal(preIdx:postIdx, :);
-            exitTrace = wormdata.autoAxialSignal(preIdx:postIdx, :)-backgroundTrace;
+            if isprocessed == 0
+                backgroundTrace = wormdata.backgroundSignal(preIdx:postIdx, :);
+                exitTrace = wormdata.autoAxialSignal(preIdx:postIdx, :)-backgroundTrace;
+            else
+                exitTrace = wormdata.autoAxialSignal(preIdx:postIdx, :);
+            end
             buffer = nan(size(exitTrace,1),1);
             exitTraceMatrix = horzcat(exitTraceMatrix, buffer, exitTrace);
             %% Get int1 and int9 signal
@@ -88,6 +111,8 @@ for i = 1:length(foodExits)
             exitInt9Matrix = horzcat(exitInt9Matrix, mean(int9Signal,2, "omitmissing"));
 
             exitTickLabels(exitTraceCount) = {num2str(exitTraceCount)};
+
+            foragingTraces(exitTraceCount).exitTrace = exitTrace;
             exitTraceCount = exitTraceCount+1;
         end
     end
@@ -106,7 +131,7 @@ for i =1:length(foodEntries)
         end
 
         framesOffFood = entryFrame-exitFrame;
-        timeOffFood = framesOffFood/fps
+        timeOffFood = framesOffFood/fps;
         
         if framesOffFood >= 90*fps % ensure the time off food was of sufficient duration
 
@@ -121,8 +146,13 @@ for i =1:length(foodEntries)
                 postIdx =size (wormdata.autoAxialSignal,1);
             end
             %% Get and concatenate valid traces
-            backgroundTrace = wormdata.backgroundSignal(preIdx:postIdx, :);
-            entryTrace = wormdata.autoAxialSignal(preIdx:postIdx, :)-backgroundTrace;
+            if isprocessed == 0
+                backgroundTrace = wormdata.backgroundSignal(preIdx:postIdx, :);
+                entryTrace = wormdata.autoAxialSignal(preIdx:postIdx, :)-backgroundTrace;
+            else
+                entryTrace = wormdata.autoAxialSignal(preIdx:postIdx, :);
+            end
+
             buffer = nan(size(entryTrace,1),1);
             entryTraceMatrix = horzcat(entryTraceMatrix, buffer, entryTrace);
             %% Get int1 and int9 signal
@@ -132,6 +162,9 @@ for i =1:length(foodEntries)
             entryInt9Matrix = horzcat(entryInt9Matrix, mean(int9Signal,2, "omitmissing"));
 
             entryTickLabels(entryTraceCount) = {num2str(entryTraceCount)};
+
+            foragingTraces(entryTraceCount).entryTrace = entryTrace;
+
             entryTraceCount = entryTraceCount+1;
 
         end
@@ -140,13 +173,13 @@ end
 
 
 figure('Position', [347.4000 61 631.2000 683.2000], 'Color', [1 1 1]);
-% t = tiledlayout(3,2);
+t = tiledlayout(3,2);
 %% Exit Traces
 
-% exitAx = nexttile([3 1]);
+exitAx = nexttile([3 1]);
 traceX = linspace(-secPre, secPost, size(exitTraceMatrix,1));
 traceY = 1:size(exitTraceMatrix,2)+(exitTraceCount-1);
-imagesc(traceX, traceY, smoothdata(exitTraceMatrix, 'gaussian', 60)', [0 90])
+imagesc(traceX, traceY, smoothdata(exitTraceMatrix, 'gaussian', 60)', [0 45])
 
 yt = nan(exitTraceCount-1,1);
 yt(1) = 100;
@@ -169,25 +202,25 @@ xticks(-15:15:60)
 
 %% Entry Traces
 
-% entryAx = nexttile([3 1]);
-% traceX = linspace(-secPre, secPost, size(entryTraceMatrix,1));
-% traceY = 1:size(entryTraceMatrix,2)+(entryTraceCount-1);
-% imagesc(traceX, traceY, smoothdata(entryTraceMatrix, 'gaussian', 60)', [0 90])
-% 
-% yt = nan(entryTraceCount-1,1);
-% yt(1) = 100;
-% if entryTraceCount >1
-%     for i = 2:entryTraceCount-1
-%         yt(i) = yt(i-1)+201;
-%     end
-% end
-% 
-% yticks(yt);
-% yticklabels(entryTickLabels)
-% colormap("turbo");
-% 
-% ylabel('Entry Event #')
-% xlabel('Time since food entry (s)')
+entryAx = nexttile([3 1]);
+traceX = linspace(-secPre, secPost, size(entryTraceMatrix,1));
+traceY = 1:size(entryTraceMatrix,2)+(entryTraceCount-1);
+imagesc(traceX, traceY, smoothdata(entryTraceMatrix, 'gaussian', 60)', [0 45])
+
+yt = nan(entryTraceCount-1,1);
+yt(1) = 100;
+if entryTraceCount >1
+    for i = 2:entryTraceCount-1
+        yt(i) = yt(i-1)+201;
+    end
+end
+
+yticks(yt);
+yticklabels(entryTickLabels)
+colormap("turbo");
+
+ylabel('Entry Event #')
+xlabel('Time since food entry (s)')
 xlim([-15 60])
 cb = colorbar;
 cb.Label.String='GCaMP Signal (a.u.)';
