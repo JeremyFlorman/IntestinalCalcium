@@ -92,7 +92,10 @@ for i = 1:size(onBouts,1)
             secondsAfterFoodEntry = (frameOfNextEvent-entryFrame)/fps; % find how many seconds after food entry the next event occured
             combinedCycleTime = secondsRemaining+secondsAfterFoodEntry; % cycle time excluding time off food
 
-            phaseChange = combinedCycleTime -interval % this is signed, will tell you +/- cycle extension/reduction
+            phaseChange = combinedCycleTime -interval; % this is signed, will tell you +/- cycle extension/reduction
+
+            exitTrace = wormdata.autoAxialSignal(frameOfThisEvent-30*fps:frameOfThisEvent+90*fps,:);
+            entryTrace = wormdata.autoAxialSignal(entryFrame-30*fps:entryFrame+90*fps,:);
 
             % Store data
             fn = strsplit(wormdata.filename, '\');
@@ -108,6 +111,15 @@ for i = 1:size(onBouts,1)
             phaseData(eventIndex).cycleSecondsRemaining = secondsRemaining; % The number of seconds left in the cycle (based on the average interval) when the animal left food
             phaseData(eventIndex).secondsDelay = secondsAfterFoodEntry; % The delay in seconds from food entry to the next defecation event
             phaseData(eventIndex).phaseChange = phaseChange; % The number of seconds the cycle shifted, simply (# seconds left in the cycle + delay after food entry) - average interval;
+            phaseData(eventIndex).exitTrace = {exitTrace};
+            phaseData(eventIndex).entryTrace = {entryTrace};
+            % 
+            % 
+            % foragingTraces(eventIndex).filename = fn{end};
+            % foragingTraces(eventIndex).exitTrace = exitTrace;
+            % foragingTraces(eventIndex).exitFrame = (exitFrame-frameOfThisEvent)+30*fps;
+            % foragingTraces(eventIndex).entryTrace = entryTrace;
+
             eventIndex = eventIndex+1;
 
         end
