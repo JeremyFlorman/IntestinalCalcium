@@ -1018,10 +1018,8 @@ classdef Intestinal_Calcium_app_exported < matlab.apps.AppBase
             for i = 1:numel(inputData)
                 if numel(inputData(i).peakLoc)>2
                     [h5path, ~] = fileparts(inputData(i).filename);
-                    phaseChange = computePhaseChange(inputData(i),framerate, fillGaps, [h5path '\*behavior'], patchDilation, debugPlots);
+                    [phaseChange]= computePhaseChange(inputData(i),framerate, fillGaps, [h5path '\*behavior'], patchDilation, debugPlots);
                     phaseTable =vertcat(phaseTable, struct2table(phaseChange));
-
-                    [~, ~, foragingTraces] = alignOffFood(inputData(i));
                 end
             end
             assignin("base", "phaseTable", phaseTable)

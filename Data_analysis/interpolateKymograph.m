@@ -12,7 +12,7 @@ function warped = interpolateKymograph(trace, idxFood, idxSpike, nPre, nMid, nPo
 
 
 if nargin<4
-    fps = 30;
+    fps = 15;
     nPre = 30*fps;
     nMid = 45*fps;
     nPost = 45*fps;

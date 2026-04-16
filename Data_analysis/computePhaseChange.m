@@ -25,6 +25,11 @@ elseif nargin == 2 && isstruct(fps) % if we are passing the settings structure, 
     h5path = [];
 elseif nargin == 3
     h5path = [];
+    dilationInMM = -0.1;
+    debugPlots = 1;
+elseif nargin < 4
+    dilationInMM = -0.1;
+    debugPlots = 1;
 end
 
 %% Recompute Food Vector
@@ -83,6 +88,7 @@ for i = 1:size(onBouts,1)
         interval = mean(onFoodIntervals, 1); % average interval during on-food bouts
         frameOfThisEvent = validEvents(end); % Frame of the last event during this on food bout
         secondsRemaining = interval - (exitFrame-frameOfThisEvent)/fps; % time between ca2+ wave and leaving event
+        secondsRemaining(secondsRemaining<0) = 0;
         frameOfNextEvent  = loc(find(loc>frameOfThisEvent, 1)); % find the next ca2+ wave after the leaving event
         isNextEventOnFood = onFoodVector(frameOfNextEvent); % check the food vector to see if it was on or off food
 
@@ -92,10 +98,16 @@ for i = 1:size(onBouts,1)
             secondsAfterFoodEntry = (frameOfNextEvent-entryFrame)/fps; % find how many seconds after food entry the next event occured
             combinedCycleTime = secondsRemaining+secondsAfterFoodEntry; % cycle time excluding time off food
 
-            phaseChange = combinedCycleTime -interval; % this is signed, will tell you +/- cycle extension/reduction
+            phaseChange = secondsAfterFoodEntry - secondsRemaining; % this is signed, will tell you +/- cycle extension/reduction
 
-            exitTrace = wormdata.autoAxialSignal(frameOfThisEvent-30*fps:frameOfThisEvent+90*fps,:);
-            entryTrace = wormdata.autoAxialSignal(entryFrame-30*fps:entryFrame+90*fps,:);
+            exitTrace = wormdata.autoAxialSignal(frameOfThisEvent-30*fps:frameOfThisEvent+90*fps,:); % Get signal when worm exits food, aligned to last Ca2+ wave
+            [int1Exit, int9Exit] = extractCellSignal(exitTrace); % get int1 and int9 on exit
+
+            entryTrace = wormdata.autoAxialSignal(entryFrame-30*fps:entryFrame+90*fps,:); % get signal when worm re-enters food
+            [int1Entry, int9Entry] = extractCellSignal(entryTrace); % get int1 and int9 on reentry
+
+            int1EntryWarped = interpolateKymograph(int1Entry, 30*fps, 30*fps+(frameOfNextEvent-entryFrame)); % interpolate int1/9 signal. traces begin 30sec before food entry so 30*fps is the first timepoint
+            int9EntryWarped = interpolateKymograph(int9Entry, 30*fps, 30*fps+(frameOfNextEvent-entryFrame)); % (frameOfNextEvent-entryFrame) is delay to the first Ca2+ wave, so we add this to 30*fps to get next timepoint
 
             % Store data
             fn = strsplit(wormdata.filename, '\');
@@ -111,14 +123,19 @@ for i = 1:size(onBouts,1)
             phaseData(eventIndex).cycleSecondsRemaining = secondsRemaining; % The number of seconds left in the cycle (based on the average interval) when the animal left food
             phaseData(eventIndex).secondsDelay = secondsAfterFoodEntry; % The delay in seconds from food entry to the next defecation event
             phaseData(eventIndex).phaseChange = phaseChange; % The number of seconds the cycle shifted, simply (# seconds left in the cycle + delay after food entry) - average interval;
+            
+            % Axial and Int1/Int9 Signal 
             phaseData(eventIndex).exitTrace = {exitTrace};
             phaseData(eventIndex).entryTrace = {entryTrace};
-            % 
-            % 
-            % foragingTraces(eventIndex).filename = fn{end};
-            % foragingTraces(eventIndex).exitTrace = exitTrace;
-            % foragingTraces(eventIndex).exitFrame = (exitFrame-frameOfThisEvent)+30*fps;
-            % foragingTraces(eventIndex).entryTrace = entryTrace;
+            
+            phaseData(eventIndex).int1Exit = {int1Exit};
+            phaseData(eventIndex).int9Exit = {int9Exit};
+
+            phaseData(eventIndex).int1Entry = {int1Entry};
+            phaseData(eventIndex).int9Entry = {int9Entry};
+            
+            phaseData(eventIndex).int1EntryWarped = {int1EntryWarped};
+            phaseData(eventIndex).int9EntryWarped = {int9EntryWarped};
 
             eventIndex = eventIndex+1;
 
@@ -126,14 +143,11 @@ for i = 1:size(onBouts,1)
     end
 end
 
-% phaseTable = struct2table(phaseData);
-
-
 %% Plot for debugging
 if debugPlots == 1
     if ~isempty(h5path) && isfield(phaseData, 'exitFrame')
-        figure('Name', phaseData(1).filename);
-        t = tiledlayout(3, length(phaseData), 'TileSpacing','none','Padding','tight');
+        figure('Name', phaseData(1).filename, 'Position', [285.8000 89.8000 917.6000 654.4000], 'Color', [1 1 1]);
+        t = tiledlayout(3, length(phaseData)+2, 'TileSpacing','compact','Padding','tight');
         h5Files = dir([h5path '\*.h5']);
         %% Display images of leaving and return events
         for i = 1:length(phaseData)
@@ -146,7 +160,7 @@ if debugPlots == 1
                 ylabel('Exit')
                 yticks([])
             end
-            nexttile(length(phaseData)+i)
+            nexttile(length(phaseData)+i+2)
             entryImg = getImage(phaseData(i).entryFrame, h5Files);
             imshow(entryImg)
             line(wormdata.headLoc(phaseData(i).entryFrame,1), wormdata.headLoc(phaseData(i).entryFrame,2), 'Color', 'g', 'Marker', 'o')
@@ -158,7 +172,7 @@ if debugPlots == 1
 
         end
         %% plot bulk signal and event locations
-        nexttile([1 length(phaseData)])
+        nexttile(((length(phaseData)+2)*2)+1, [1 length(phaseData)+2])
         patchAlpha = 1;
         patchColor = [0.996 0.9400 0.7920]; %[0.93 0.69 0.13]
         pk = max(bulkSignal, [], "all");
@@ -166,6 +180,7 @@ if debugPlots == 1
             preSpikes = time(vertcat(phaseData.preFrame));
             postSpikes = time(vertcat(phaseData.postFrame));
             plot(time,bulkSignal, 'k',preSpikes,pk*1.05, 'rv',postSpikes,pk*1.05, 'gv', 'MarkerSize',3)
+            text()
         else
             plot(time,bulkSignal, 'k')
         end
@@ -212,7 +227,55 @@ if debugPlots == 1
             uistack(p, 'bottom');
         end
     end
+
+    %% Plot Exit and entry traces
+    exTraces = [];
+    enTraces = [];
+    if isfield(phaseData, 'exitTrace')
+        for i =1:numel(phaseData)
+            buffer = nan(1,size(phaseData(i).exitTrace{:}',2));
+            exTraces = vertcat(exTraces,buffer, phaseData(i).exitTrace{:}');
+            enTraces = vertcat(enTraces,buffer, phaseData(i).entryTrace{:}');
+        end
+
+        traceX = linspace(-30, 90, size(exTraces,1));
+        traceY = 1:size(exTraces,1)+(eventIndex-1);
+
+        yt = nan(eventIndex-1,1);
+        yt(1) = 100;
+        yLabels = '1';
+        if eventIndex >1
+            for i = 2:eventIndex-1
+                yt(i) = yt(i-1)+201;
+                yLabels = [yLabels; num2str(i)];
+            end
+        end
+
+
+        % figure();
+        % tiledlayout(2,2, "TileSpacing","compact", 'Padding','tight');
+        nexttile([2 1])
+        imagesc(traceX, traceY, smoothdata(exTraces,2,'gaussian', 60), [0 45]);
+        yticks(yt);
+        yticklabels(yLabels)
+        xticks(-30:30:90)
+        box off
+
+        nexttile([2 1])
+        imagesc(traceX, traceY, smoothdata(enTraces,2,'gaussian', 60), [0 45])
+        yticks(yt);
+        ax = gca; 
+        ax.YAxis.Visible = 'off';
+        xticks(-30:30:90)
+        
+        box off
+        % colormap("turbo")
+    end
+
+
 end
+
+
 
 
 end
