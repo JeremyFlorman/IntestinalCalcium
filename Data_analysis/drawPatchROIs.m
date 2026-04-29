@@ -1,4 +1,4 @@
-folder  = 'C:\Users\Alkem\Desktop\analysis\260406_zfis178_wildtype-19patch-r24mm-05ul-15fps_4\2026_04_06_14_55_58_flircamera_behavior';
+folder  = 'E:\260330_zfis178_wildtype-19patch-r24mm-05ul-15fps_1\2026_03_30_10_50_00_flircamera_behavior';
 tic
 d  = dir(fullfile(folder, '*videoEvents.mat'));
 h5 = dir(fullfile(folder, '*.h5'));
@@ -222,7 +222,7 @@ else
 end
 %%
 colorSignal = int9Signal; % signal used for color of scatter plot markers
-sizeSignal = repmat(8, size(colorSignal)); % signal used for size of scatter plot markers
+sizeSignal = repmat(5, size(colorSignal)); % signal used for size of scatter plot markers
 % sizeSignal(sizeSignal<5) = 1;
 
 
@@ -230,7 +230,8 @@ figure;
 ax = gca;
 
 
-s = scatter(ax,xSubset,ySubset,sizeSignal(inc),colorSignal(inc), 'o', 'filled');
+% s = scatter(ax,xSubset,ySubset,sizeSignal(inc),colorSignal(inc), 'o', 'filled');
+line(x_px_center + offsetX, y_px_center + offsetY)
 colormap(ax, turbo);
 ax.CLim = [0 45];
 
@@ -281,24 +282,27 @@ set(gca, ...
 xlabel('');
 ylabel('');
 
-ax.XAxis.Visible = 0;
-ax.YAxis.Visible = 0;
+ax.XAxis.Visible = 1;
+ax.YAxis.Visible = 1;
 
 hold(ax, 'off');
 toc
-%% Define food patches
-
-% ROIs = struct();
-nPatches = input("How Many Food Patches?");
-if ~isempty(nPatches) && isnumeric(nPatches)
-    for i = 1:nPatches
-        disp(['Draw Circle ' num2str(i) ' of ' num2str(nPatches) ...
-            ' - Double Click When Done'])
-        c = drawcircle('Color',[0.6350 0.0780 0.1840], FaceAlpha=0, LineWidth=1);
-        wait(c)
-        ROIs(i).Center = c.Center;
-        ROIs(i).Radius = c.Radius;
-        ROIs(i).Vertices = c.Vertices;
+%% Load Existing / Define New Food Patches
+if isfield(wormdata, 'patchROIs')
+    ROIs = wormdata.patchROIs;
+    nPatches = numel(ROIs);
+else
+    nPatches = input("How Many Food Patches?");
+    if ~isempty(nPatches) && isnumeric(nPatches)
+        for i = 1:nPatches
+            disp(['Draw Circle ' num2str(i) ' of ' num2str(nPatches) ...
+                ' - Double Click When Done'])
+            c = drawcircle('Color',[0.6350 0.0780 0.1840], FaceAlpha=0, LineWidth=1);
+            wait(c)
+            ROIs(i).Center = c.Center;
+            ROIs(i).Radius = c.Radius;
+            ROIs(i).Vertices = c.Vertices;
+        end
     end
 end
 
