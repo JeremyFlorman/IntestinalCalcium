@@ -62,8 +62,13 @@ if isfield(wormdata, 'onFood')
     if trimOffFood ==1
         offFood = offFood(1:end-1);
     end
-elseif isfield(wormdata, 'onFoodVector')
-    foodTrace = wormdata.onFoodVector;
+elseif isfield(wormdata, 'patchROIs')
+    ROIs = wormdata.patchROIs; 
+    dilationInMM = 0;
+    minGapSeconds = 0;
+    framerate = 15;
+    [foodTrace] = computeFoodVector(ROIs, dilationInMM);
+    wormdata.boutData = computeFoodBouts(foodTrace, framerate, minGapSeconds);
 end
 
 
