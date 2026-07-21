@@ -1,10 +1,10 @@
-h5path = 'C:\Users\AlkemaLab\Desktop\HisCat\zfex1028_Tag-168HisCat\Movies\260427_zfex1028_tag-168HisCat_+30mM_HA_1\2026_04_27_15_24_28_flircamera_behavior';
+h5path = 'C:\src\OpenAutoScope-v2\data\260616_wildtype-10mM-HA\2026_06_16_14_55_43_flircamera_behavior';
 d = dir([h5path '\*.h5']);
 
 [indices] = indexCameraTimestamps(h5path, 0);
 
 fr = 15;    % frame rate of original video
-playrate = 10; % multiplier for playback framerate
+playrate = 5; % multiplier for playback framerate
 
 startidx = 1; %460;
 endidx = length(indices.timestamps);
@@ -18,15 +18,27 @@ vW.FrameRate = fr*playrate;
 
 open(vW)
 
+addTimestamp =1; 
 
 
+
+%%
+t = linspace(0, endidx/15/60, endidx);
 for i = startidx:endidx
-    img = getSlice(i, indices);
-    % imshow(img);
-    % drawnow()
-    writeVideo(vW,img)
+    if addTimestamp == 0
+        img = getSlice(i, indices);
+        writeVideo(vW,img)
+    else
+        img = getSlice(i, indices);
+        imshow(img);
+        txtstr = [num2str(t(i),'%0.2f') ' min'];
+        text(5,7, txtstr, "FontSize", 12, "Color",[0 0 0])
+        frame = getframe;
+        % drawnow()
+        writeVideo(vW,frame)
+    end
 end
-
+% close(fig)
 close(vW)
 disp('DONE!!!')
 % end

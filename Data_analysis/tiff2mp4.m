@@ -6,12 +6,12 @@
 % % 
 % for f = length(fn)
 %     filename = fn{f};
-    filename = "C:\Users\Jeremy\Desktop\251110_zfis178_wildtype+Food_4_rgb_croppped.tif";
+    filename = "C:\Users\AlkemaLab\Desktop\HisCat\4Well_10mMHA\N2_acr-2_unc-47_tag-168_10mM-HA.tif";
     [fp, name, ext] = fileparts(filename);
     info = imfinfo(filename);
 
-    fr = 15;    % frame rate of original video
-    playrate = 1; % multiplier for playback framerate
+    fr = 1;    % frame rate of original video
+    playrate = 50; % multiplier for playback framerate
 
     startidx = 1; %460;
     endidx = length(info);

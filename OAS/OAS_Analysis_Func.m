@@ -39,6 +39,9 @@ axSigHeight = 35; % how many pixels to sample across the width of the worm (i.e.
 
 % SEsize = 20;
 
+analyzeMuscle =0; 
+
+
 %%
 %%
 imgDir = dir([fld '\**\*behavior\*.h5']);
@@ -227,6 +230,13 @@ for nf =startIndex:length(imgDir)
     wormLength = NaN(nFrames, 1);
     headLoc = NaN(nFrames, 2);
     tailLoc = NaN(nFrames,2);
+
+    if analyzeMuscle == 1
+        leftMuscles = NaN(nFrames, axSigLen/2);
+        rightMuscles = NaN(nFrames, axSigLen/2);
+        quadLeft = NaN(nFrames,1);
+        quadRight = NaN(nFrames,1);
+    end
 
     time = (log_events.time-log_events.time(1))/60; %minutes per frame
     wormIdx = [];
@@ -574,24 +584,47 @@ for nf =startIndex:length(imgDir)
                         abf = resample(mean(tempbf), size(axialSignal,2), size(tempbf,2),5,20);
 
                         % % % % real-time autoFixSignal % % %
-                        querryLength = length(tt)*0.1; % fraction of signal to querry
+                        querryLength = length(tt)*0.25; % fraction of signal to querry
                         leftMean = mean(tt(1:querryLength),'omitnan');
                         rightMean = mean(tt(length(tt)-querryLength:length(tt)),'omitnan');
 
-                        if leftMean>rightMean
-                            tt = fliplr(tt);
-                            temptrace = fliplr(temptrace);
-                            abf = fliplr(abf);
-                            tempbf = fliplr(tempbf);
-                            ex = flipud(ex);
-                            ey = flipud(ey);
+                        switch analyzeMuscle
+                            case 0
+                                if leftMean<rightMean
+                                    tt = fliplr(tt);
+                                    temptrace = fliplr(temptrace);
+                                    abf = fliplr(abf);
+                                    tempbf = fliplr(tempbf);
+                                    ex = flipud(ex);
+                                    ey = flipud(ey);
+                                end
+                            case 1
+                                if leftMean<rightMean
+                                    tt = fliplr(tt);
+                                    temptrace = fliplr(temptrace);
+                                    abf = fliplr(abf);
+                                    tempbf = fliplr(tempbf);
+                                    ex = flipud(ex);
+                                    ey = flipud(ey);
+                                end
                         end
-                        
 
                         % % % % % % % % % % % % % % % % % % % %
 
                         axialBF(i,1:size(abf,2)) = abf;
                         axialSignal(i,1:size(tt,2)) = tt;
+
+
+                        if analyzeMuscle == 1
+                            top = temptrace(1:size(temptrace,1)/2,:);
+                            bot = temptrace(size(temptrace,1)/2+1:end,:);
+
+                            leftMuscles(i,1:size(top,2)) = max(top);
+                            rightMuscles(i,1:size(bot,2)) = max(bot);
+
+                            quadLeft(i) = mean(leftMuscles(i,20:40));
+                            quadRight(i) = mean(rightMuscles(i,20:40));
+                        end
                     end
                 end
 
@@ -620,10 +653,6 @@ for nf =startIndex:length(imgDir)
                     headLoc(i,1:2) = [ex(1) ey(1)];
                     tailLoc(i,1:2) = [ex(end) ey(end)];
                 end
-
-                
-
-
 
                 % Upsample temptrace and tempbf to match original sortSkel size
                 originalIndices = 1:totalPoints - 1;
@@ -699,6 +728,14 @@ for nf =startIndex:length(imgDir)
 
                         axsig = smoothdata(axialSignal(1:i,:),1,'gaussian',60)'-median(backgroundSignal(1:i),'omitnan');
 
+                        if analyzeMuscle == 1
+                            leftSig = smoothdata(leftMuscles(1:i,:),1,'gaussian',15)'-median(backgroundSignal(1:i),'omitnan');
+                            rightSig = smoothdata(rightMuscles(1:i,:),1,'gaussian',15)'-median(backgroundSignal(1:i),'omitnan');
+
+                            muscleSig = [leftSig; rightSig];
+                        end
+
+
                         if i == startframe  % plot for the first time
                             %% Binary Mask
                             hold(ax1, 'on')
@@ -729,8 +766,14 @@ for nf =startIndex:length(imgDir)
                             title(ax3,'GCaMP');
 
                             %% Axial Signal
-                            hKymo = imagesc(axsig,'Parent',ax4);
-                            ax4.CLim = [0 60];
+                            if analyzeMuscle == 1
+                                hKymo = imagesc(muscleSig,'Parent',ax4);
+                                ax4.CLim = [0 25];
+                            else
+                                hKymo = imagesc(axsig,'Parent',ax4);
+                                ax4.CLim = [0 60];
+                            end
+                            
                             ax4.XLim = [1, length(axialSignal)];
                             ax4.XAxis.Visible = 0;
                             ax4.YTickLabel = [];
@@ -745,11 +788,17 @@ for nf =startIndex:length(imgDir)
 
 
                             %% Bulk signal
+
                             hBulk = plot(time,bulkSignal, 'Parent', ax7);
                             hold(ax7, 'on')
                             hBkg = plot(time',backgroundSignal, 'Parent', ax7);
-                            hAnterior = plot(time, antSignal,'g', 'Parent', ax7);
-                            hPosterior = plot(time, postSignal, 'r', 'Parent', ax7);
+                            if analyzeMuscle == 1
+                                hAnterior = plot(time, quadLeft,'g', 'Parent', ax7);
+                                hPosterior = plot(time, quadRight, 'r', 'Parent', ax7);
+                            else
+                                hAnterior = plot(time, antSignal,'g', 'Parent', ax7);
+                                hPosterior = plot(time, postSignal, 'r', 'Parent', ax7);
+                            end
 
                             hold(ax7, 'off')
                             ax7.XLim = [0 time(end)];
@@ -819,18 +868,28 @@ for nf =startIndex:length(imgDir)
                             end
 
                             % Axial Signal
-                            hKymo.CData = axsig;
-
+                            if analyzeMuscle == 1
+                                hKymo.CData = muscleSig;
+                            else 
+                                hKymo.CData = axsig;
+                            end
                             % Bulk & Background Signal
                             hBulk.XData = time;
                             hBulk.YData = bulkSignal;
 
-                            hAnterior.XData = time;
-                            hAnterior.YData = antSignal;
+                            if analyzeMuscle == 1
+                                hAnterior.XData = time;
+                                hAnterior.YData = quadLeft;
 
-                            hPosterior.XData = time;
-                            hPosterior.YData = postSignal;
+                                hPosterior.XData = time;
+                                hPosterior.YData = quadRight;
+                            else                              
+                                hAnterior.XData = time;
+                                hAnterior.YData = antSignal;
 
+                                hPosterior.XData = time;
+                                hPosterior.YData = postSignal;
+                            end
                             hBkg.XData = time';
                             hBkg.YData = backgroundSignal;
 
@@ -938,6 +997,12 @@ for nf =startIndex:length(imgDir)
     wormdata.autoAxialSignal = autoAxialSignal;
     % wormdata.sumSignal = sumSignal;
     wormdata.bulkSignal = bulkSignal;
+
+    if analyzeMuscle == 1
+        wormdata.leftMuscles = leftMuscles;
+        wormdata.rightMuscles = rightMuscles;
+    end
+
     % wormdata.bulkAboveBkg = bulkAboveBkg;
     wormdata.backgroundSignal = backgroundSignal;
     wormdata.background1Pct = background1Pct;
@@ -988,11 +1053,17 @@ for nf =startIndex:length(imgDir)
     t = tiledlayout(4,4,'TileSpacing','compact','Padding','tight');
 
     % % % Bulk Signal % % %
-    nexttile([1 3])
-    if ~isnan(loc)
-        plot(time,bulkSignal-backgroundSignal,time(loc),(pk-backgroundSignal(loc))*1.01, 'rv')
+
+    if analyzeMuscle == 1
+        plot(time,quadLeft-backgroundSignal, time, quadRight-backgroundSignal)
     else
-        plot(time,bulkSignal-backgroundSignal)
+
+        nexttile([1 3])
+        if ~isnan(loc)
+            plot(time,bulkSignal-backgroundSignal,time(loc),(pk-backgroundSignal(loc))*1.01, 'rv')
+        else
+            plot(time,bulkSignal-backgroundSignal)
+        end
     end
     hold on
     if ~isempty(stimTimes)
@@ -1026,7 +1097,13 @@ for nf =startIndex:length(imgDir)
 
     % % % Axial Signal % % %
     ax = nexttile([1 3]);
-    imagesc(smoothdata(autoAxialSignal,1,'gaussian',60)'-median(backgroundSignal,'omitnan'))
+    if analyzeMuscle == 1
+        imagesc(muscleSig-median(backgroundSignal,'omitnan'))
+        ax.CLim =[0 25];
+    else 
+        imagesc(smoothdata(autoAxialSignal,1,'gaussian',60)'-median(backgroundSignal,'omitnan'))
+        ax.CLim =[0 50];
+    end
     title(gca, 'Axial Calcium Trace')
     hold on
     plot(loc,1, 'vw', 'MarkerFaceColor' ,[.4 .5 .6]);
@@ -1041,7 +1118,7 @@ for nf =startIndex:length(imgDir)
     ax.XTickLabels = xtl;
     ax.YTick = [20 size(autoAxialSignal,2)-20];
     ax.YTickLabel = {'Head', 'Tail'};
-    ax.CLim =[0 50];
+
     colormap turbo
     ax.TickLength = [0.001 0.001];
 
