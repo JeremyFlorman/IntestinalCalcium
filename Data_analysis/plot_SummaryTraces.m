@@ -181,7 +181,7 @@ box off
 %% Velocity  % % %
 if isfield(wormdata, 'velocity')
     nexttile([1 3]);
-    plot(time,smoothdata(velocity,'gaussian',45),"Color",'k')
+    plot(time,smoothdata(velocity,'gaussian',75),"Color",'k')
     ax = gca;
     hold on
     if ~isempty(stimTimes)
@@ -246,7 +246,7 @@ end
 
 %% Worm Area % % %
 nexttile([1 3]);
-plot(time,smoothdata(area,'gaussian', 30))
+plot(time,smoothdata(area,'gaussian', 75))
 xlim([0 time(end)])
 title(gca, 'Worm Area')
 ylabel(gca,'Pixels')
