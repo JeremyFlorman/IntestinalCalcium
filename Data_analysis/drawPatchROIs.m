@@ -1,4 +1,4 @@
-folder  = 'E:\260330_zfis178_wildtype-19patch-r24mm-05ul-15fps_1\2026_03_30_10_50_00_flircamera_behavior';
+folder  = 'R:\People\Jeremy_Florman\OAS\5-HT\+Food\che-2+Food\261117_zfis178_che-2+Food_2\2026_11_17_15_39_27_flircamera_behavior';
 tic
 d  = dir(fullfile(folder, '*videoEvents.mat'));
 h5 = dir(fullfile(folder, '*.h5'));
@@ -297,7 +297,7 @@ else
         for i = 1:nPatches
             disp(['Draw Circle ' num2str(i) ' of ' num2str(nPatches) ...
                 ' - Double Click When Done'])
-            c = drawcircle('Color',[0.6350 0.0780 0.1840], FaceAlpha=0, LineWidth=1);
+            c = drawcircle('Color',[0.6350 0.0780 0.1840],'DrawingArea', 'unlimited', FaceAlpha=0, LineWidth=1);
             wait(c)
             ROIs(i).Center = c.Center;
             ROIs(i).Radius = c.Radius;
@@ -368,7 +368,7 @@ clear('ROIs')
 
 plot_SummaryTraces(wormDataPath)
 
-pc = computePhaseChange(wormdata,15,15, folder);
+% pc = computePhaseChange(wormdata,15,15, folder);
 
 
 
