@@ -584,13 +584,13 @@ for nf =startIndex:length(imgDir)
                         abf = resample(mean(tempbf), size(axialSignal,2), size(tempbf,2),5,20);
 
                         % % % % real-time autoFixSignal % % %
-                        querryLength = length(tt)*0.25; % fraction of signal to querry
+                        querryLength = length(tt)*0.1; % fraction of signal to querry
                         leftMean = mean(tt(1:querryLength),'omitnan');
                         rightMean = mean(tt(length(tt)-querryLength:length(tt)),'omitnan');
 
                         switch analyzeMuscle
                             case 0
-                                if leftMean<rightMean
+                                if leftMean>rightMean
                                     tt = fliplr(tt);
                                     temptrace = fliplr(temptrace);
                                     abf = fliplr(abf);
